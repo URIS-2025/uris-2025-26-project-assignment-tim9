@@ -1,0 +1,10 @@
+bin/
+obj/
+.idea/
+.vscode/
+.vs/
+.DS_Store
+*.csproj.user
+*.user
+*.suo
+.env
