@@ -2,8 +2,8 @@
 {
     public class RequirementsConfirmationDto
     {
-        public Guid RequirementID { get; set; }
-        public Guid ProjectID { get; set; }
+        public Guid RequirementId { get; set; }
+        public Guid ProjectId { get; set; }
         public string Description { get; set; }
     }
 }

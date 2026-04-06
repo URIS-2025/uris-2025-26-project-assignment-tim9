@@ -2,7 +2,7 @@
 {
     public class MilestoneCreationDto
     {
-        public Guid ProjectID { get; set; }
+        public Guid ProjectId { get; set; }
         public DateTime ExpectedDate { get; set; }
     }
 }

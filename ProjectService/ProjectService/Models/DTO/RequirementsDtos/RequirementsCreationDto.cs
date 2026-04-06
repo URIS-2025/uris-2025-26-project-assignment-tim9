@@ -2,7 +2,7 @@
 {
     public class RequirementsCreationDto
     {
-        public Guid ProjectID { get; set; }
+        public Guid ProjectId { get; set; }
         public string Description { get; set; }
     }
 }

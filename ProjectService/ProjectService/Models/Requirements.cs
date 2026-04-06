@@ -1,9 +1,12 @@
-﻿namespace ProjectService.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ProjectService.Models
 {
     public class Requirements
     {
-        public Guid RequirementID { get; set; }
-        public Guid ProjectID { get; set; }
+        [Key]
+        public Guid RequirementId { get; set; }
+        public Guid ProjectId { get; set; }
         public string Description { get; set; }
     }
 }

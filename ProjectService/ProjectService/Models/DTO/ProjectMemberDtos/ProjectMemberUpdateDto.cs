@@ -2,8 +2,8 @@
 {
     public class ProjectMemberUpdateDto
     {
-        public Guid ProjectMemberID { get; set; }
-        public Guid ProjectID { get; set; }
+        public Guid ProjectMemberId { get; set; }
+        public Guid ProjectId { get; set; }
         public DateTime JoinedAt { get; set; }
         public bool Status { get; set; }
     }

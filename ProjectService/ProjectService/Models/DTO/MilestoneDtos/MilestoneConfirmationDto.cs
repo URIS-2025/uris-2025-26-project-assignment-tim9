@@ -2,8 +2,8 @@
 {
     public class MilestoneConfirmationDto
     {
-        public Guid MilestoneID { get; set; }
-        public Guid ProjectID { get; set; }
+        public Guid MilestoneId { get; set; }
+        public Guid ProjectId { get; set; }
         public DateTime ExpectedDate { get; set; }
     }
 }

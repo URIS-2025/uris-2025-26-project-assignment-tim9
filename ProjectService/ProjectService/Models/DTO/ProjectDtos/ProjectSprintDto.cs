@@ -2,7 +2,7 @@
 {
     public class ProjectSprintDto
     {
-        public Guid MilestoneID { get; set; }
+        public Guid MilestoneId { get; set; }
         public DateTime ExpectedDate { get; set; }
     }
 }

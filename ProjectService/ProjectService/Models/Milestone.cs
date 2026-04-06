@@ -1,9 +1,12 @@
-﻿namespace ProjectService.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace ProjectService.Models
 {
     public class Milestone
     {
-        public Guid MilestoneID { get; set; }
-        public Guid ProjectID { get; set; }
+        [Key]
+        public Guid MilestoneId { get; set; }
+        public Guid ProjectId { get; set; }
         public DateTime ExpectedDate { get; set; }
     }
 }
