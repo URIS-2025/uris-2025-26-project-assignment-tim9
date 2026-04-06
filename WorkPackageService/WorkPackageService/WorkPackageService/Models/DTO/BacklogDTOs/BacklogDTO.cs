@@ -1,0 +1,13 @@
+﻿namespace WorkPackageService.Models.DTO.BackLog
+{
+    public class BackLogDTO
+    {
+        public Guid BackLogId { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public Guid CreatedByProjectMember { get; set; }
+        public Guid WorkPackageId { get; set; }
+    }
+}
