@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TimelogService.Validation;
 
 namespace TimelogService.Models.DTO
 {
@@ -14,6 +15,7 @@ namespace TimelogService.Models.DTO
         public double HoursSpent { get; set; }
 
         [Required(ErrorMessage = "Date is required.")]
+        [NoFutureDate(ErrorMessage = "Timelog date can not be in the future time.")]
         public DateTime Date { get; set; }
     }
 }

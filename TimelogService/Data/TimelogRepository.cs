@@ -2,6 +2,7 @@
 using TimelogService.Models.DTO;
 using TimelogService.Models.DTO.Project;
 using TimelogService.Models.DTO.WorkPackage;
+using AutoMapper;
 
 namespace TimelogService.Data
 {
@@ -10,9 +11,11 @@ namespace TimelogService.Data
         private List<Timelog> Timelogs;
         private List<ProjectDTO> Projects;
         private List<WorkPackageDTO> WorkPackages;
+        private readonly IMapper _mapper;
 
-        public TimelogRepository()
+        public TimelogRepository(IMapper mapper)
         {
+            _mapper = mapper;
             Timelogs = new List<Timelog>();
             Projects = new List<ProjectDTO>();
             WorkPackages = new List<WorkPackageDTO>();
@@ -33,7 +36,7 @@ namespace TimelogService.Data
 
             WorkPackages.Add(new WorkPackageDTO
             {
-                Title = "Repository implemantion",
+                Title = "Repository implementation",
                 Status = "Doing"
             });
 
@@ -49,57 +52,28 @@ namespace TimelogService.Data
 
         public IEnumerable<TimelogDTO> GetTimelogs()
         {
-            var timelogDTOs = new List<TimelogDTO>();
-            foreach (var log in Timelogs)
-            {
-                timelogDTOs.Add(new TimelogDTO
-                {
-                    Id = log.Id,
-                    ProjectId = log.ProjectId,
-                    WorkPackageId = log.WorkPackageId,
-                    HoursSpent = log.HoursSpent,
-                    Date = log.Date
-                });
-            }
-            return timelogDTOs;
+            return _mapper.Map<List<TimelogDTO>>(Timelogs);
         }
 
         public TimelogDTO GetTimelogById(Guid id)
         {
             var log = Timelogs.FirstOrDefault(t => t.Id == id);
-            if (log == null) return null!;
-
-            return new TimelogDTO
-            {
-                Id = log.Id,
-                ProjectId = log.ProjectId,
-                WorkPackageId = log.WorkPackageId,
-                HoursSpent = log.HoursSpent,
-                Date = log.Date
-            };
+            return _mapper.Map<TimelogDTO>(log)!;
         }
 
         public TimelogConfirmationDTO CreateTimelog(TimelogCreationDTO timelog)
         {
-            var newTimelog = new Timelog
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = timelog.ProjectId,
-                WorkPackageId = timelog.WorkPackageId,
-                HoursSpent = timelog.HoursSpent,
-                Date = timelog.Date
-            };
+            var newTimelog = _mapper.Map<Timelog>(timelog);
+            newTimelog.Id = Guid.NewGuid();
 
             Timelogs.Add(newTimelog);
 
-            return new TimelogConfirmationDTO
-            {
-                Id = newTimelog.Id,
-                Username = Projects.FirstOrDefault()?.Username ?? "Unknown",
-                WorkPackageTitle = WorkPackages.FirstOrDefault()?.Title ?? "No Title",
-                HoursSpent = newTimelog.HoursSpent,
-                Date = newTimelog.Date
-            };
+            var confirmation = _mapper.Map<TimelogConfirmationDTO>(newTimelog);
+
+            confirmation.Username = Projects.FirstOrDefault()?.Username ?? "Unknown";
+            confirmation.WorkPackageTitle = WorkPackages.FirstOrDefault()?.Title ?? "No Title";
+
+            return confirmation;
         }
 
         public TimelogConfirmationDTO UpdateTimelog(Timelog timelog)
@@ -107,20 +81,14 @@ namespace TimelogService.Data
             var existingLog = Timelogs.FirstOrDefault(t => t.Id == timelog.Id);
             if (existingLog != null)
             {
-                existingLog.ProjectId = timelog.ProjectId;
-                existingLog.WorkPackageId = timelog.WorkPackageId;
-                existingLog.HoursSpent = timelog.HoursSpent;
-                existingLog.Date = timelog.Date;
+                _mapper.Map(timelog, existingLog);
             }
 
-            return new TimelogConfirmationDTO
-            {
-                Id = existingLog?.Id ?? Guid.Empty,
-                Username = Projects.FirstOrDefault()?.Username ?? "Unknown",
-                WorkPackageTitle = WorkPackages.FirstOrDefault()?.Title ?? "No Title",
-                HoursSpent = existingLog?.HoursSpent ?? 0,
-                Date = existingLog?.Date ?? DateTime.Now
-            };
+            var confirmation = _mapper.Map<TimelogConfirmationDTO>(existingLog);
+            confirmation.Username = Projects.FirstOrDefault()?.Username ?? "Unknown";
+            confirmation.WorkPackageTitle = WorkPackages.FirstOrDefault()?.Title ?? "No Title";
+
+            return confirmation;
         }
 
         public void DeleteTimelog(Guid id)
