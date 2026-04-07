@@ -1,3 +1,4 @@
+using TimelogService.Context;
 using TimelogService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,12 +9,12 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Ovo je neophodno kako bi se izbeglo pravljenje novih instanci klase prilikom svakog poziva
-// Kada se budemo povezali sa bazom podataka, AddSingleton metodu zamenjujemo sa AddScoped
-//builder.Services.AddSingleton<ITimelogRepository, TimelogRepository>();
+
 builder.Services.AddScoped<ITimelogRepository, TimelogRepository>();
 
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddDbContext<TimelogContext>();
 
 var app = builder.Build();
 

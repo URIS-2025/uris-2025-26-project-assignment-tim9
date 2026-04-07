@@ -10,5 +10,6 @@ namespace TimelogService.Data
         TimelogConfirmationDTO CreateTimelog(TimelogCreationDTO timelog);
         TimelogConfirmationDTO UpdateTimelog(Timelog timelog);
         void DeleteTimelog(Guid id);
+        bool SaveChanges();
     }
 }
