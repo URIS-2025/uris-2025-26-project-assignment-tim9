@@ -4,6 +4,8 @@ using TimelogService.Models;
 using TimelogService.Models.DTO;
 using TimelogService.Models.DTO.Project;
 using TimelogService.Models.DTO.WorkPackage;
+using TimelogService.ServiceCalls.Project;
+using TimelogService.ServiceCalls.WorkPackage;
 
 namespace TimelogService.Data
 {
@@ -11,11 +13,15 @@ namespace TimelogService.Data
     {
         private readonly TimelogContext _context;
         private readonly IMapper _mapper;
+        private readonly IProjectService _projectService;
+        private readonly IWorkPackageService _wpService;
 
-        public TimelogRepository(IMapper mapper, TimelogContext context)
+        public TimelogRepository(IMapper mapper, TimelogContext context, IProjectService projectService, IWorkPackageService wpService)
         {
             _mapper = mapper;
             _context = context;
+            _projectService = projectService;
+            _wpService = wpService;
         }
 
         public bool SaveChanges()
@@ -44,10 +50,12 @@ namespace TimelogService.Data
             SaveChanges();
 
             var confirmation = _mapper.Map<TimelogConfirmationDTO>(newTimelog);
+          
+            var projectData = _projectService.GetProjectById(newTimelog.ProjectId);
+            var wpData = _wpService.GetWorkPackageById(newTimelog.WorkPackageId);
 
-            //privremeni podaci dok se ne poveže mikroservis sa drugima
-            confirmation.Username = "milabikar";
-            confirmation.WorkPackageTitle = "Database Integration";
+            confirmation.Username = projectData?.Username ?? "Unknown User";
+            confirmation.WorkPackageTitle = wpData?.Title ?? "Unknown WorkPackage";
 
             return confirmation;
         }
@@ -62,7 +70,9 @@ namespace TimelogService.Data
             }
 
             var confirmation = _mapper.Map<TimelogConfirmationDTO>(existingLog);
-            confirmation.Username = "milabikar";
+
+            var projectData = _projectService.GetProjectById(existingLog.ProjectId);
+            confirmation.Username = projectData?.Username ?? "Unknown User";
 
             return confirmation;
         }
