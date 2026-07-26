@@ -1,5 +1,6 @@
 using AutoMapper;
 using WorkPackageService.Context;
+using WorkPackageService.Exceptions;
 using WorkPackageService.Models.DTO.TaskDTOs;
 using Task = WorkPackageService.Models.Task;
 using TaskStatus = WorkPackageService.Models.Enums.TaskStatus;
@@ -88,8 +89,8 @@ namespace WorkPackageService.Data
         public TaskDisplayDTO? UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == taskId);
-            if (entity == null) return null;
-            if (entity.AssigneeId != callerId) return null;
+            if (entity == null) throw new EntityNotFoundException($"Task sa Id-jem {taskId} ne postoji.");
+            if (entity.AssigneeId != callerId) throw new UnauthorizedOperationException("Samo osoba kojoj je task dodeljen moze da promeni njegov status.");
 
             entity.Status = newStatus;
             entity.UpdatedAt = DateTime.UtcNow;

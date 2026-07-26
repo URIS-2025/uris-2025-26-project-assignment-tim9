@@ -1,5 +1,6 @@
 using AutoMapper;
 using WorkPackageService.Context;
+using WorkPackageService.Exceptions;
 using WorkPackageService.Models;
 using WorkPackageService.Models.DTO.CommentDTOs;
 
@@ -48,8 +49,8 @@ namespace WorkPackageService.Data
         public CommentDisplayDTO? Update(Guid commentId, Guid callerId, CommentUpdateDTO dto)
         {
             var entity = _context.Comments.FirstOrDefault(c => c.CommentId == commentId);
-            if (entity == null) return null;
-            if (entity.AuthorId != callerId) return null;
+            if (entity == null) throw new EntityNotFoundException($"Comment sa Id-jem {commentId} ne postoji.");
+            if (entity.AuthorId != callerId) throw new UnauthorizedOperationException("Samo autor komentara moze da ga izmeni.");
 
             _mapper.Map(dto, entity);
             entity.UpdatedAt = DateTime.UtcNow;
@@ -61,8 +62,8 @@ namespace WorkPackageService.Data
         public bool Delete(Guid commentId, Guid callerId)
         {
             var entity = _context.Comments.FirstOrDefault(c => c.CommentId == commentId);
-            if (entity == null) return false;
-            if (entity.AuthorId != callerId) return false;
+            if (entity == null) throw new EntityNotFoundException($"Comment sa Id-jem {commentId} ne postoji.");
+            if (entity.AuthorId != callerId) throw new UnauthorizedOperationException("Samo autor komentara moze da ga obrise.");
 
             _context.Comments.Remove(entity);
             return true;
