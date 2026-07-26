@@ -51,7 +51,7 @@ nunit-*.xml
 *.dbproj.schemaview
 
 # appsettings sa osetljivim podacima (opciono - otkomentarisi ako ne zelis da pushujes secrets)
-# appsettings.Development.json
+appsettings.Development.json
 # appsettings.Production.json
 
 # Ostalo
