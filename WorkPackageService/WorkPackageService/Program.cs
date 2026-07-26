@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WorkPackageService.Context;
+using WorkPackageService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,14 @@ builder.Services.AddSwaggerGen();
 var connectionString = builder.Configuration.GetConnectionString("WorkPackageServiceConnection");
 builder.Services.AddDbContext<WorkPackageServiceContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+builder.Services.AddAutoMapper(typeof(Program));
+
+builder.Services.AddScoped<IWorkPackageRepository, WorkPackageRepository>();
+builder.Services.AddScoped<IBacklogRepository, BacklogRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<IDependencyRepository, DependencyRepository>();
+builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 
 var app = builder.Build();
 

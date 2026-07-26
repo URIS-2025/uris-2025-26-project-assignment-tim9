@@ -2,6 +2,6 @@ namespace WorkPackageService.Models.DTO.DependencyDTOs
 {
     public class DependencyUpdateDTO
     {
-        public Guid BlockerTaskId { get; set; }
+        public Guid? BlockerTaskId { get; set; }
     }
 }
