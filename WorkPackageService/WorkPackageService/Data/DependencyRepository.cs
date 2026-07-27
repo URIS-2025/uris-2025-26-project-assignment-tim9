@@ -27,6 +27,15 @@ namespace WorkPackageService.Data
             return _mapper.Map<IEnumerable<DependencyDisplayDTO>>(entities);
         }
 
+        // Dependency-ji koji blokiraju ovaj task (Dependency.TaskId == taskId) - odgovara
+        // Task.Dependencies navigacionoj kolekciji, ne ukljucuje slucajeve gde ovaj task
+        // blokira neki drugi (BlockerTaskId == taskId).
+        public IEnumerable<DependencyDisplayDTO> GetByTaskId(Guid taskId)
+        {
+            var entities = _context.Dependencies.Where(d => d.TaskId == taskId).ToList();
+            return _mapper.Map<IEnumerable<DependencyDisplayDTO>>(entities);
+        }
+
         public DependencyDisplayDTO? GetById(Guid id)
         {
             var entity = _context.Dependencies.FirstOrDefault(d => d.DependencyId == id);
