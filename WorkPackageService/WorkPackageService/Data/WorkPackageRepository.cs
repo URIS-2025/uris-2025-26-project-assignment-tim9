@@ -47,6 +47,7 @@ namespace WorkPackageService.Data
             entity.CreatedAt = DateTime.UtcNow;
 
             _context.WorkPackages.Add(entity);
+            SaveChanges();
             return _mapper.Map<WorkPackageDisplayDTO>(entity);
         }
 
@@ -57,6 +58,7 @@ namespace WorkPackageService.Data
 
             _mapper.Map(dto, entity);
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
 
             return _mapper.Map<WorkPackageDisplayDTO>(entity);
         }
@@ -67,7 +69,7 @@ namespace WorkPackageService.Data
             if (entity == null) return false;
 
             _context.WorkPackages.Remove(entity);
-            return true;
+            return SaveChanges();
         }
     }
 }

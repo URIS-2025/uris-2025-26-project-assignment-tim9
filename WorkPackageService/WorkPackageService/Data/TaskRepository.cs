@@ -2,6 +2,7 @@ using AutoMapper;
 using WorkPackageService.Context;
 using WorkPackageService.Exceptions;
 using WorkPackageService.Models.DTO.TaskDTOs;
+using WorkPackageService.ServiceCalls.Notification;
 using Task = WorkPackageService.Models.Task;
 using TaskStatus = WorkPackageService.Models.Enums.TaskStatus;
 
@@ -11,11 +12,13 @@ namespace WorkPackageService.Data
     {
         private readonly WorkPackageServiceContext _context;
         private readonly IMapper _mapper;
+        private readonly INotificationService _notificationService;
 
-        public TaskRepository(WorkPackageServiceContext context, IMapper mapper)
+        public TaskRepository(WorkPackageServiceContext context, IMapper mapper, INotificationService notificationService)
         {
             _context = context;
             _mapper = mapper;
+            _notificationService = notificationService;
         }
 
         public bool SaveChanges()
@@ -43,6 +46,7 @@ namespace WorkPackageService.Data
             entity.CreatedAt = DateTime.UtcNow;
 
             _context.Tasks.Add(entity);
+            SaveChanges();
             return _mapper.Map<TaskDisplayDTO>(entity);
         }
 
@@ -53,6 +57,7 @@ namespace WorkPackageService.Data
 
             _mapper.Map(dto, entity);
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
 
             return _mapper.Map<TaskDisplayDTO>(entity);
         }
@@ -70,7 +75,7 @@ namespace WorkPackageService.Data
             _context.Dependencies.RemoveRange(relatedDependencies);
 
             _context.Tasks.Remove(entity);
-            return true;
+            return SaveChanges();
         }
 
         public IEnumerable<TaskDisplayDTO> GetTasksByWorkPackageId(Guid workPackageId)
@@ -86,7 +91,9 @@ namespace WorkPackageService.Data
         }
 
         // Autorizacija: status moze da promeni samo osoba kojoj je task dodeljen.
-        public TaskDisplayDTO? UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus)
+        // Async zbog notifikacije ka Notification servisu kad task predje u Done - vidi napomenu
+        // u Programu.cs/summary-ju o tome zasto su samo UpdateStatus i Reassign async, ne ceo repo.
+        public async System.Threading.Tasks.Task<TaskDisplayDTO?> UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == taskId);
             if (entity == null) throw new EntityNotFoundException($"Task sa Id-jem {taskId} ne postoji.");
@@ -94,6 +101,28 @@ namespace WorkPackageService.Data
 
             entity.Status = newStatus;
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
+
+            if (newStatus == TaskStatus.Done)
+            {
+                // Ovaj task je blokirao ove taskove (Dependency.BlockerTaskId == taskId) - sad
+                // kad je zavrsen, obavesti assignee-e odblokiranih taskova (ako imaju dodeljenu osobu).
+                var unblocked = _context.Dependencies
+                    .Where(d => d.BlockerTaskId == taskId)
+                    .Join(_context.Tasks, d => d.TaskId, t => t.TaskId, (d, t) => new { t.TaskId, t.AssigneeId })
+                    .ToList();
+
+                foreach (var unblockedTask in unblocked)
+                {
+                    if (unblockedTask.AssigneeId.HasValue)
+                    {
+                        await _notificationService.SendNotificationAsync(
+                            unblockedTask.AssigneeId.Value,
+                            $"Task {unblockedTask.TaskId} je odblokiran zavrsetkom taska {taskId}.",
+                            "TaskUnblocked");
+                    }
+                }
+            }
 
             return _mapper.Map<TaskDisplayDTO>(entity);
         }
@@ -111,6 +140,7 @@ namespace WorkPackageService.Data
 
             entity.WorkPackageId = newWorkPackageId;
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
 
             return new TaskMoveResultDTO
             {
@@ -122,8 +152,8 @@ namespace WorkPackageService.Data
             };
         }
 
-        // Vraca i staru i novu vrednost AssigneeId - koristi se za buduce notifikacije.
-        public TaskReassignResultDTO? Reassign(Guid taskId, Guid newAssigneeId)
+        // Vraca i staru i novu vrednost AssigneeId, i obavestava obe strane preko Notification servisa.
+        public async System.Threading.Tasks.Task<TaskReassignResultDTO?> Reassign(Guid taskId, Guid newAssigneeId)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == taskId);
             if (entity == null) return null;
@@ -131,6 +161,20 @@ namespace WorkPackageService.Data
             var oldAssigneeId = entity.AssigneeId;
             entity.AssigneeId = newAssigneeId;
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
+
+            if (oldAssigneeId.HasValue)
+            {
+                await _notificationService.SendNotificationAsync(
+                    oldAssigneeId.Value,
+                    $"Vise nisi zaduzen za task {taskId}.",
+                    "TaskReassignedFrom");
+            }
+
+            await _notificationService.SendNotificationAsync(
+                newAssigneeId,
+                $"Zaduzen si za task {taskId}.",
+                "TaskReassignedTo");
 
             return new TaskReassignResultDTO
             {

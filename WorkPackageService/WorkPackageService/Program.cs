@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPackageService.Context;
 using WorkPackageService.Data;
+using WorkPackageService.ServiceCalls.Notification;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,14 @@ builder.Services.AddScoped<IBacklogRepository, BacklogRepository>();
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDependencyRepository, DependencyRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
+
+// Placeholder adresa dok kolega ne definise pravu - uskladiti "ServiceUrls:NotificationService"
+// u appsettings.json (ili appsettings.Development.json) kad Notification servis dobije pravi port/URL.
+builder.Services.AddHttpClient<INotificationService, NotificationService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:NotificationService"]
+        ?? "http://localhost:5100/");
+});
 
 var app = builder.Build();
 

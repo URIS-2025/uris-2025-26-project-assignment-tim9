@@ -24,10 +24,6 @@ namespace WorkPackageService.Controllers
             if (!TryValidateModel(dto)) return BadRequest(ModelState);
 
             var created = _repository.Add(dto);
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja Task-a.");
-            }
 
             return CreatedAtAction(nameof(GetTaskById), new { id = created.TaskId }, created);
         }
@@ -55,11 +51,6 @@ namespace WorkPackageService.Controllers
             var updated = _repository.Update(id, dto);
             if (updated == null) return NotFound();
 
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja izmena.");
-            }
-
             return Ok(updated);
         }
 
@@ -68,11 +59,6 @@ namespace WorkPackageService.Controllers
         {
             var deleted = _repository.Delete(id);
             if (!deleted) return NotFound();
-
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom brisanja.");
-            }
 
             return NoContent();
         }
@@ -87,10 +73,6 @@ namespace WorkPackageService.Controllers
             if (!TryValidateModel(dto)) return BadRequest(ModelState);
 
             var created = _repository.Add(dto);
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja SubTask-a.");
-            }
 
             return CreatedAtAction(nameof(GetTaskById), new { id = created.TaskId }, created);
         }
@@ -104,18 +86,13 @@ namespace WorkPackageService.Controllers
         // PRIVREMENO: callerId kao query parametar dok ne postoji pravi auth middleware -
         // isti pristup kao u CommentController.
         [HttpPatch("tasks/{id}/status")]
-        public ActionResult<TaskDisplayDTO> UpdateTaskStatus(Guid id, [FromQuery] Guid callerId, [FromBody] TaskStatusUpdateRequestDTO dto)
+        public async Task<ActionResult<TaskDisplayDTO>> UpdateTaskStatus(Guid id, [FromQuery] Guid callerId, [FromBody] TaskStatusUpdateRequestDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             try
             {
-                var updated = _repository.UpdateStatus(id, callerId, dto.NewStatus);
-
-                if (!_repository.SaveChanges())
-                {
-                    return StatusCode(500, "Doslo je do greske prilikom cuvanja izmena.");
-                }
+                var updated = await _repository.UpdateStatus(id, callerId, dto.NewStatus);
 
                 return Ok(updated);
             }
@@ -131,17 +108,12 @@ namespace WorkPackageService.Controllers
         }
 
         [HttpPatch("tasks/{id}/reassign")]
-        public ActionResult<TaskReassignResultDTO> ReassignTask(Guid id, [FromBody] TaskReassignRequestDTO dto)
+        public async Task<ActionResult<TaskReassignResultDTO>> ReassignTask(Guid id, [FromBody] TaskReassignRequestDTO dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            var result = _repository.Reassign(id, dto.NewAssigneeId);
+            var result = await _repository.Reassign(id, dto.NewAssigneeId);
             if (result == null) return NotFound();
-
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja izmena.");
-            }
 
             // OldAssigneeId/NewAssigneeId iz rezultata koristice sledeca faza za notifikacije.
             return Ok(result);
@@ -154,11 +126,6 @@ namespace WorkPackageService.Controllers
 
             var result = _repository.MoveToWorkPackage(id, dto.NewWorkPackageId);
             if (result == null) return NotFound();
-
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja izmena.");
-            }
 
             // 200 OK i kad je HasDependencyWarning true - premestanje se izvrsava,
             // upozorenje je samo informativno i ne blokira operaciju.

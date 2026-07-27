@@ -54,6 +54,7 @@ namespace WorkPackageService.Data
             entity.CreatedAt = DateTime.UtcNow;
 
             _context.Dependencies.Add(entity);
+            SaveChanges();
             return _mapper.Map<DependencyDisplayDTO>(entity);
         }
 
@@ -65,6 +66,7 @@ namespace WorkPackageService.Data
             if (dto.BlockerTaskId.HasValue && dto.BlockerTaskId.Value == entity.TaskId) return null;
 
             _mapper.Map(dto, entity);
+            SaveChanges();
 
             return _mapper.Map<DependencyDisplayDTO>(entity);
         }
@@ -75,7 +77,7 @@ namespace WorkPackageService.Data
             if (entity == null) return false;
 
             _context.Dependencies.Remove(entity);
-            return true;
+            return SaveChanges();
         }
     }
 }

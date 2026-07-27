@@ -48,6 +48,7 @@ namespace WorkPackageService.Data
             entity.CreatedAt = DateTime.UtcNow;
 
             _context.Comments.Add(entity);
+            SaveChanges();
             return _mapper.Map<CommentDisplayDTO>(entity);
         }
 
@@ -60,6 +61,7 @@ namespace WorkPackageService.Data
 
             _mapper.Map(dto, entity);
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
 
             return _mapper.Map<CommentDisplayDTO>(entity);
         }
@@ -72,7 +74,7 @@ namespace WorkPackageService.Data
             if (entity.AuthorId != callerId) throw new UnauthorizedOperationException("Samo autor komentara moze da ga obrise.");
 
             _context.Comments.Remove(entity);
-            return true;
+            return SaveChanges();
         }
     }
 }

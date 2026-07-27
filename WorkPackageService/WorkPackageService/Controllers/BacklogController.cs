@@ -23,10 +23,6 @@ namespace WorkPackageService.Controllers
             if (!TryValidateModel(dto)) return BadRequest(ModelState);
 
             var created = _repository.Add(dto);
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja Backlog-a.");
-            }
 
             return CreatedAtAction(nameof(GetBacklogById), new { id = created.BacklogId }, created);
         }
@@ -54,11 +50,6 @@ namespace WorkPackageService.Controllers
             var updated = _repository.Update(id, dto);
             if (updated == null) return NotFound();
 
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja izmena.");
-            }
-
             return Ok(updated);
         }
 
@@ -67,11 +58,6 @@ namespace WorkPackageService.Controllers
         {
             var deleted = _repository.Delete(id);
             if (!deleted) return NotFound();
-
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom brisanja.");
-            }
 
             return NoContent();
         }

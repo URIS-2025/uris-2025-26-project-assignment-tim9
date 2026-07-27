@@ -14,8 +14,8 @@ namespace WorkPackageService.Data
 
         IEnumerable<TaskDisplayDTO> GetTasksByWorkPackageId(Guid workPackageId);
         IEnumerable<TaskDisplayDTO> GetSubTasks(Guid parentTaskId);
-        TaskDisplayDTO? UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus);
+        Task<TaskDisplayDTO?> UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus);
         TaskMoveResultDTO? MoveToWorkPackage(Guid taskId, Guid newWorkPackageId);
-        TaskReassignResultDTO? Reassign(Guid taskId, Guid newAssigneeId);
+        Task<TaskReassignResultDTO?> Reassign(Guid taskId, Guid newAssigneeId);
     }
 }

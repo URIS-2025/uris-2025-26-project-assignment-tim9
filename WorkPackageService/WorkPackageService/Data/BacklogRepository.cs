@@ -47,6 +47,7 @@ namespace WorkPackageService.Data
             entity.CreatedAt = DateTime.UtcNow;
 
             _context.Backlogs.Add(entity);
+            SaveChanges();
             return _mapper.Map<BacklogDisplayDTO>(entity);
         }
 
@@ -57,6 +58,7 @@ namespace WorkPackageService.Data
 
             _mapper.Map(dto, entity);
             entity.UpdatedAt = DateTime.UtcNow;
+            SaveChanges();
 
             return _mapper.Map<BacklogDisplayDTO>(entity);
         }
@@ -67,7 +69,7 @@ namespace WorkPackageService.Data
             if (entity == null) return false;
 
             _context.Backlogs.Remove(entity);
-            return true;
+            return SaveChanges();
         }
     }
 }

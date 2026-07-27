@@ -24,10 +24,6 @@ namespace WorkPackageService.Controllers
             if (!TryValidateModel(dto)) return BadRequest(ModelState);
 
             var created = _repository.Add(dto);
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja komentara.");
-            }
 
             return CreatedAtAction(nameof(GetCommentById), new { id = created.CommentId }, created);
         }
@@ -59,11 +55,6 @@ namespace WorkPackageService.Controllers
             {
                 var updated = _repository.Update(id, callerId, dto);
 
-                if (!_repository.SaveChanges())
-                {
-                    return StatusCode(500, "Doslo je do greske prilikom cuvanja izmena.");
-                }
-
                 return Ok(updated);
             }
             catch (EntityNotFoundException)
@@ -86,11 +77,6 @@ namespace WorkPackageService.Controllers
             try
             {
                 _repository.Delete(id, callerId);
-
-                if (!_repository.SaveChanges())
-                {
-                    return StatusCode(500, "Doslo je do greske prilikom brisanja.");
-                }
 
                 return NoContent();
             }

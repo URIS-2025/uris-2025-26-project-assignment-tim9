@@ -32,11 +32,6 @@ namespace WorkPackageService.Controllers
                 return BadRequest("Task ne moze blokirati sam sebe.");
             }
 
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom cuvanja Dependency-ja.");
-            }
-
             return CreatedAtAction(nameof(GetDependencyById), new { id = created.DependencyId }, created);
         }
 
@@ -60,11 +55,6 @@ namespace WorkPackageService.Controllers
         {
             var deleted = _repository.Delete(id);
             if (!deleted) return NotFound();
-
-            if (!_repository.SaveChanges())
-            {
-                return StatusCode(500, "Doslo je do greske prilikom brisanja.");
-            }
 
             return NoContent();
         }
