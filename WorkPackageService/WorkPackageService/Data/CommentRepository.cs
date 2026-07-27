@@ -28,6 +28,12 @@ namespace WorkPackageService.Data
             return _mapper.Map<IEnumerable<CommentDisplayDTO>>(entities);
         }
 
+        public IEnumerable<CommentDisplayDTO> GetByTaskId(Guid taskId)
+        {
+            var entities = _context.Comments.Where(c => c.TaskId == taskId).ToList();
+            return _mapper.Map<IEnumerable<CommentDisplayDTO>>(entities);
+        }
+
         public CommentDisplayDTO? GetById(Guid id)
         {
             var entity = _context.Comments.FirstOrDefault(c => c.CommentId == id);

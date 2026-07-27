@@ -27,6 +27,12 @@ namespace WorkPackageService.Data
             return _mapper.Map<IEnumerable<BacklogDisplayDTO>>(entities);
         }
 
+        public IEnumerable<BacklogDisplayDTO> GetByProjectId(Guid projectId)
+        {
+            var entities = _context.Backlogs.Where(b => b.ProjectId == projectId).ToList();
+            return _mapper.Map<IEnumerable<BacklogDisplayDTO>>(entities);
+        }
+
         public BacklogDisplayDTO? GetById(Guid id)
         {
             var entity = _context.Backlogs.FirstOrDefault(b => b.BacklogId == id);

@@ -27,6 +27,12 @@ namespace WorkPackageService.Data
             return _mapper.Map<IEnumerable<WorkPackageDisplayDTO>>(entities);
         }
 
+        public IEnumerable<WorkPackageDisplayDTO> GetByProjectId(Guid projectId)
+        {
+            var entities = _context.WorkPackages.Where(wp => wp.ProjectId == projectId).ToList();
+            return _mapper.Map<IEnumerable<WorkPackageDisplayDTO>>(entities);
+        }
+
         public WorkPackageDisplayDTO? GetById(Guid id)
         {
             var entity = _context.WorkPackages.FirstOrDefault(wp => wp.WorkPackageId == id);

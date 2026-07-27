@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WorkPackageService.Context;
 using WorkPackageService.Data;
@@ -10,6 +11,15 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// [ApiController] otherwise auto-returns 400 on invalid ModelState before the action
+// body runs, which would make the controllers' manual ModelState checks unreachable
+// and would block route-supplied FK values (e.g. ProjectId) from being applied to the
+// DTO before validation. We validate explicitly in each action instead.
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
 
 var connectionString = builder.Configuration.GetConnectionString("WorkPackageServiceConnection");
 builder.Services.AddDbContext<WorkPackageServiceContext>(options =>
