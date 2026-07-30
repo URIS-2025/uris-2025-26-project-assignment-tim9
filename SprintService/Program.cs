@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using SprintService.Context;
+using SprintService.Data;
 using SprintService.Profiles;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 builder.Services.AddDbContext<SprintContext>();
+builder.Services.AddScoped<ISprintRepository, SprintRepository>();
 
 var app = builder.Build();
 
