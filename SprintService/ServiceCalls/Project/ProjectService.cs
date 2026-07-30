@@ -1,6 +1,39 @@
-﻿namespace SprintService.ServiceCalls.Project
+﻿using System;
+using System.Net.Http;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
+using SprintService.Models.DTO.Project;
+
+namespace SprintService.ServiceCalls.Project
 {
-    public class ProjectService
+    public class ProjectService : IProjectService
     {
+        private readonly IConfiguration _configuration;
+
+        public ProjectService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public ProjectDTO GetProjectById(Guid id)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                string baseUrl = _configuration["Services:ProjectService"];
+                Uri url = new Uri($"{baseUrl}api/project/{id}");
+
+                var response = client.GetAsync(url).Result;
+                if (!response.IsSuccessStatusCode) return null;
+
+                var content = response.Content.ReadAsStringAsync().Result;
+
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                return JsonSerializer.Deserialize<ProjectDTO>(content, options);
+            }
+        }
     }
 }

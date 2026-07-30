@@ -1,10 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using AutoMapper;
+﻿using AutoMapper;
 using SprintService.Context;
 using SprintService.Models;
 using SprintService.Models.DTO;
+using SprintService.ServiceCalls.Project;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SprintService.Data
 {
@@ -12,11 +13,13 @@ namespace SprintService.Data
     {
         private readonly SprintContext _context;
         private readonly IMapper _mapper;
+        private readonly IProjectService _projectService;
 
-        public SprintRepository(SprintContext context, IMapper mapper)
+        public SprintRepository(SprintContext context, IMapper mapper, IProjectService projectService)
         {
             _context = context;
             _mapper = mapper;
+            _projectService = projectService;
         }
 
         public IEnumerable<SprintDTO> GetSprints()
@@ -39,7 +42,16 @@ namespace SprintService.Data
             _context.Sprints.Add(newSprint);
             SaveChanges();
 
-            return _mapper.Map<SprintConfirmationDTO>(newSprint);
+            var confirmation = _mapper.Map<SprintConfirmationDTO>(newSprint);
+
+            var projectData = _projectService.GetProjectById(newSprint.ProjectId);
+            if (projectData != null)
+            {
+                confirmation.MilestoneId = projectData.MilestoneID;
+                confirmation.ExpectedDate = projectData.ExpectedDate;
+            }
+
+            return confirmation;
         }
 
         public SprintConfirmationDTO UpdateSprint(Sprint sprint)
@@ -51,7 +63,17 @@ namespace SprintService.Data
                 SaveChanges();
             }
 
-            return _mapper.Map<SprintConfirmationDTO>(existingSprint);
+            var confirmation = _mapper.Map<SprintConfirmationDTO>(existingSprint);
+
+            var projectData = _projectService.GetProjectById(existingSprint.ProjectId);
+            if (projectData != null)
+            {
+                confirmation.MilestoneId = projectData.MilestoneID;
+                confirmation.ExpectedDate = projectData.ExpectedDate;
+            }
+
+            return confirmation;
+
         }
 
         public void DeleteSprint(Guid id)
