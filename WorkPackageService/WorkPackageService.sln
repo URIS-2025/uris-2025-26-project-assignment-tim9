@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkPackageService", "WorkPackageService\WorkPackageService.csproj", "{A6B3CF9A-E221-4508-8AC6-1F2B6B15DE7C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WorkPackageService.Tests", "WorkPackageService.Tests\WorkPackageService.Tests.csproj", "{7E2748DB-70FB-43DF-A62B-079539B7A7C2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{A6B3CF9A-E221-4508-8AC6-1F2B6B15DE7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A6B3CF9A-E221-4508-8AC6-1F2B6B15DE7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A6B3CF9A-E221-4508-8AC6-1F2B6B15DE7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7E2748DB-70FB-43DF-A62B-079539B7A7C2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7E2748DB-70FB-43DF-A62B-079539B7A7C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7E2748DB-70FB-43DF-A62B-079539B7A7C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7E2748DB-70FB-43DF-A62B-079539B7A7C2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
