@@ -13,7 +13,9 @@ namespace WorkPackageService.Profiles
             CreateMap<WorkPackageCreateDTO, WorkPackage>();
 
             CreateMap<WorkPackageUpdateDTO, WorkPackage>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+                .ForMember(dest => dest.Name, opt => opt.Condition(src => src.Name != null))
+                .ForMember(dest => dest.Description, opt => opt.Condition(src => src.Description != null))
+                .ForMember(dest => dest.Status, opt => opt.Condition(src => src.Status != null));
         }
     }
 }

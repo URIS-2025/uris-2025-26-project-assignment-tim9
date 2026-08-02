@@ -1,3 +1,5 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkPackageService.Data;
 using WorkPackageService.Exceptions;
@@ -5,56 +7,71 @@ using WorkPackageService.Models.DTO.CommentDTOs;
 
 namespace WorkPackageService.Controllers
 {
+    //[Authorize]
     [ApiController]
+    [Route("api/[controller]")]
     public class CommentController : ControllerBase
     {
-        private readonly ICommentRepository _repository;
+        private readonly ICommentRepository _commentRepository;
+        private readonly IMapper _mapper;
 
-        public CommentController(ICommentRepository repository)
+        public CommentController(ICommentRepository commentRepository, IMapper mapper)
         {
-            _repository = repository;
+            _commentRepository = commentRepository;
+            _mapper = mapper;
         }
 
-        [HttpPost("tasks/{taskId}/comments")]
-        public ActionResult<CommentDisplayDTO> CreateComment(Guid taskId, [FromBody] CommentCreateDTO dto)
+        [HttpGet]
+        [HttpHead]
+        public ActionResult<IEnumerable<CommentDisplayDTO>> GetComments()
         {
-            // TaskId dolazi iz rute - isti razlog za Clear()+TryValidateModel kao u WorkPackageController.
-            dto.TaskId = taskId;
-            ModelState.Clear();
-            if (!TryValidateModel(dto)) return BadRequest(ModelState);
-
-            var created = _repository.Add(dto);
-
-            return CreatedAtAction(nameof(GetCommentById), new { id = created.CommentId }, created);
+            var comments = _commentRepository.GetAll();
+            if (comments == null || !comments.Any())
+                return NoContent();
+            return Ok(comments);
         }
 
-        [HttpGet("tasks/{taskId}/comments")]
-        public ActionResult<IEnumerable<CommentDisplayDTO>> GetCommentsForTask(Guid taskId)
-        {
-            return Ok(_repository.GetByTaskId(taskId));
-        }
-
-        [HttpGet("comments/{id}")]
+        [HttpGet("{id}")]
         public ActionResult<CommentDisplayDTO> GetCommentById(Guid id)
         {
-            var comment = _repository.GetById(id);
+            var comment = _commentRepository.GetById(id);
             if (comment == null) return NotFound();
-
             return Ok(comment);
         }
 
-        // PRIVREMENO: dok ne postoji pravi auth middleware, identitet pozivaoca se prosledjuje
-        // kao query parametar (?callerId={guid}). Kad se doda prava autentifikacija, ovo treba
-        // zameniti citanjem callerId-a iz autentifikovanog korisnika (npr. iz tokena), ne iz query-ja.
-        [HttpPut("comments/{id}")]
-        public ActionResult<CommentDisplayDTO> UpdateComment(Guid id, [FromQuery] Guid callerId, [FromBody] CommentUpdateDTO dto)
+        [HttpGet("task/{taskId}")]
+        public ActionResult<IEnumerable<CommentDisplayDTO>> GetCommentsByTask(Guid taskId)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            var comments = _commentRepository.GetByTaskId(taskId);
+            if (comments == null || !comments.Any())
+                return NoContent();
+            return Ok(comments);
+        }
 
+        [HttpPost]
+        public ActionResult<CommentDisplayDTO> CreateComment([FromBody] CommentCreateDTO dto)
+        {
             try
             {
-                var updated = _repository.Update(id, callerId, dto);
+                var created = _commentRepository.Add(dto);
+                return Created("", created);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
 
+        // PRIVREMENO: callerId kao query parametar dok ne postoji pravi auth middleware -
+        // treba zameniti citanjem iz autentifikovanog korisnika kad se doda prava autentifikacija.
+        // Id je deo tela (konzistentno sa ostalim PUT-ovima), callerId ostaje query jer nije
+        // deo perzistovanog resursa.
+        [HttpPut]
+        public ActionResult<CommentDisplayDTO> UpdateComment([FromQuery] Guid callerId, [FromBody] CommentUpdateDTO dto)
+        {
+            try
+            {
+                var updated = _commentRepository.Update(dto.Id, callerId, dto);
                 return Ok(updated);
             }
             catch (EntityNotFoundException)
@@ -63,21 +80,20 @@ namespace WorkPackageService.Controllers
             }
             catch (UnauthorizedOperationException)
             {
-                // Forbid() bi zahtevao registrovanu auth semu (AddAuthentication), koje jos
-                // nema u ovom servisu - vracamo plain 403 status kod dok se ne ugradi prava
-                // autentifikacija (Forbid() bi inace bacio InvalidOperationException).
                 return StatusCode(StatusCodes.Status403Forbidden);
+            }
+            catch
+            {
+                return BadRequest();
             }
         }
 
-        // PRIVREMENO: isti callerId-preko-query-ja pristup kao kod UpdateComment - vidi napomenu gore.
-        [HttpDelete("comments/{id}")]
+        [HttpDelete("{id}")]
         public IActionResult DeleteComment(Guid id, [FromQuery] Guid callerId)
         {
             try
             {
-                _repository.Delete(id, callerId);
-
+                _commentRepository.Delete(id, callerId);
                 return NoContent();
             }
             catch (EntityNotFoundException)
@@ -88,6 +104,17 @@ namespace WorkPackageService.Controllers
             {
                 return StatusCode(StatusCodes.Status403Forbidden);
             }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Delete Error");
+            }
+        }
+
+        [HttpOptions]
+        public IActionResult GetCommentOptions()
+        {
+            Response.Headers["Allow"] = "GET, POST, PUT, DELETE";
+            return Ok();
         }
     }
 }

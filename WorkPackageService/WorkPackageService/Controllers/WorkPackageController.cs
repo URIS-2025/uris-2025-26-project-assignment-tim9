@@ -1,67 +1,101 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkPackageService.Data;
 using WorkPackageService.Models.DTO.WorkPackageDTOs;
 
 namespace WorkPackageService.Controllers
 {
+    //[Authorize]
     [ApiController]
+    [Route("api/[controller]")]
     public class WorkPackageController : ControllerBase
     {
-        private readonly IWorkPackageRepository _repository;
+        private readonly IWorkPackageRepository _workPackageRepository;
+        private readonly IMapper _mapper;
 
-        public WorkPackageController(IWorkPackageRepository repository)
+        public WorkPackageController(IWorkPackageRepository workPackageRepository, IMapper mapper)
         {
-            _repository = repository;
+            _workPackageRepository = workPackageRepository;
+            _mapper = mapper;
         }
 
-        [HttpPost("projects/{projectId}/work-packages")]
-        public ActionResult<WorkPackageDisplayDTO> CreateWorkPackage(Guid projectId, [FromBody] WorkPackageCreateDTO dto)
+        [HttpGet]
+        [HttpHead]
+        public ActionResult<IEnumerable<WorkPackageDisplayDTO>> GetWorkPackages()
         {
-            // ProjectId dolazi iz rute, ne iz tela zahteva - postavi ga pre validacije
-            // i eksplicitno revalidiraj, jer je ModelState vec popunjen (od strane model
-            // bindera) na osnovu originalne vrednosti iz tela (koja bi bila Guid.Empty).
-            dto.ProjectId = projectId;
-            ModelState.Clear();
-            if (!TryValidateModel(dto)) return BadRequest(ModelState);
-
-            var created = _repository.Add(dto);
-
-            return CreatedAtAction(nameof(GetWorkPackageById), new { id = created.WorkPackageId }, created);
+            var workPackages = _workPackageRepository.GetAll();
+            if (workPackages == null || !workPackages.Any())
+                return NoContent();
+            return Ok(workPackages);
         }
 
-        [HttpGet("projects/{projectId}/work-packages")]
-        public ActionResult<IEnumerable<WorkPackageDisplayDTO>> GetWorkPackagesForProject(Guid projectId)
-        {
-            return Ok(_repository.GetByProjectId(projectId));
-        }
-
-        [HttpGet("work-packages/{id}")]
+        [HttpGet("{id}")]
         public ActionResult<WorkPackageDisplayDTO> GetWorkPackageById(Guid id)
         {
-            var workPackage = _repository.GetById(id);
+            var workPackage = _workPackageRepository.GetById(id);
             if (workPackage == null) return NotFound();
-
             return Ok(workPackage);
         }
 
-        [HttpPut("work-packages/{id}")]
-        public ActionResult<WorkPackageDisplayDTO> UpdateWorkPackage(Guid id, [FromBody] WorkPackageUpdateDTO dto)
+        [HttpGet("project/{projectId}")]
+        public ActionResult<IEnumerable<WorkPackageDisplayDTO>> GetWorkPackagesByProject(Guid projectId)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var updated = _repository.Update(id, dto);
-            if (updated == null) return NotFound();
-
-            return Ok(updated);
+            var workPackages = _workPackageRepository.GetByProjectId(projectId);
+            if (workPackages == null || !workPackages.Any())
+                return NoContent();
+            return Ok(workPackages);
         }
 
-        [HttpDelete("work-packages/{id}")]
+        [HttpPost]
+        public ActionResult<WorkPackageDisplayDTO> CreateWorkPackage([FromBody] WorkPackageCreateDTO dto)
+        {
+            try
+            {
+                var created = _workPackageRepository.Add(dto);
+                return Created("", created);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPut]
+        public ActionResult<WorkPackageDisplayDTO> UpdateWorkPackage([FromBody] WorkPackageUpdateDTO dto)
+        {
+            try
+            {
+                var updated = _workPackageRepository.Update(dto.Id, dto);
+                if (updated == null) return NotFound();
+                return Ok(updated);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpDelete("{id}")]
         public IActionResult DeleteWorkPackage(Guid id)
         {
-            var deleted = _repository.Delete(id);
-            if (!deleted) return NotFound();
+            try
+            {
+                var deleted = _workPackageRepository.Delete(id);
+                if (!deleted) return NotFound();
+                return NoContent();
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Delete Error");
+            }
+        }
 
-            return NoContent();
+        [HttpOptions]
+        public IActionResult GetWorkPackageOptions()
+        {
+            Response.Headers["Allow"] = "GET, POST, PUT, DELETE";
+            return Ok();
         }
     }
 }

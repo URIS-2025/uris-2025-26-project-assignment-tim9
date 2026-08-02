@@ -13,7 +13,8 @@ namespace WorkPackageService.Profiles
             CreateMap<BacklogCreateDTO, Backlog>();
 
             CreateMap<BacklogUpdateDTO, Backlog>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+                .ForMember(dest => dest.Name, opt => opt.Condition(src => src.Name != null))
+                .ForMember(dest => dest.Description, opt => opt.Condition(src => src.Description != null));
         }
     }
 }

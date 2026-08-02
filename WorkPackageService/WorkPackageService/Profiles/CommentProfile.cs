@@ -13,7 +13,7 @@ namespace WorkPackageService.Profiles
             CreateMap<CommentCreateDTO, Comment>();
 
             CreateMap<CommentUpdateDTO, Comment>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+                .ForMember(dest => dest.Text, opt => opt.Condition(src => src.Text != null));
         }
     }
 }

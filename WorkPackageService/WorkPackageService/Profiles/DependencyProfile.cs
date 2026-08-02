@@ -13,7 +13,7 @@ namespace WorkPackageService.Profiles
             CreateMap<DependencyCreateDTO, Dependency>();
 
             CreateMap<DependencyUpdateDTO, Dependency>()
-                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+                .ForMember(dest => dest.BlockerTaskId, opt => opt.Condition(src => src.BlockerTaskId != null));
         }
     }
 }

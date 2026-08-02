@@ -1,62 +1,107 @@
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkPackageService.Data;
 using WorkPackageService.Models.DTO.DependencyDTOs;
 
 namespace WorkPackageService.Controllers
 {
+    //[Authorize]
     [ApiController]
+    [Route("api/[controller]")]
     public class DependencyController : ControllerBase
     {
-        private readonly IDependencyRepository _repository;
+        private readonly IDependencyRepository _dependencyRepository;
+        private readonly IMapper _mapper;
 
-        public DependencyController(IDependencyRepository repository)
+        public DependencyController(IDependencyRepository dependencyRepository, IMapper mapper)
         {
-            _repository = repository;
+            _dependencyRepository = dependencyRepository;
+            _mapper = mapper;
         }
 
-        [HttpPost("tasks/{taskId}/dependencies")]
-        public ActionResult<DependencyDisplayDTO> CreateDependency(Guid taskId, [FromBody] DependencyCreateDTO dto)
+        [HttpGet]
+        [HttpHead]
+        public ActionResult<IEnumerable<DependencyDisplayDTO>> GetDependencies()
         {
-            // TaskId dolazi iz rute - isti razlog za Clear()+TryValidateModel kao u ostalim
-            // kontrolerima. Ovde je narocito bitno jer [NotEqualToProperty] poredi BlockerTaskId
-            // bas protiv ovog TaskId polja - mora imati ispravnu (route) vrednost pre validacije.
-            dto.TaskId = taskId;
-            ModelState.Clear();
-            if (!TryValidateModel(dto)) return BadRequest(ModelState);
-
-            var created = _repository.Add(dto);
-            if (created == null)
-            {
-                // Odbrana u dubinu - [NotEqualToProperty] na DTO-u vec hvata ovo pre nego sto
-                // stigne do repository-ja, ali repo i dalje proverava isto poslovno pravilo.
-                return BadRequest("Task ne moze blokirati sam sebe.");
-            }
-
-            return CreatedAtAction(nameof(GetDependencyById), new { id = created.DependencyId }, created);
+            var dependencies = _dependencyRepository.GetAll();
+            if (dependencies == null || !dependencies.Any())
+                return NoContent();
+            return Ok(dependencies);
         }
 
-        [HttpGet("tasks/{taskId}/dependencies")]
-        public ActionResult<IEnumerable<DependencyDisplayDTO>> GetDependenciesForTask(Guid taskId)
-        {
-            return Ok(_repository.GetByTaskId(taskId));
-        }
-
-        [HttpGet("dependencies/{id}")]
+        [HttpGet("{id}")]
         public ActionResult<DependencyDisplayDTO> GetDependencyById(Guid id)
         {
-            var dependency = _repository.GetById(id);
+            var dependency = _dependencyRepository.GetById(id);
             if (dependency == null) return NotFound();
-
             return Ok(dependency);
         }
 
-        [HttpDelete("dependencies/{id}")]
+        [HttpGet("task/{taskId}")]
+        public ActionResult<IEnumerable<DependencyDisplayDTO>> GetDependenciesByTask(Guid taskId)
+        {
+            var dependencies = _dependencyRepository.GetByTaskId(taskId);
+            if (dependencies == null || !dependencies.Any())
+                return NoContent();
+            return Ok(dependencies);
+        }
+
+        [HttpPost]
+        public ActionResult<DependencyDisplayDTO> CreateDependency([FromBody] DependencyCreateDTO dto)
+        {
+            try
+            {
+                var created = _dependencyRepository.Add(dto);
+                if (created == null)
+                {
+                    // Odbrana u dubinu - [NotEqualToProperty] na DTO-u vec hvata self-block
+                    // pre nego sto stigne ovde, ali repo i dalje proverava isto poslovno pravilo.
+                    return BadRequest("Task ne moze blokirati sam sebe.");
+                }
+                return Created("", created);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpPut]
+        public ActionResult<DependencyDisplayDTO> UpdateDependency([FromBody] DependencyUpdateDTO dto)
+        {
+            try
+            {
+                var updated = _dependencyRepository.Update(dto.Id, dto);
+                if (updated == null) return NotFound();
+                return Ok(updated);
+            }
+            catch
+            {
+                return BadRequest();
+            }
+        }
+
+        [HttpDelete("{id}")]
         public IActionResult DeleteDependency(Guid id)
         {
-            var deleted = _repository.Delete(id);
-            if (!deleted) return NotFound();
+            try
+            {
+                var deleted = _dependencyRepository.Delete(id);
+                if (!deleted) return NotFound();
+                return NoContent();
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Delete Error");
+            }
+        }
 
-            return NoContent();
+        [HttpOptions]
+        public IActionResult GetDependencyOptions()
+        {
+            Response.Headers["Allow"] = "GET, POST, PUT, DELETE";
+            return Ok();
         }
     }
 }

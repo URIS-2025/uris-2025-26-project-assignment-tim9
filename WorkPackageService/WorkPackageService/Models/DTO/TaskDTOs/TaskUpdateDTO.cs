@@ -8,6 +8,9 @@ namespace WorkPackageService.Models.DTO.TaskDTOs
 {
     public class TaskUpdateDTO
     {
+        [NotEmptyGuid]
+        public Guid Id { get; set; }
+
         [StringLength(200)]
         public string? Title { get; set; }
 
