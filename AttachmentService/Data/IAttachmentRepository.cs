@@ -10,6 +10,5 @@ namespace AttachmentService.Data
         AttachmentDTO? ConfirmAttachment(AttachmentConfirmationDTO confirmation);
         AttachmentDTO? UpdateAttachment(Guid id, AttachmentUpdateDTO attachment);
         void DeleteAttachment(Guid id);
-        bool SaveChanges();
     }
 }

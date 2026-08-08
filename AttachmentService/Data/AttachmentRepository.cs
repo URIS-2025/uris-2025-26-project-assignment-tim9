@@ -46,6 +46,7 @@ namespace AttachmentService.Data
             entity.StoragePath = BuildStoragePath(entity);
 
             _context.Attachments.Add(entity);
+            _context.SaveChanges();
 
             return _mapper.Map<AttachmentDTO>(entity);
         }
@@ -65,6 +66,7 @@ namespace AttachmentService.Data
             }
 
             entity.Status = AttachmentStatus.Ready;
+            _context.SaveChanges();
 
             return _mapper.Map<AttachmentDTO>(entity);
         }
@@ -80,6 +82,7 @@ namespace AttachmentService.Data
             }
 
             _mapper.Map(attachment, entity);
+            _context.SaveChanges();
 
             return _mapper.Map<AttachmentDTO>(entity);
         }
@@ -95,11 +98,7 @@ namespace AttachmentService.Data
 
             entity.Status = AttachmentStatus.Deleted;
             entity.DeletedAt = DateTime.UtcNow;
-        }
-
-        public bool SaveChanges()
-        {
-            return _context.SaveChanges() >= 0;
+            _context.SaveChanges();
         }
 
         private static string BuildStoragePath(Attachment entity)
