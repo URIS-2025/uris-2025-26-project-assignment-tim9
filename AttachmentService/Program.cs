@@ -1,4 +1,5 @@
 using AttachmentService.Context;
+using AttachmentService.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +13,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 builder.Services.AddDbContext<AttachmentContext>();
+builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
 var app = builder.Build();
 
