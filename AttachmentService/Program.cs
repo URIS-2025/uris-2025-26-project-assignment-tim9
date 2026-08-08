@@ -1,3 +1,6 @@
+using AttachmentService.Context;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -8,6 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
+builder.Services.AddDbContext<AttachmentContext>();
 
 var app = builder.Build();
 

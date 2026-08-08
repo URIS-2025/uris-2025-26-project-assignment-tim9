@@ -12,9 +12,8 @@ namespace AttachmentService.Profiles
 
             CreateMap<Attachment, AttachmentDTO>();
 
-            CreateMap<AttachmentUpdateDTO, Attachment>();
-
-            CreateMap<Attachment, AttachmentConfirmationDTO>();
+            CreateMap<AttachmentUpdateDTO, Attachment>()
+                .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
         }
     }
 }
