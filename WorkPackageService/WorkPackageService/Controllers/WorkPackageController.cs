@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WorkPackageService.Data;
+using WorkPackageService.Exceptions;
 using WorkPackageService.Models.DTO.WorkPackageDTOs;
 
 namespace WorkPackageService.Controllers
@@ -84,6 +85,14 @@ namespace WorkPackageService.Controllers
                 var deleted = _workPackageRepository.Delete(id);
                 if (!deleted) return NotFound();
                 return NoContent();
+            }
+            catch (EntityNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (UnauthorizedOperationException)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden);
             }
             catch
             {

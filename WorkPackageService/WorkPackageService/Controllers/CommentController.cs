@@ -62,10 +62,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
-        // PRIVREMENO: callerId kao query parametar dok ne postoji pravi auth middleware -
-        // treba zameniti citanjem iz autentifikovanog korisnika kad se doda prava autentifikacija.
-        // Id je deo tela (konzistentno sa ostalim PUT-ovima), callerId ostaje query jer nije
-        // deo perzistovanog resursa.
+  
         [HttpPut]
         public ActionResult<CommentDisplayDTO> UpdateComment([FromQuery] Guid callerId, [FromBody] CommentUpdateDTO dto)
         {
