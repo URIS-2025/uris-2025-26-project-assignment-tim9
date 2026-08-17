@@ -38,6 +38,7 @@ namespace AttachmentService.Context
 
             var seedProjectId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             var seedWorkPackageId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+            var seedUserId = Guid.Parse("55555555-5555-5555-5555-555555555555");
             var seededAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
             modelBuilder.Entity<Attachment>().HasData(
@@ -55,7 +56,8 @@ namespace AttachmentService.Context
                     Status = AttachmentStatus.Ready,
                     DeletedAt = null,
                     ProjectId = seedProjectId,
-                    WorkPackageId = null
+                    WorkPackageId = null,
+                    UploadedByUserId = seedUserId
                 },
                 new Attachment
                 {
@@ -71,7 +73,8 @@ namespace AttachmentService.Context
                     Status = AttachmentStatus.Ready,
                     DeletedAt = null,
                     ProjectId = seedProjectId,
-                    WorkPackageId = seedWorkPackageId
+                    WorkPackageId = seedWorkPackageId,
+                    UploadedByUserId = seedUserId
                 }
             );
         }

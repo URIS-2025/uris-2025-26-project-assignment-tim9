@@ -15,5 +15,6 @@ namespace AttachmentService.Models.DTO
         public AttachmentStatus Status { get; set; }
         public Guid ProjectId { get; set; }
         public Guid? WorkPackageId { get; set; }
+        public Guid UploadedByUserId { get; set; }
     }
 }

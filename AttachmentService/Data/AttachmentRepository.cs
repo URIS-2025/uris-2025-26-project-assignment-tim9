@@ -3,6 +3,9 @@ using AttachmentService.Context;
 using AttachmentService.Models;
 using AttachmentService.Models.DTO;
 using AttachmentService.Models.Enums;
+using AttachmentService.ServiceCalls.Project;
+using AttachmentService.ServiceCalls.WorkPackage;
+using AttachmentService.Storage;
 
 namespace AttachmentService.Data
 {
@@ -10,17 +13,38 @@ namespace AttachmentService.Data
     {
         private readonly AttachmentContext _context;
         private readonly IMapper _mapper;
+        private readonly IFileStorageService _fileStorageService;
+        private readonly IWorkPackageService _workPackageService;
+        private readonly IProjectService _projectService;
 
-        public AttachmentRepository(AttachmentContext context, IMapper mapper)
+        public AttachmentRepository(
+            AttachmentContext context,
+            IMapper mapper,
+            IFileStorageService fileStorageService,
+            IWorkPackageService workPackageService,
+            IProjectService projectService)
         {
             _context = context;
             _mapper = mapper;
+            _fileStorageService = fileStorageService;
+            _workPackageService = workPackageService;
+            _projectService = projectService;
         }
 
-        public IEnumerable<AttachmentDTO> GetAttachments()
+        public IEnumerable<AttachmentDTO> GetAttachments(Guid? projectId = null, Guid? workPackageId = null)
         {
-            var attachments = _context.Attachments
-                .Where(a => a.Status != AttachmentStatus.Deleted)
+            var query = _context.Attachments.Where(a => a.Status != AttachmentStatus.Deleted);
+
+            if (workPackageId.HasValue)
+            {
+                query = query.Where(a => a.WorkPackageId == workPackageId.Value);
+            }
+            else if (projectId.HasValue)
+            {
+                query = query.Where(a => a.ProjectId == projectId.Value);
+            }
+
+            var attachments = query
                 .OrderByDescending(a => a.CreatedAt)
                 .ToList();
 
@@ -35,7 +59,44 @@ namespace AttachmentService.Data
             return attachment is null ? null : _mapper.Map<AttachmentDTO>(attachment);
         }
 
-        public AttachmentDTO CreateAttachment(AttachmentCreationDTO attachment)
+        public string? GetDownloadUrl(Guid id)
+        {
+            var attachment = _context.Attachments
+                .FirstOrDefault(a => a.Id == id && a.Status == AttachmentStatus.Ready);
+
+            return attachment is null
+                ? null
+                : _fileStorageService.GenerateDownloadUrl(attachment.StoragePath);
+        }
+
+        public async Task<AttachmentDetailsDTO?> GetAttachmentDetailsAsync(Guid id)
+        {
+            var attachment = GetAttachmentById(id);
+
+            if (attachment is null)
+            {
+                return null;
+            }
+
+            string? workPackageTitle = null;
+            if (attachment.WorkPackageId is Guid workPackageId)
+            {
+                var workPackage = await _workPackageService.GetWorkPackageByIdAsync(workPackageId);
+                workPackageTitle = workPackage?.Title;
+            }
+
+            var uploader = await _projectService.GetUserInfoAsync(attachment.UploadedByUserId);
+
+            return new AttachmentDetailsDTO
+            {
+                Attachment = attachment,
+                WorkPackageTitle = workPackageTitle,
+                UploadedByUsername = uploader?.Username,
+                UploadedByRole = uploader?.Role
+            };
+        }
+
+        public AttachmentUploadResponseDTO CreateAttachment(AttachmentCreationDTO attachment, Guid uploadedByUserId)
         {
             var entity = _mapper.Map<Attachment>(attachment);
 
@@ -44,20 +105,37 @@ namespace AttachmentService.Data
             entity.Status = AttachmentStatus.Uploading;
             entity.FileName = $"{entity.Id}_{attachment.OriginalFileName}";
             entity.StoragePath = BuildStoragePath(entity);
+            entity.UploadedByUserId = uploadedByUserId;
 
             _context.Attachments.Add(entity);
             _context.SaveChanges();
 
-            return _mapper.Map<AttachmentDTO>(entity);
+            var uploadUrl = _fileStorageService.GenerateUploadUrl(entity.StoragePath, entity.ContentType);
+
+            return new AttachmentUploadResponseDTO
+            {
+                Attachment = _mapper.Map<AttachmentDTO>(entity),
+                UploadUrl = uploadUrl
+            };
         }
 
-        public AttachmentDTO? ConfirmAttachment(AttachmentConfirmationDTO confirmation)
+        public async Task<ConfirmAttachmentResult> ConfirmAttachmentAsync(AttachmentConfirmationDTO confirmation)
         {
             var entity = _context.Attachments.FirstOrDefault(a => a.Id == confirmation.AttachmentId);
 
-            if (entity is null || entity.Status != AttachmentStatus.Uploading)
+            if (entity is null || entity.Status == AttachmentStatus.Deleted)
             {
-                return null;
+                return new ConfirmAttachmentResult(ConfirmAttachmentOutcome.NotFound, null);
+            }
+
+            if (entity.Status != AttachmentStatus.Uploading)
+            {
+                return new ConfirmAttachmentResult(ConfirmAttachmentOutcome.InvalidState, null);
+            }
+
+            if (!await _fileStorageService.ObjectExistsAsync(entity.StoragePath))
+            {
+                return new ConfirmAttachmentResult(ConfirmAttachmentOutcome.ObjectMissing, null);
             }
 
             if (confirmation.Checksum is not null)
@@ -68,7 +146,7 @@ namespace AttachmentService.Data
             entity.Status = AttachmentStatus.Ready;
             _context.SaveChanges();
 
-            return _mapper.Map<AttachmentDTO>(entity);
+            return new ConfirmAttachmentResult(ConfirmAttachmentOutcome.Success, _mapper.Map<AttachmentDTO>(entity));
         }
 
         public AttachmentDTO? UpdateAttachment(Guid id, AttachmentUpdateDTO attachment)

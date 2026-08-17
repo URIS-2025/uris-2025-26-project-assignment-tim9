@@ -22,5 +22,7 @@ namespace AttachmentService.Models
         public DateTime? DeletedAt { get; set; }
         public Guid ProjectId { get; set; }
         public Guid? WorkPackageId { get; set; }
+
+        public Guid UploadedByUserId { get; set; }
     }
 }
