@@ -1,11 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using SprintService.Context;
 using SprintService.Models;
 using SprintService.Models.DTO;
 using SprintService.ServiceCalls.Project;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SprintService.Data
 {
@@ -22,30 +19,38 @@ namespace SprintService.Data
             _projectService = projectService;
         }
 
-        public IEnumerable<SprintDTO> GetSprints()
+        public IEnumerable<SprintDTO> GetSprints(Guid? projectId = null)
         {
-            var sprints = _context.Sprints.ToList();
+            var query = _context.Sprints.AsQueryable();
+
+            if (projectId.HasValue)
+            {
+                query = query.Where(s => s.ProjectId == projectId.Value);
+            }
+
+            var sprints = query.ToList();
             return _mapper.Map<List<SprintDTO>>(sprints);
         }
 
-        public SprintDTO GetSprintById(Guid id)
+        public SprintDTO? GetSprintById(Guid id)
         {
             var sprint = _context.Sprints.FirstOrDefault(s => s.Id == id);
-            return _mapper.Map<SprintDTO>(sprint);
+            return sprint is null ? null : _mapper.Map<SprintDTO>(sprint);
         }
 
-        public SprintConfirmationDTO CreateSprint(SprintCreationDTO sprint)
+        public async Task<SprintConfirmationDTO> CreateSprintAsync(Guid projectId, SprintCreationDTO sprint)
         {
             var newSprint = _mapper.Map<Sprint>(sprint);
             newSprint.Id = Guid.NewGuid();
+            newSprint.ProjectId = projectId;
 
             _context.Sprints.Add(newSprint);
-            SaveChanges();
+            _context.SaveChanges();
 
             var confirmation = _mapper.Map<SprintConfirmationDTO>(newSprint);
 
-            var projectData = _projectService.GetProjectById(newSprint.ProjectId);
-            if (projectData != null)
+            var projectData = await _projectService.GetProjectByIdAsync(newSprint.ProjectId);
+            if (projectData is not null)
             {
                 confirmation.MilestoneId = projectData.MilestoneID;
                 confirmation.ExpectedDate = projectData.ExpectedDate;
@@ -54,41 +59,37 @@ namespace SprintService.Data
             return confirmation;
         }
 
-        public SprintConfirmationDTO UpdateSprint(Sprint sprint)
+        public async Task<SprintConfirmationDTO?> UpdateSprintAsync(Guid sprintId, SprintUpdateDTO sprint)
         {
-            var existingSprint = _context.Sprints.FirstOrDefault(s => s.Id == sprint.Id);
-            if (existingSprint != null)
+            var existingSprint = _context.Sprints.FirstOrDefault(s => s.Id == sprintId);
+            if (existingSprint is null)
             {
-                _mapper.Map(sprint, existingSprint);
-                SaveChanges();
+                return null;
             }
+
+            _mapper.Map(sprint, existingSprint);
+            _context.SaveChanges();
 
             var confirmation = _mapper.Map<SprintConfirmationDTO>(existingSprint);
 
-            var projectData = _projectService.GetProjectById(existingSprint.ProjectId);
-            if (projectData != null)
+            var projectData = await _projectService.GetProjectByIdAsync(existingSprint.ProjectId);
+            if (projectData is not null)
             {
                 confirmation.MilestoneId = projectData.MilestoneID;
                 confirmation.ExpectedDate = projectData.ExpectedDate;
             }
 
             return confirmation;
-
         }
 
         public void DeleteSprint(Guid id)
         {
             var sprint = _context.Sprints.FirstOrDefault(s => s.Id == id);
-            if (sprint != null)
+            if (sprint is not null)
             {
                 _context.Sprints.Remove(sprint);
-                SaveChanges();
+                _context.SaveChanges();
             }
-        }
-
-        public bool SaveChanges()
-        {
-            return _context.SaveChanges() >= 0;
         }
     }
 }

@@ -13,17 +13,20 @@ namespace SprintService.Validation
 
         protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
         {
+            var memberNames = validationContext.MemberName is null
+                ? Array.Empty<string>()
+                : new[] { validationContext.MemberName };
+
             var currentValue = value as DateTime?;
             var property = validationContext.ObjectType.GetProperty(_comparisonProperty);
 
             if (property == null)
-                return new ValidationResult($"Property '{_comparisonProperty}' not found.");
+                return new ValidationResult($"Property '{_comparisonProperty}' not found.", memberNames);
 
-            
             var comparisonValue = property.GetValue(validationContext.ObjectInstance) as DateTime?;
             if (currentValue.HasValue && comparisonValue.HasValue && currentValue.Value <= comparisonValue.Value)
             {
-                return new ValidationResult(ErrorMessage ?? $"The date must be later than {_comparisonProperty}.");
+                return new ValidationResult(ErrorMessage ?? $"The date must be later than {_comparisonProperty}.", memberNames);
             }
 
             return ValidationResult.Success;

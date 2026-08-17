@@ -1,5 +1,3 @@
-using AutoMapper;
-using Microsoft.Extensions.DependencyInjection;
 using SprintService.Context;
 using SprintService.Data;
 using SprintService.Profiles;
@@ -18,7 +16,15 @@ builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly
 builder.Services.AddDbContext<SprintContext>();
 builder.Services.AddScoped<ISprintRepository, SprintRepository>();
 
-builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddHttpClient<IProjectService, ProjectService>((sp, client) =>
+{
+    var baseUrl = sp.GetRequiredService<IConfiguration>()["Services:ProjectService"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 var app = builder.Build();
 
@@ -36,3 +42,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

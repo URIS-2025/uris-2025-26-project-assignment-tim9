@@ -1,6 +1,6 @@
-﻿namespace SprintService.Models.DTO.Project
+namespace SprintService.Models.DTO.Project
 {
-    public class ProjectDTO
+    public class MilestoneDTO
     {
         public Guid MilestoneID { get; set; }
         public DateTime ExpectedDate { get; set; }

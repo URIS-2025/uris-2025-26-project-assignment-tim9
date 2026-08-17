@@ -1,106 +1,79 @@
-﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SprintService.Data;
-using SprintService.Models;
 using SprintService.Models.DTO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace SprintService.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("sprints")]
     public class SprintController : ControllerBase
     {
         private readonly ISprintRepository _sprintRepository;
 
-        // Dependency injection
         public SprintController(ISprintRepository sprintRepository)
         {
             _sprintRepository = sprintRepository;
         }
 
-        // GET: api/sprint
+        // GET: /sprints
+        // GET: /sprints?projectId={id} - extra convenience, same filter as the required
+        // GET /projects/{projectId}/sprints route below.
         [HttpGet]
-        public ActionResult<IEnumerable<SprintDTO>> GetSprints()
+        public ActionResult<IEnumerable<SprintDTO>> GetSprints([FromQuery] Guid? projectId)
         {
-            var sprints = _sprintRepository.GetSprints();
-            if (sprints == null || !sprints.Any())
-            {
-                return NoContent(); // 204 No Content ako je lista prazna
-            }
-            return Ok(sprints); // 200 OK
+            return Ok(_sprintRepository.GetSprints(projectId));
         }
 
-        // GET: api/sprint/{id}
-        [HttpGet("{id}")]
-        public ActionResult<SprintDTO> GetSprintById(Guid id)
+        // GET: /projects/{projectId}/sprints
+        [HttpGet("~/projects/{projectId:guid}/sprints")]
+        public ActionResult<IEnumerable<SprintDTO>> GetSprintsForProject(Guid projectId)
         {
-            var sprint = _sprintRepository.GetSprintById(id);
-            if (sprint == null)
+            return Ok(_sprintRepository.GetSprints(projectId));
+        }
+
+        // GET: /sprints/{sprintId}
+        [HttpGet("{sprintId:guid}", Name = "GetSprintById")]
+        public ActionResult<SprintDTO> GetSprintById(Guid sprintId)
+        {
+            var sprint = _sprintRepository.GetSprintById(sprintId);
+            if (sprint is null)
             {
-                return NotFound(); // 404 Not Found
+                return NotFound();
             }
             return Ok(sprint);
         }
 
-        // POST: api/sprint
-        [HttpPost]
-        public ActionResult<SprintConfirmationDTO> CreateSprint([FromBody] SprintCreationDTO sprint)
+        // POST: /projects/{projectId}/sprints
+        [HttpPost("~/projects/{projectId:guid}/sprints")]
+        public async Task<ActionResult<SprintConfirmationDTO>> CreateSprint(Guid projectId, SprintCreationDTO sprint)
         {
-            try
-            {
-                var confirmation = _sprintRepository.CreateSprint(sprint);
-
-                return Created("", confirmation);
-            }
-            catch
-            {
-                return BadRequest(); // 400 Bad Request
-            }
+            var confirmation = await _sprintRepository.CreateSprintAsync(projectId, sprint);
+            return CreatedAtRoute("GetSprintById", new { sprintId = confirmation.Id }, confirmation);
         }
 
-        // DELETE: api/sprint/{id}
-        [HttpDelete("{id}")]
-        public IActionResult DeleteSprint(Guid id)
+        // DELETE: /sprints/{sprintId}
+        [HttpDelete("{sprintId:guid}")]
+        public IActionResult DeleteSprint(Guid sprintId)
         {
-            try
+            if (_sprintRepository.GetSprintById(sprintId) is null)
             {
-                var existingSprint = _sprintRepository.GetSprintById(id);
-                if (existingSprint == null)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                _sprintRepository.DeleteSprint(id);
-                return NoContent(); // 204 Success, no content to return
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error while trying to delete.");
-            }
+            _sprintRepository.DeleteSprint(sprintId);
+            return NoContent();
         }
 
-        // PUT: api/sprint
-        [HttpPut]
-        public ActionResult<SprintConfirmationDTO> UpdateSprint([FromBody] Sprint sprint)
+        // PUT: /sprints/{sprintId}
+        [HttpPut("{sprintId:guid}")]
+        public async Task<ActionResult<SprintConfirmationDTO>> UpdateSprint(Guid sprintId, SprintUpdateDTO sprint)
         {
-            try
+            var updated = await _sprintRepository.UpdateSprintAsync(sprintId, sprint);
+            if (updated is null)
             {
-                var existingSprint = _sprintRepository.GetSprintById(sprint.Id);
-                if (existingSprint == null)
-                {
-                    return NotFound();
-                }
-
-                var updatedSprint = _sprintRepository.UpdateSprint(sprint);
-                return Ok(updatedSprint);
+                return NotFound();
             }
-            catch
-            {
-                return BadRequest();
-            }
+            return Ok(updated);
         }
     }
 }

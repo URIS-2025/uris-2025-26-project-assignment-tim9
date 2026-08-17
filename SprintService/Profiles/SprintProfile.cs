@@ -1,7 +1,6 @@
-﻿using AutoMapper;
+using AutoMapper;
 using SprintService.Models;
 using SprintService.Models.DTO;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SprintService.Profiles
 {
@@ -9,13 +8,18 @@ namespace SprintService.Profiles
     {
         public SprintProfile()
         {
-            CreateMap<SprintCreationDTO, Sprint>();
+            CreateMap<SprintCreationDTO, Sprint>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.ProjectId, opt => opt.Ignore());
 
             CreateMap<Sprint, SprintDTO>();
 
-            CreateMap<SprintUpdateDTO, Sprint>();
+            CreateMap<SprintUpdateDTO, Sprint>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-            CreateMap<Sprint, SprintConfirmationDTO>();
+            CreateMap<Sprint, SprintConfirmationDTO>()
+                .ForMember(dest => dest.MilestoneId, opt => opt.Ignore())
+                .ForMember(dest => dest.ExpectedDate, opt => opt.Ignore());
         }
     }
 }

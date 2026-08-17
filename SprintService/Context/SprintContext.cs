@@ -2,9 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using SprintService.Models;
 using SprintService.Models.Enums;
-using System;
-using System.Collections.Generic;
-using System.Reflection.Emit;
 
 namespace SprintService.Context
 {
@@ -24,11 +21,14 @@ namespace SprintService.Context
         // konekcija sa bazom
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var connectionString = _configuration.GetConnectionString("SprintDB");
-            optionsBuilder.UseMySql(
-                connectionString,
-                ServerVersion.AutoDetect(connectionString)
-            );
+            if (!optionsBuilder.IsConfigured)
+            {
+                var connectionString = _configuration.GetConnectionString("SprintDB");
+                optionsBuilder.UseMySql(
+                    connectionString,
+                    ServerVersion.AutoDetect(connectionString)
+                );
+            }
         }
 
         // inicijalni podaci
