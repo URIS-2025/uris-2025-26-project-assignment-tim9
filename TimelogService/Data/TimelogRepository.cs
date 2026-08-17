@@ -1,9 +1,7 @@
-﻿using AutoMapper;
+using AutoMapper;
 using TimelogService.Context;
 using TimelogService.Models;
 using TimelogService.Models.DTO;
-using TimelogService.Models.DTO.Project;
-using TimelogService.Models.DTO.WorkPackage;
 using TimelogService.ServiceCalls.Project;
 using TimelogService.ServiceCalls.WorkPackage;
 
@@ -16,63 +14,76 @@ namespace TimelogService.Data
         private readonly IProjectService _projectService;
         private readonly IWorkPackageService _wpService;
 
-        public TimelogRepository(IMapper mapper, TimelogContext context, IProjectService projectService, IWorkPackageService wpService)
+        public TimelogRepository(TimelogContext context, IMapper mapper, IProjectService projectService, IWorkPackageService wpService)
         {
-            _mapper = mapper;
             _context = context;
+            _mapper = mapper;
             _projectService = projectService;
             _wpService = wpService;
         }
 
-        public bool SaveChanges()
+        public IEnumerable<TimelogDTO> GetTimelogs(Guid? projectId = null, Guid? workPackageId = null)
         {
-            return (_context.SaveChanges() >= 0);
-        }
+            var query = _context.Timelogs.AsQueryable();
 
-        public IEnumerable<TimelogDTO> GetTimelogs()
-        {
-            var timelogs = _context.Timelogs.ToList();
+            if (projectId.HasValue)
+            {
+                query = query.Where(t => t.ProjectId == projectId.Value);
+            }
+
+            if (workPackageId.HasValue)
+            {
+                query = query.Where(t => t.WorkPackageId == workPackageId.Value);
+            }
+
+            var timelogs = query.ToList();
             return _mapper.Map<List<TimelogDTO>>(timelogs);
         }
 
-        public TimelogDTO GetTimelogById(Guid id)
+        public TimelogDTO? GetTimelogById(Guid id)
         {
             var log = _context.Timelogs.FirstOrDefault(t => t.Id == id);
-            return _mapper.Map<TimelogDTO>(log)!;
+            return log is null ? null : _mapper.Map<TimelogDTO>(log);
         }
 
-        public TimelogConfirmationDTO CreateTimelog(TimelogCreationDTO timelog)
+        public async Task<TimelogConfirmationDTO> CreateTimelogAsync(TimelogCreationDTO timelog, Guid loggedByUserId)
         {
             var newTimelog = _mapper.Map<Timelog>(timelog);
             newTimelog.Id = Guid.NewGuid();
+            newTimelog.LoggedByUserId = loggedByUserId;
 
             _context.Timelogs.Add(newTimelog);
-            SaveChanges();
+            _context.SaveChanges();
 
             var confirmation = _mapper.Map<TimelogConfirmationDTO>(newTimelog);
-          
-            var projectData = _projectService.GetProjectById(newTimelog.ProjectId);
-            var wpData = _wpService.GetWorkPackageById(newTimelog.WorkPackageId);
 
-            confirmation.Username = projectData?.Username ?? "Unknown User";
+            var userInfo = await _projectService.GetUserInfoAsync(newTimelog.LoggedByUserId);
+            var wpData = await _wpService.GetWorkPackageByIdAsync(newTimelog.WorkPackageId);
+
+            confirmation.Username = userInfo?.Username ?? "Unknown User";
             confirmation.WorkPackageTitle = wpData?.Title ?? "Unknown WorkPackage";
 
             return confirmation;
         }
 
-        public TimelogConfirmationDTO UpdateTimelog(Timelog timelog)
+        public async Task<TimelogConfirmationDTO?> UpdateTimelogAsync(Guid id, TimelogUpdateDTO timelog)
         {
-            var existingLog = _context.Timelogs.FirstOrDefault(t => t.Id == timelog.Id);
-            if (existingLog != null)
+            var existingLog = _context.Timelogs.FirstOrDefault(t => t.Id == id);
+            if (existingLog is null)
             {
-                _mapper.Map(timelog, existingLog);
-                SaveChanges();
+                return null;
             }
+
+            _mapper.Map(timelog, existingLog);
+            _context.SaveChanges();
 
             var confirmation = _mapper.Map<TimelogConfirmationDTO>(existingLog);
 
-            var projectData = _projectService.GetProjectById(existingLog.ProjectId);
-            confirmation.Username = projectData?.Username ?? "Unknown User";
+            var userInfo = await _projectService.GetUserInfoAsync(existingLog.LoggedByUserId);
+            var wpData = await _wpService.GetWorkPackageByIdAsync(existingLog.WorkPackageId);
+
+            confirmation.Username = userInfo?.Username ?? "Unknown User";
+            confirmation.WorkPackageTitle = wpData?.Title ?? "Unknown WorkPackage";
 
             return confirmation;
         }
@@ -80,10 +91,10 @@ namespace TimelogService.Data
         public void DeleteTimelog(Guid id)
         {
             var log = _context.Timelogs.FirstOrDefault(t => t.Id == id);
-            if (log != null)
+            if (log is not null)
             {
                 _context.Timelogs.Remove(log);
-                SaveChanges();
+                _context.SaveChanges();
             }
         }
     }

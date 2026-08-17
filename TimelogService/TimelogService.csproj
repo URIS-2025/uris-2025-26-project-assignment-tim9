@@ -7,8 +7,13 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="AutoMapper" Version="12.0.1" />
-		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+		<!-- Was 12.0.1, which has a known high-severity DoS vulnerability (GHSA-rvv3-g6hj-g44x /
+		     CVE-2026-32933, uncontrolled recursion on deeply nested object graphs). 16.2.0
+		     matches AttachmentService/SprintService's pinned version and is outside every
+		     vulnerable range. AutoMapper.Extensions.Microsoft.DependencyInjection is no longer
+		     a separate package as of v12+ - AddAutoMapper() ships in the main package now, so
+		     it's removed rather than also bumped. -->
+		<PackageReference Include="AutoMapper" Version="16.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">

@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using TimelogService.Data;
-using TimelogService.Models;
 using TimelogService.Models.DTO;
 
 namespace TimelogService.Controllers
@@ -9,6 +8,8 @@ namespace TimelogService.Controllers
     [Route("api/[controller]")]
     public class TimelogController : ControllerBase
     {
+        private const string UserIdHeaderName = "X-User-Id";
+
         private readonly ITimelogRepository _timelogRepository;
 
         //dependency injection
@@ -18,85 +19,62 @@ namespace TimelogService.Controllers
         }
 
         // GET: api/timelog
+        // GET: api/timelog?projectId={id}&workPackageId={id}
         [HttpGet]
-        public ActionResult<IEnumerable<TimelogDTO>> GetTimelogs()
+        public ActionResult<IEnumerable<TimelogDTO>> GetTimelogs([FromQuery] Guid? projectId, [FromQuery] Guid? workPackageId)
         {
-            var timelogs = _timelogRepository.GetTimelogs();
-            if (timelogs == null || !timelogs.Any())
-            {
-                return NoContent(); // 204 No Content ako je lista prazna
-            }
-            return Ok(timelogs); // 200 OK
+            return Ok(_timelogRepository.GetTimelogs(projectId, workPackageId));
         }
 
         // GET: api/timelog/{id}
-        [HttpGet("{id}")]
+        [HttpGet("{id:guid}", Name = "GetTimelogById")]
         public ActionResult<TimelogDTO> GetTimelogById(Guid id)
         {
             var timelog = _timelogRepository.GetTimelogById(id);
-            if (timelog == null)
+            if (timelog is null)
             {
-                return NotFound(); // 404 Not Found
+                return NotFound();
             }
             return Ok(timelog);
         }
 
         // POST: api/timelog
         [HttpPost]
-        public ActionResult<TimelogConfirmationDTO> CreateTimelog([FromBody] TimelogCreationDTO timelog)
+        public async Task<ActionResult<TimelogConfirmationDTO>> CreateTimelog(TimelogCreationDTO timelog)
         {
-            try
+            if (!Request.Headers.TryGetValue(UserIdHeaderName, out var userIdHeader) ||
+                !Guid.TryParse(userIdHeader, out var loggedByUserId))
             {
-                var confirmation = _timelogRepository.CreateTimelog(timelog);
+                return BadRequest($"Missing or invalid {UserIdHeaderName} header - this is expected to be set by the API Gateway after authenticating the caller.");
+            }
 
-                return Created("", confirmation);
-            }
-            catch
-            {
-                return BadRequest(); // 400 Bad Request
-            }
+            var confirmation = await _timelogRepository.CreateTimelogAsync(timelog, loggedByUserId);
+            return CreatedAtRoute("GetTimelogById", new { id = confirmation.Id }, confirmation);
         }
 
         // DELETE: api/timelog/{id}
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:guid}")]
         public IActionResult DeleteTimelog(Guid id)
         {
-            try
+            if (_timelogRepository.GetTimelogById(id) is null)
             {
-                var existingLog = _timelogRepository.GetTimelogById(id);
-                if (existingLog == null)
-                {
-                    return NotFound();
-                }
+                return NotFound();
+            }
 
-                _timelogRepository.DeleteTimelog(id);
-                return NoContent(); // 204 Success, no content to return
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "Error while trying to delete.");
-            }
+            _timelogRepository.DeleteTimelog(id);
+            return NoContent();
         }
 
-        // PUT: api/timelog
-        [HttpPut]
-        public ActionResult<TimelogConfirmationDTO> UpdateTimelog([FromBody] Timelog timelog)
+        // PUT: api/timelog/{id}
+        [HttpPut("{id:guid}")]
+        public async Task<ActionResult<TimelogConfirmationDTO>> UpdateTimelog(Guid id, TimelogUpdateDTO timelog)
         {
-            try
+            var updated = await _timelogRepository.UpdateTimelogAsync(id, timelog);
+            if (updated is null)
             {
-                var existingLog = _timelogRepository.GetTimelogById(timelog.Id);
-                if (existingLog == null)
-                {
-                    return NotFound();
-                }
-
-                var updatedLog = _timelogRepository.UpdateTimelog(timelog);
-                return Ok(updatedLog);
+                return NotFound();
             }
-            catch
-            {
-                return BadRequest();
-            }
+            return Ok(updated);
         }
     }
 }

@@ -1,30 +1,43 @@
-﻿using Newtonsoft.Json;
-using TimelogService.Models.DTO;
+using System.Text.Json;
 using TimelogService.Models.DTO.Project;
 
 namespace TimelogService.ServiceCalls.Project
 {
     public class ProjectService : IProjectService
     {
-        private readonly IConfiguration _configuration;
-
-        public ProjectService(IConfiguration configuration)
+        private static readonly JsonSerializerOptions JsonOptions = new()
         {
-            _configuration = configuration;
+            PropertyNameCaseInsensitive = true
+        };
+
+        private readonly HttpClient _httpClient;
+
+        public ProjectService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
         }
 
-        public ProjectDTO GetProjectById(Guid id)
+        public async Task<UserInfoDTO?> GetUserInfoAsync(Guid userId)
         {
-            using (HttpClient client = new HttpClient())
+            try
             {
-                string baseUrl = _configuration["Services:ProjectService"];
-                Uri url = new Uri($"{baseUrl}api/project/{id}");
+                var response = await _httpClient.GetAsync($"api/project/users/{userId}");
 
-                var response = client.GetAsync(url).Result;
-                if (!response.IsSuccessStatusCode) return null;
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
 
-                var content = response.Content.ReadAsStringAsync().Result;
-                return JsonConvert.DeserializeObject<ProjectDTO>(content);
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<UserInfoDTO>(content, JsonOptions);
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+            catch (TaskCanceledException)
+            {
+                return null;
             }
         }
     }

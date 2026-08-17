@@ -1,34 +1,43 @@
-﻿using Newtonsoft.Json;
-using TimelogService.Models.DTO;
+using System.Text.Json;
 using TimelogService.Models.DTO.WorkPackage;
 
 namespace TimelogService.ServiceCalls.WorkPackage
 {
     public class WorkPackageService : IWorkPackageService
     {
-        private readonly IConfiguration _configuration;
-
-        public WorkPackageService(IConfiguration configuration)
+        private static readonly JsonSerializerOptions JsonOptions = new()
         {
-            _configuration = configuration;
+            PropertyNameCaseInsensitive = true
+        };
+
+        private readonly HttpClient _httpClient;
+
+        public WorkPackageService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
         }
 
-        public WorkPackageDTO GetWorkPackageById(Guid id)
+        public async Task<WorkPackageDTO?> GetWorkPackageByIdAsync(Guid id)
         {
-            using (HttpClient client = new HttpClient())
+            try
             {
-                string baseUrl = _configuration["Services:WorkPackageService"];
-                Uri url = new Uri($"{baseUrl}api/workpackage/{id}");
-
-                var response = client.GetAsync(url).Result;
+                var response = await _httpClient.GetAsync($"api/workpackage/{id}");
 
                 if (!response.IsSuccessStatusCode)
                 {
                     return null;
                 }
 
-                var content = response.Content.ReadAsStringAsync().Result;
-                return JsonConvert.DeserializeObject<WorkPackageDTO>(content);
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<WorkPackageDTO>(content, JsonOptions);
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+            catch (TaskCanceledException)
+            {
+                return null;
             }
         }
     }

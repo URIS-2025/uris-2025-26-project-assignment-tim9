@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Reflection.Emit;
-using TimelogService.Models;
 using Microsoft.EntityFrameworkCore;
+using TimelogService.Models;
 
 namespace TimelogService.Context
 {
@@ -21,11 +19,14 @@ namespace TimelogService.Context
         //konekcija sa bazom
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var connectionString = _configuration.GetConnectionString("TimelogDB");
-            optionsBuilder.UseMySql(
-                connectionString,
-                ServerVersion.AutoDetect(connectionString)
-            );
+            if (!optionsBuilder.IsConfigured)
+            {
+                var connectionString = _configuration.GetConnectionString("TimelogDB");
+                optionsBuilder.UseMySql(
+                    connectionString,
+                    ServerVersion.AutoDetect(connectionString)
+                );
+            }
         }
 
         //inicijalni podaci
@@ -37,7 +38,8 @@ namespace TimelogService.Context
                 ProjectId = Guid.Parse("044f3de0-a9dd-4c2e-b745-89976a1b2a36"),
                 WorkPackageId = Guid.Parse("21ad52f8-0281-4241-98b0-481566d25e4f"),
                 HoursSpent = 4.5,
-                Date = new DateTime(2026, 4, 7)
+                Date = new DateTime(2026, 4, 7),
+                LoggedByUserId = Guid.Parse("55555555-5555-5555-5555-555555555555")
             });
         }
     }

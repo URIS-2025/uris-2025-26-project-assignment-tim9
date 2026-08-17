@@ -1,9 +1,9 @@
-﻿using TimelogService.Models.DTO.Project;
+using TimelogService.Models.DTO.Project;
 
 namespace TimelogService.ServiceCalls.Project
 {
     public interface IProjectService
     {
-        ProjectDTO GetProjectById(Guid id);
+        Task<UserInfoDTO?> GetUserInfoAsync(Guid userId);
     }
 }

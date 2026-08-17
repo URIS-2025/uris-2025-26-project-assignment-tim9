@@ -7,5 +7,6 @@ namespace TimelogService.Models.DTO
         public Guid WorkPackageId { get; set; }
         public double HoursSpent { get; set; }
         public DateTime Date { get; set; }
+        public Guid LoggedByUserId { get; set; }
     }
 }

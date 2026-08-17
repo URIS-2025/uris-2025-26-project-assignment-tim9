@@ -1,7 +1,7 @@
 namespace TimelogService.Models.DTO.Project
 {
-	public class ProjectDTO
-	{
+    public class UserInfoDTO
+    {
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
     }

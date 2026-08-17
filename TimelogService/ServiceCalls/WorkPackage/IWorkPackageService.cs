@@ -1,9 +1,9 @@
-﻿using TimelogService.Models.DTO.WorkPackage;
+using TimelogService.Models.DTO.WorkPackage;
 
 namespace TimelogService.ServiceCalls.WorkPackage
 {
     public interface IWorkPackageService
     {
-        WorkPackageDTO GetWorkPackageById(Guid id);
+        Task<WorkPackageDTO?> GetWorkPackageByIdAsync(Guid id);
     }
 }
