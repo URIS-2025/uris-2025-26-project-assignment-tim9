@@ -69,3 +69,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Top-level statements make Program implicitly internal - this makes it accessible to
+// WebApplicationFactory<Program> in AttachmentService.Tests. No behavior change.
+public partial class Program { }
