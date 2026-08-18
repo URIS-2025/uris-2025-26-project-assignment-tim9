@@ -5,6 +5,8 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectService", "ProjectService\ProjectService.csproj", "{FBF179E0-4444-48C5-80F9-269653628834}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectService.Tests", "ProjectService.Tests\ProjectService.Tests.csproj", "{A7F367C2-DB04-4947-94A0-BAD90315A7D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{FBF179E0-4444-48C5-80F9-269653628834}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBF179E0-4444-48C5-80F9-269653628834}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBF179E0-4444-48C5-80F9-269653628834}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7F367C2-DB04-4947-94A0-BAD90315A7D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7F367C2-DB04-4947-94A0-BAD90315A7D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7F367C2-DB04-4947-94A0-BAD90315A7D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7F367C2-DB04-4947-94A0-BAD90315A7D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
