@@ -11,7 +11,7 @@ using ProjectService.Context;
 namespace ProjectService.Migrations
 {
     [DbContext(typeof(ProjectContext))]
-    [Migration("20260406202421_InitialCreate")]
+    [Migration("20260818145100_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -56,13 +56,18 @@ namespace ProjectService.Migrations
                     b.Property<int>("Budget")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("Deadline")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("ProjectId");
 
@@ -73,8 +78,10 @@ namespace ProjectService.Migrations
                         {
                             ProjectId = new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
                             Budget = 10000,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Deadline = new DateTime(2026, 12, 31, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Name = "Project Management System",
-                            Status = "Active"
+                            Status = 1
                         });
                 });
 
@@ -111,7 +118,7 @@ namespace ProjectService.Migrations
                         });
                 });
 
-            modelBuilder.Entity("ProjectService.Models.Requirements", b =>
+            modelBuilder.Entity("ProjectService.Models.Requirement", b =>
                 {
                     b.Property<Guid>("RequirementId")
                         .ValueGeneratedOnAdd()

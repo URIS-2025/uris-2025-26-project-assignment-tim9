@@ -77,24 +77,21 @@ namespace ProjectService.Data
             };
         }
 
-        public RequirementsConfirmationDto UpdateRequirement(Requirement requirement)
+        public RequirementsConfirmationDto UpdateRequirement(RequirementsUpdateDto requirementDto)
         {
             var existing = _context.Requirements
-                .FirstOrDefault(r => r.RequirementId == requirement.RequirementId);
-
+                .FirstOrDefault(r => r.RequirementId == requirementDto.RequirementId);
             if (existing != null)
             {
-                existing.ProjectId = requirement.ProjectId;
-                existing.Description = requirement.Description;
-
+                existing.ProjectId = requirementDto.ProjectId;
+                existing.Description = requirementDto.Description;
                 _context.SaveChanges();
             }
-
             return new RequirementsConfirmationDto
             {
-                RequirementId = requirement.RequirementId,
-                ProjectId = requirement.ProjectId,
-                Description = requirement.Description
+                RequirementId = requirementDto.RequirementId,
+                ProjectId = requirementDto.ProjectId,
+                Description = requirementDto.Description
             };
         }
 

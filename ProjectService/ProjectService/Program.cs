@@ -7,6 +7,7 @@ CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // var config = builder.Configuration; // potrebno za JWT
 
 // Controllers
@@ -32,7 +33,15 @@ builder.Services.AddScoped<IMilestoneRepository, MilestoneRepository>();
 builder.Services.AddScoped<IRequirementsRepository, RequirementsRepository>();
 
 // Service calls
-builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddHttpClient<IUserService, UserService>((sp, client) =>
+{
+    var baseUrl = sp.GetRequiredService<IConfiguration>()["Services:UserService"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 // AutoMapper
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
@@ -56,9 +65,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
+public partial class Program { }

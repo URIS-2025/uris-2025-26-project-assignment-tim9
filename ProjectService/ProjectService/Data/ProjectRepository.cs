@@ -2,6 +2,7 @@
 using ProjectService.Context;
 using ProjectService.Models;
 using ProjectService.Models.DTO.ProjectDtos;
+using ProjectService.Models.Enums;
 //using ProjectService.ServiceCalls.User;
 
 namespace ProjectService.Data
@@ -31,7 +32,7 @@ namespace ProjectService.Data
             return result;
         }
 
-        public IEnumerable<ProjectDto> GetProjectsByStatus(string status)
+        public IEnumerable<ProjectDto> GetProjectsByStatus(ProjectStatus status)
         {
             var projects = _context.Projects.Where(p => p.Status == status).ToList();
             var result = new List<ProjectDto>();
@@ -61,7 +62,9 @@ namespace ProjectService.Data
                 ProjectId = Guid.NewGuid(),
                 Name = projectDto.Name,
                 Budget = projectDto.Budget,
-                Status = projectDto.Status
+                Status = projectDto.Status,
+                Deadline = projectDto.Deadline,
+                CreatedAt = DateTime.UtcNow
             };
 
             _context.Projects.Add(project);
@@ -72,28 +75,33 @@ namespace ProjectService.Data
                 ProjectId = project.ProjectId,
                 Name = project.Name,
                 Budget = project.Budget,
-                Status = project.Status
+                Status = project.Status,
+                Deadline = project.Deadline,
+                CreatedAt = project.CreatedAt
             };
         }
 
-        public ProjectConfirmationDto UpdateProject(Project project)
+        public ProjectConfirmationDto UpdateProject(ProjectUpdateDto projectDto)
         {
-            var existing = _context.Projects.FirstOrDefault(p => p.ProjectId == project.ProjectId);
+            var existing = _context.Projects.FirstOrDefault(p => p.ProjectId == projectDto.ProjectId);
 
             if (existing != null)
             {
-                existing.Name = project.Name;
-                existing.Budget = project.Budget;
-                existing.Status = project.Status;
+                existing.Name = projectDto.Name;
+                existing.Budget = projectDto.Budget;
+                existing.Status = projectDto.Status;
+                existing.Deadline = projectDto.Deadline;
                 _context.SaveChanges();
             }
 
             return new ProjectConfirmationDto
             {
-                ProjectId = project.ProjectId,
-                Name = project.Name,
-                Budget = project.Budget,
-                Status = project.Status
+                ProjectId = projectDto.ProjectId,
+                Name = projectDto.Name,
+                Budget = projectDto.Budget,
+                Status = projectDto.Status,
+                Deadline = projectDto.Deadline,
+                CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow
             };
         }
 
@@ -121,6 +129,27 @@ namespace ProjectService.Data
 
             var projects = _context.Projects
                 .Where(p => ProjectIds.Contains(p.ProjectId))
+                .ToList();
+
+            var result = new List<ProjectDto>();
+            foreach (var project in projects)
+            {
+                var dto = _mapper.Map<ProjectDto>(project);
+                result.Add(dto);
+            }
+
+            return result;
+        }
+
+        public IEnumerable<ProjectDto> GetProjectsByUserId(Guid userId)
+        {
+            var projectIds = _context.ProjectMembers
+                .Where(pm => pm.UserId == userId)
+                .Select(pm => pm.ProjectId)
+                .ToList();
+
+            var projects = _context.Projects
+                .Where(p => projectIds.Contains(p.ProjectId))
                 .ToList();
 
             var result = new List<ProjectDto>();

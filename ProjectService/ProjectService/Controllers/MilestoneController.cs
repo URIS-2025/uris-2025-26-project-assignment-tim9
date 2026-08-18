@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using ProjectService.Data;
-using ProjectService.Models;
 using ProjectService.Models.DTO.MilestoneDtos;
 
 namespace ProjectService.Controllers
@@ -51,7 +50,7 @@ namespace ProjectService.Controllers
             return Ok(milestone);
         }
 
-        // POST kreiraj milestone
+        // POST
         [HttpPost]
         public ActionResult<MilestoneConfirmationDto> CreateMilestone([FromBody] MilestoneCreationDto milestoneDto)
         {
@@ -66,16 +65,16 @@ namespace ProjectService.Controllers
             }
         }
 
-        // PUT azuriraj milestone
+        // PUT 
         [HttpPut]
-        public ActionResult<MilestoneConfirmationDto> UpdateMilestone([FromBody] Milestone milestone)
+        public ActionResult<MilestoneConfirmationDto> UpdateMilestone([FromBody] MilestoneUpdateDto milestoneDto)
         {
             try
             {
-                var existing = _milestoneRepository.GetMilestoneById(milestone.MilestoneId);
+                var existing = _milestoneRepository.GetMilestoneById(milestoneDto.MilestoneId);
                 if (existing == null)
                     return NotFound();
-                var updated = _milestoneRepository.UpdateMilestone(milestone);
+                var updated = _milestoneRepository.UpdateMilestone(milestoneDto);
                 return Ok(updated);
             }
             catch
@@ -84,7 +83,7 @@ namespace ProjectService.Controllers
             }
         }
 
-        // DELETE obrisi milestone
+        // DELETE 
         [HttpDelete("{MilestoneId}")]
         public IActionResult DeleteMilestone(Guid MilestoneId)
         {

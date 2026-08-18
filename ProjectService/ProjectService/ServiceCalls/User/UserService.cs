@@ -5,27 +5,36 @@ namespace ProjectService.ServiceCalls.User
 {
     public class UserService : IUserService
     {
-        private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<UserService> _logger;
 
-        public UserService(IConfiguration configuration)
+        public UserService(HttpClient httpClient, ILogger<UserService> logger)
         {
-            _configuration = configuration;
+            _httpClient = httpClient;
+            _logger = logger;
         }
 
-        public UserProjectDto GetUserById(Guid UserId)
+        public async Task<UserProjectDto> GetUserByIdAsync(Guid userId)
         {
-            using (HttpClient client = new HttpClient())
+            try
             {
-                Uri url = new Uri($"{_configuration["Services:UserService"]}api/user/{UserId}");
-                var response = client.GetAsync(url).Result;
+                var response = await _httpClient.GetAsync($"api/user/{userId}");
 
                 if (!response.IsSuccessStatusCode)
                 {
+                    _logger.LogWarning(
+                        "User service returned {StatusCode} for user {UserId}.",
+                        response.StatusCode, userId);
                     return null;
                 }
 
-                var content = response.Content.ReadAsStringAsync().Result;
+                var content = await response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<UserProjectDto>(content);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch user {UserId} from User service.", userId);
+                return null;
             }
         }
     }

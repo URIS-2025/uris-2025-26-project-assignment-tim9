@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectService.Data;
 using ProjectService.Models;
 using ProjectService.Models.DTO.ProjectDtos;
+using ProjectService.Models.Enums;
 
 namespace ProjectService.Controllers
 {
@@ -34,7 +35,7 @@ namespace ProjectService.Controllers
 
         // GET projekti po statusu
         [HttpGet("status/{status}")]
-        public ActionResult<IEnumerable<ProjectDto>> GetProjectsByStatus(string status)
+        public ActionResult<IEnumerable<ProjectDto>> GetProjectsByStatus(ProjectStatus status)
         {
             var projects = _projectRepository.GetProjectsByStatus(status);
             if (projects == null || !projects.Any())
@@ -47,6 +48,16 @@ namespace ProjectService.Controllers
         public ActionResult<IEnumerable<ProjectDto>> GetProjectsByMemberId(Guid memberId)
         {
             var projects = _projectRepository.GetProjectsByMemberId(memberId);
+            if (projects == null || !projects.Any())
+                return NoContent();
+            return Ok(projects);
+        }
+
+        // GET projekti po korisniku
+        [HttpGet("user/{userId}")]
+        public ActionResult<IEnumerable<ProjectDto>> GetProjectsByUserId(Guid userId)
+        {
+            var projects = _projectRepository.GetProjectsByUserId(userId);
             if (projects == null || !projects.Any())
                 return NoContent();
             return Ok(projects);
@@ -79,14 +90,14 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj projekat
         [HttpPut]
-        public ActionResult<ProjectConfirmationDto> UpdateProject([FromBody] Project project)
+        public ActionResult<ProjectConfirmationDto> UpdateProject([FromBody] ProjectUpdateDto projectDto)
         {
             try
             {
-                var existing = _projectRepository.GetProjectById(project.ProjectId);
+                var existing = _projectRepository.GetProjectById(projectDto.ProjectId);
                 if (existing == null)
                     return NotFound();
-                var updated = _projectRepository.UpdateProject(project);
+                var updated = _projectRepository.UpdateProject(projectDto);
                 return Ok(updated);
             }
             catch

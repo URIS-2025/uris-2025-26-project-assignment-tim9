@@ -77,24 +77,21 @@ namespace ProjectService.Data
             };
         }
 
-        public MilestoneConfirmationDto UpdateMilestone(Milestone milestone)
+        public MilestoneConfirmationDto UpdateMilestone(MilestoneUpdateDto milestoneDto)
         {
             var existing = _context.Milestones
-                .FirstOrDefault(m => m.MilestoneId == milestone.MilestoneId);
-
+                .FirstOrDefault(m => m.MilestoneId == milestoneDto.MilestoneId);
             if (existing != null)
             {
-                existing.ProjectId = milestone.ProjectId;
-                existing.ExpectedDate = milestone.ExpectedDate;
-
+                existing.ProjectId = milestoneDto.ProjectId;
+                existing.ExpectedDate = milestoneDto.ExpectedDate;
                 _context.SaveChanges();
             }
-
             return new MilestoneConfirmationDto
             {
-                MilestoneId = milestone.MilestoneId,
-                ProjectId = milestone.ProjectId,
-                ExpectedDate = milestone.ExpectedDate
+                MilestoneId = milestoneDto.MilestoneId,
+                ProjectId = milestoneDto.ProjectId,
+                ExpectedDate = milestoneDto.ExpectedDate
             };
         }
 

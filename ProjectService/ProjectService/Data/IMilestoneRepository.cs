@@ -9,7 +9,7 @@ namespace ProjectService.Data
         IEnumerable<MilestoneDto> GetMilestonesByProjectId(Guid ProjectId);
         MilestoneDto GetMilestoneById(Guid MilestoneId);
         MilestoneConfirmationDto CreateMilestone(MilestoneCreationDto milestone);
-        MilestoneConfirmationDto UpdateMilestone(Milestone milestone);
+        MilestoneConfirmationDto UpdateMilestone(MilestoneUpdateDto milestone);
         void DeleteMilestone(Guid MilestoneId);
         bool SaveChanges();
     }

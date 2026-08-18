@@ -68,14 +68,14 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj zahtev
         [HttpPut]
-        public ActionResult<RequirementsConfirmationDto> UpdateRequirement([FromBody] Requirement requirement)
+        public ActionResult<RequirementsConfirmationDto> UpdateRequirement([FromBody] RequirementsUpdateDto requirementDto)
         {
             try
             {
-                var existing = _requirementsRepository.GetRequirementById(requirement.RequirementId);
+                var existing = _requirementsRepository.GetRequirementById(requirementDto.RequirementId);
                 if (existing == null)
                     return NotFound();
-                var updated = _requirementsRepository.UpdateRequirement(requirement);
+                var updated = _requirementsRepository.UpdateRequirement(requirementDto);
                 return Ok(updated);
             }
             catch

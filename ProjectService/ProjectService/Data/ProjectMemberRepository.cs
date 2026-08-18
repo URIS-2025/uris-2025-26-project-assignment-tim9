@@ -63,6 +63,7 @@ namespace ProjectService.Data
             {
                 ProjectMemberId = Guid.NewGuid(),
                 ProjectId = projectMemberDto.ProjectId,
+                UserId = projectMemberDto.UserId,
                 JoinedAt = DateTime.UtcNow,
                 Status = true
             };
@@ -74,31 +75,31 @@ namespace ProjectService.Data
             {
                 ProjectMemberId = member.ProjectMemberId,
                 ProjectId = member.ProjectId,
+                UserId = projectMemberDto.UserId,
                 JoinedAt = member.JoinedAt,
                 Status = member.Status
             };
         }
 
-        public ProjectMemberConfirmationDto UpdateProjectMember(ProjectMember projectMember)
+        public ProjectMemberConfirmationDto UpdateProjectMember(ProjectMemberUpdateDto projectMemberDto)
         {
             var existing = _context.ProjectMembers
-                .FirstOrDefault(pm => pm.ProjectMemberId == projectMember.ProjectMemberId);
-
+                .FirstOrDefault(pm => pm.ProjectMemberId == projectMemberDto.ProjectMemberId);
             if (existing != null)
             {
-                existing.ProjectId = projectMember.ProjectId;
-                existing.JoinedAt = projectMember.JoinedAt;
-                existing.Status = projectMember.Status;
-
+                existing.ProjectId = projectMemberDto.ProjectId;
+                existing.UserId = projectMemberDto.UserId;
+                existing.JoinedAt = projectMemberDto.JoinedAt;
+                existing.Status = projectMemberDto.Status;
                 _context.SaveChanges();
             }
-
             return new ProjectMemberConfirmationDto
             {
-                ProjectMemberId = projectMember.ProjectMemberId,
-                ProjectId = projectMember.ProjectId,
-                JoinedAt = projectMember.JoinedAt,
-                Status = projectMember.Status
+                ProjectMemberId = projectMemberDto.ProjectMemberId,
+                ProjectId = projectMemberDto.ProjectId,
+                UserId = projectMemberDto.UserId,
+                JoinedAt = projectMemberDto.JoinedAt,
+                Status = projectMemberDto.Status
             };
         }
 

@@ -10,7 +10,7 @@ namespace ProjectService.Data
         IEnumerable<ProjectMemberDto> GetMembersByProjectId(Guid ProjectId);
         ProjectMemberDto GetProjectMemberById(Guid ProjectMemberId);
         ProjectMemberConfirmationDto CreateProjectMember(ProjectMemberCreationDto projectMember);
-        ProjectMemberConfirmationDto UpdateProjectMember(ProjectMember projectMember);
+        ProjectMemberConfirmationDto UpdateProjectMember(ProjectMemberUpdateDto projectMember);
         void DeleteProjectMember(Guid ProjectMemberId);
         bool SaveChanges();
     }

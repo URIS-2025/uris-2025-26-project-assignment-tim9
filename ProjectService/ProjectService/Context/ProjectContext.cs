@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectService.Models;
+using ProjectService.Models.Enums;
 
 namespace ProjectService.Context
 {
@@ -43,7 +44,9 @@ namespace ProjectService.Context
             ProjectId = Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890"),
             Name = "Project Management System",
             Budget = 10000,
-            Status = "Active"
+            Status = ProjectStatus.Active,
+            Deadline = DateTime.Parse("2026-12-31T00:00:00"),  
+            CreatedAt = DateTime.Parse("2025-01-01T00:00:00")
         }
     );
 

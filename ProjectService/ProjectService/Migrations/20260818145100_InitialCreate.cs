@@ -52,8 +52,9 @@ namespace ProjectService.Migrations
                     Name = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Budget = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4")
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Deadline = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -88,8 +89,8 @@ namespace ProjectService.Migrations
 
             migrationBuilder.InsertData(
                 table: "Projects",
-                columns: new[] { "ProjectId", "Budget", "Name", "Status" },
-                values: new object[] { new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"), 10000, "Project Management System", "Active" });
+                columns: new[] { "ProjectId", "Budget", "CreatedAt", "Deadline", "Name", "Status" },
+                values: new object[] { new Guid("a1b2c3d4-e5f6-7890-abcd-ef1234567890"), 10000, new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), new DateTime(2026, 12, 31, 0, 0, 0, 0, DateTimeKind.Unspecified), "Project Management System", 1 });
 
             migrationBuilder.InsertData(
                 table: "Requirements",

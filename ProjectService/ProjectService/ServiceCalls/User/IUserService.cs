@@ -4,6 +4,6 @@ namespace ProjectService.ServiceCalls.User
 {
     public interface IUserService
     {
-        UserProjectDto GetUserById(Guid UserId);
+        Task<UserProjectDto> GetUserByIdAsync(Guid userId);
     }
 }

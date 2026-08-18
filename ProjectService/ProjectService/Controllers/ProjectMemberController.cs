@@ -69,14 +69,14 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj clana
         [HttpPut]
-        public ActionResult<ProjectMemberConfirmationDto> UpdateProjectMember([FromBody] ProjectMember projectMember)
+        public ActionResult<ProjectMemberConfirmationDto> UpdateProjectMember([FromBody] ProjectMemberUpdateDto projectMemberDto)
         {
             try
             {
-                var existing = _projectMemberRepository.GetProjectMemberById(projectMember.ProjectMemberId);
+                var existing = _projectMemberRepository.GetProjectMemberById(projectMemberDto.ProjectMemberId);
                 if (existing == null)
                     return NotFound();
-                var updated = _projectMemberRepository.UpdateProjectMember(projectMember);
+                var updated = _projectMemberRepository.UpdateProjectMember(projectMemberDto);
                 return Ok(updated);
             }
             catch
