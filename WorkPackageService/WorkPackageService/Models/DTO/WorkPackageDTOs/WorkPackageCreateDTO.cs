@@ -17,5 +17,7 @@ namespace WorkPackageService.Models.DTO.WorkPackageDTOs
         public string? Description { get; set; }
 
         public WorkPackageStatus Status { get; set; }
+
+        public DateTime Deadline { get; set; }
     }
 }

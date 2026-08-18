@@ -12,6 +12,8 @@ namespace WorkPackageService.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
+        public DateTime? Deadline { get; set; }
+
         public ICollection<Task> Tasks { get; set; } = new List<Task>();
     }
 }

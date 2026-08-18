@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using WorkPackageService.Data;
 using WorkPackageService.Exceptions;
 using WorkPackageService.Models.DTO.WorkPackageDTOs;
+using WorkPackageService.ServiceCalls.Project;
 
 namespace WorkPackageService.Controllers
 {
@@ -14,11 +15,13 @@ namespace WorkPackageService.Controllers
     {
         private readonly IWorkPackageRepository _workPackageRepository;
         private readonly IMapper _mapper;
+        private readonly IProjectService _projectService;
 
-        public WorkPackageController(IWorkPackageRepository workPackageRepository, IMapper mapper)
+        public WorkPackageController(IWorkPackageRepository workPackageRepository, IMapper mapper, IProjectService projectService)
         {
             _workPackageRepository = workPackageRepository;
             _mapper = mapper;
+            _projectService = projectService;
         }
 
         [HttpGet]
@@ -49,8 +52,13 @@ namespace WorkPackageService.Controllers
         }
 
         [HttpPost]
-        public ActionResult<WorkPackageDisplayDTO> CreateWorkPackage([FromBody] WorkPackageCreateDTO dto)
+        public async Task<ActionResult<WorkPackageDisplayDTO>> CreateWorkPackageAsync([FromBody] WorkPackageCreateDTO dto)
         {
+            var projectDeadline = await _projectService.GetProjectDeadlineAsync(dto.ProjectId);
+            if (projectDeadline.HasValue && dto.Deadline > projectDeadline.Value)
+            {
+                return BadRequest($"WorkPackage deadline cannot exceed project deadline ({projectDeadline.Value:yyyy-MM-dd}).");
+            }
             try
             {
                 var created = _workPackageRepository.Add(dto);
@@ -63,8 +71,19 @@ namespace WorkPackageService.Controllers
         }
 
         [HttpPut]
-        public ActionResult<WorkPackageDisplayDTO> UpdateWorkPackage([FromBody] WorkPackageUpdateDTO dto)
+        public async Task <ActionResult<WorkPackageDisplayDTO>> UpdateWorkPackage([FromBody] WorkPackageUpdateDTO dto)
         {
+            if (dto.Deadline.HasValue)
+            {
+                var existing = _workPackageRepository.GetById(dto.Id);
+                if (existing == null) return NotFound();
+
+                var projectDeadline = await _projectService.GetProjectDeadlineAsync(existing.ProjectId);
+                if (projectDeadline.HasValue && dto.Deadline.Value > projectDeadline.Value)
+                {
+                    return BadRequest($"WorkPackage deadline cannot exceed project deadline ({projectDeadline.Value:yyyy-MM-dd}).");
+                }
+            }
             try
             {
                 var updated = _workPackageRepository.Update(dto.Id, dto);

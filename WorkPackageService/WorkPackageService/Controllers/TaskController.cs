@@ -101,8 +101,6 @@ namespace WorkPackageService.Controllers
             }
         }
 
-        // PRIVREMENO: callerId kao query parametar dok ne postoji pravi auth middleware -
-        // treba zameniti citanjem iz autentifikovanog korisnika kad se doda prava autentifikacija.
         [HttpPatch("{id}/status")]
         public async Task<ActionResult<TaskDisplayDTO>> UpdateTaskStatus(Guid id, [FromQuery] Guid callerId, [FromBody] TaskStatusUpdateRequestDTO dto)
         {

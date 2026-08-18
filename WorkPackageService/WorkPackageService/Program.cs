@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WorkPackageService.Context;
 using WorkPackageService.Data;
 using WorkPackageService.ServiceCalls.Notification;
+using WorkPackageService.ServiceCalls.Project;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,12 +25,16 @@ builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<IDependencyRepository, DependencyRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 
-// Placeholder adresa dok kolega ne definise pravu - uskladiti "ServiceUrls:NotificationService"
-// u appsettings.json (ili appsettings.Development.json) kad Notification servis dobije pravi port/URL.
+
 builder.Services.AddHttpClient<INotificationService, NotificationService>(client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:NotificationService"]
         ?? "http://localhost:5100/");
+});
+
+builder.Services.AddHttpClient<IProjectService, ProjectService>(client =>
+{
+    client.BaseAddress = new Uri("http://project-service-url/"); 
 });
 
 var app = builder.Build();
@@ -49,6 +54,4 @@ app.MapControllers();
 
 app.Run();
 
-// Potrebno da bi WebApplicationFactory<Program> u integracionim testovima mogao da referencira
-// ovu klasu (top-level statements generisu je kao internal po default-u).
 public partial class Program { }
