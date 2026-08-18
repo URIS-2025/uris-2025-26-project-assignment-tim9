@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using Microsoft.EntityFrameworkCore;
 using ProjectService.Context;
 using ProjectService.Data;
 using ProjectService.ServiceCalls.User;
@@ -52,6 +53,15 @@ builder.Services.AddDbContext<ProjectContext>();
 //builder.Services.AddAuthentication
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ProjectContext>();
+    if (context.Database.IsRelational())
+    {
+        context.Database.Migrate();
+    }
+}
 
 // Middleware
 if (app.Environment.IsDevelopment())
