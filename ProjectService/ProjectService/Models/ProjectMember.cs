@@ -5,7 +5,7 @@ namespace ProjectService.Models
 {
     public class ProjectMember
     {
-        [Key]
+        
         public Guid ProjectMemberId { get; set; }
         public Guid ProjectId { get; set; }
         public Guid UserId { get; set; }

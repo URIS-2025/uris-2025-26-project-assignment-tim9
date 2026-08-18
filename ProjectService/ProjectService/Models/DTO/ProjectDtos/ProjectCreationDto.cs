@@ -1,10 +1,22 @@
-﻿namespace ProjectService.Models.DTO.ProjectDtos
+﻿using System.ComponentModel.DataAnnotations;
+using ProjectService.Models.Enums;
+using ProjectService.Validation;
+
+namespace ProjectService.Models.DTO.ProjectDtos
 {
     public class ProjectCreationDto
     {
-        public string Name { get; set; }
-        public int Budget { get; set; }
-        public string Status { get; set; }
+        [Required]
+        [StringLength(200)]
+        public string Name { get; set; } = string.Empty;
 
+        [Range(0, int.MaxValue, ErrorMessage = "Budget must not be negative.")]
+        public int Budget { get; set; }
+
+        [Required]
+        public ProjectStatus Status { get; set; }
+
+        [FutureOrNullDate]
+        public DateTime? Deadline { get; set; }
     }
 }

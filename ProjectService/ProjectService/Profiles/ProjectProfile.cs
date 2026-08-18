@@ -27,9 +27,9 @@ namespace ProjectService.Profiles
             CreateMap<Milestone, MilestoneConfirmationDto>();
 
             // Requirements
-            CreateMap<RequirementsCreationDto, Requirements>().ReverseMap();
-            CreateMap<Requirements, RequirementsDto>().ReverseMap();
-            CreateMap<Requirements, RequirementsConfirmationDto>();
+            CreateMap<RequirementsCreationDto, Requirement>().ReverseMap();
+            CreateMap<Requirement, RequirementsDto>().ReverseMap();
+            CreateMap<Requirement, RequirementsConfirmationDto>();
         }
     }
 }

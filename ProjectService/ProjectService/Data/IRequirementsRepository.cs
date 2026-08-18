@@ -9,7 +9,7 @@ namespace ProjectService.Data
         IEnumerable<RequirementsDto> GetRequirementsByProjectId(Guid ProjectId);
         RequirementsDto GetRequirementById(Guid RequirementId);
         RequirementsConfirmationDto CreateRequirement(RequirementsCreationDto requirement);
-        RequirementsConfirmationDto UpdateRequirement(Requirements requirement);
+        RequirementsConfirmationDto UpdateRequirement(Requirement requirement);
         void DeleteRequirement(Guid RequirementId);
         bool SaveChanges();
     }

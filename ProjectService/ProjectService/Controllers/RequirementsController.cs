@@ -68,7 +68,7 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj zahtev
         [HttpPut]
-        public ActionResult<RequirementsConfirmationDto> UpdateRequirement([FromBody] Requirements requirement)
+        public ActionResult<RequirementsConfirmationDto> UpdateRequirement([FromBody] Requirement requirement)
         {
             try
             {

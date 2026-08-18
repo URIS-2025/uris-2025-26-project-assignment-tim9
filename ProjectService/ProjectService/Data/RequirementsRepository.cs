@@ -59,7 +59,7 @@ namespace ProjectService.Data
 
         public RequirementsConfirmationDto CreateRequirement(RequirementsCreationDto requirementDto)
         {
-            var requirement = new Requirements
+            var requirement = new Requirement
             {
                 RequirementId = Guid.NewGuid(),
                 ProjectId = requirementDto.ProjectId,
@@ -77,7 +77,7 @@ namespace ProjectService.Data
             };
         }
 
-        public RequirementsConfirmationDto UpdateRequirement(Requirements requirement)
+        public RequirementsConfirmationDto UpdateRequirement(Requirement requirement)
         {
             var existing = _context.Requirements
                 .FirstOrDefault(r => r.RequirementId == requirement.RequirementId);
