@@ -7,7 +7,7 @@ using WorkPackageService.Models.DTO.CommentDTOs;
 
 namespace WorkPackageService.Controllers
 {
-    //[Authorize]
+   
     [ApiController]
     [Route("api/[controller]")]
     public class CommentController : ControllerBase

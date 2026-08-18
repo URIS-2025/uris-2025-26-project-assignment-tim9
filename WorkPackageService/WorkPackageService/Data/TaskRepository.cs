@@ -62,8 +62,7 @@ namespace WorkPackageService.Data
             return _mapper.Map<TaskDisplayDTO>(entity);
         }
 
-        // Task se ne oslanja na FK cascade (Dependency FK-ovi su Restrict) - eksplicitno
-        // brisemo sve Dependency zapise gde je ovaj task blokiran ili blokira drugi task.
+      
         public bool Delete(Guid id)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == id);
@@ -90,9 +89,6 @@ namespace WorkPackageService.Data
             return _mapper.Map<IEnumerable<TaskDisplayDTO>>(entities);
         }
 
-        // Autorizacija: status moze da promeni samo osoba kojoj je task dodeljen.
-        // Async zbog notifikacije ka Notification servisu kad task predje u Done - vidi napomenu
-        // u Programu.cs/summary-ju o tome zasto su samo UpdateStatus i Reassign async, ne ceo repo.
         public async System.Threading.Tasks.Task<TaskDisplayDTO?> UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == taskId);
@@ -105,8 +101,7 @@ namespace WorkPackageService.Data
 
             if (newStatus == TaskStatus.Done)
             {
-                // Ovaj task je blokirao ove taskove (Dependency.BlockerTaskId == taskId) - sad
-                // kad je zavrsen, obavesti assignee-e odblokiranih taskova (ako imaju dodeljenu osobu).
+                
                 var unblocked = _context.Dependencies
                     .Where(d => d.BlockerTaskId == taskId)
                     .Join(_context.Tasks, d => d.TaskId, t => t.TaskId, (d, t) => new { t.TaskId, t.AssigneeId })
@@ -127,9 +122,7 @@ namespace WorkPackageService.Data
             return _mapper.Map<TaskDisplayDTO>(entity);
         }
 
-        // Premesta task u drugi WorkPackage. Ako task ima Dependency zapise (kao blokirani
-        // ili kao blokirajuci), premestanje se i dalje izvrsava, ali se vraca upozorenje
-        // umesto tihe izmene - pozivajuci sloj (kontroler) odlucuje kako da ga prikaze.
+      
         public TaskMoveResultDTO? MoveToWorkPackage(Guid taskId, Guid newWorkPackageId)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == taskId);
@@ -152,7 +145,7 @@ namespace WorkPackageService.Data
             };
         }
 
-        // Vraca i staru i novu vrednost AssigneeId, i obavestava obe strane preko Notification servisa.
+        
         public async System.Threading.Tasks.Task<TaskReassignResultDTO?> Reassign(Guid taskId, Guid newAssigneeId)
         {
             var entity = _context.Tasks.FirstOrDefault(t => t.TaskId == taskId);

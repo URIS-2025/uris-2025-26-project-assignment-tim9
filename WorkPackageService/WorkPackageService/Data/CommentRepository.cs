@@ -52,7 +52,7 @@ namespace WorkPackageService.Data
             return _mapper.Map<CommentDisplayDTO>(entity);
         }
 
-        // Autor komentara je jedini koji moze da ga izmeni.
+   
         public CommentDisplayDTO? Update(Guid commentId, Guid callerId, CommentUpdateDTO dto)
         {
             var entity = _context.Comments.FirstOrDefault(c => c.CommentId == commentId);
@@ -66,7 +66,7 @@ namespace WorkPackageService.Data
             return _mapper.Map<CommentDisplayDTO>(entity);
         }
 
-        // Autor komentara je jedini koji moze da ga obrise.
+   
         public bool Delete(Guid commentId, Guid callerId)
         {
             var entity = _context.Comments.FirstOrDefault(c => c.CommentId == commentId);

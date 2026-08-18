@@ -8,7 +8,7 @@ using WorkPackageService.ServiceCalls.Project;
 
 namespace WorkPackageService.Controllers
 {
-    //[Authorize]
+   
     [ApiController]
     [Route("api/[controller]")]
     public class WorkPackageController : ControllerBase

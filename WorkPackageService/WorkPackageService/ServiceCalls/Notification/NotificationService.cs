@@ -11,10 +11,7 @@ namespace WorkPackageService.ServiceCalls.Notification
             _logger = logger;
         }
 
-        // Pretpostavljeni ugovor sa Notification servisom: POST /notifications sa telom
-        // { userId, message, type }. Ovo NIJE potvrdjen API - treba uskladiti sa kolegom
-        // koji radi Notification servis cim definise tacan format (ruta, imena polja, itd).
-        // Poziv nikad ne baca dalje - repository ne sme da padne zbog notifikacije koja ne uspe.
+        
         public async Task<bool> SendNotificationAsync(Guid userId, string message, string type)
         {
             try

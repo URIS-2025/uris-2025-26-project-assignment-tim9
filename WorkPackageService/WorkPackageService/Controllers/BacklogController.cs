@@ -6,7 +6,7 @@ using WorkPackageService.Models.DTO.BacklogDTOs;
 
 namespace WorkPackageService.Controllers
 {
-    //[Authorize]
+ 
     [ApiController]
     [Route("api/[controller]")]
     public class BacklogController : ControllerBase

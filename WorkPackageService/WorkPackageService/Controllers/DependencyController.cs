@@ -6,7 +6,7 @@ using WorkPackageService.Models.DTO.DependencyDTOs;
 
 namespace WorkPackageService.Controllers
 {
-    //[Authorize]
+  
     [ApiController]
     [Route("api/[controller]")]
     public class DependencyController : ControllerBase

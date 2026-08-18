@@ -28,18 +28,17 @@ builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 
 builder.Services.AddHttpClient<INotificationService, NotificationService>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:NotificationService"]
-        ?? "http://localhost:5100/");
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:NotificationService"]);
 });
 
 builder.Services.AddHttpClient<IProjectService, ProjectService>(client =>
 {
-    client.BaseAddress = new Uri("http://project-service-url/"); 
+    client.BaseAddress = new Uri(builder.Configuration["ServiceUrls:ProjectService"]);
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
