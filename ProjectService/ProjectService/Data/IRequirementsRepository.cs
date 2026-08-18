@@ -6,11 +6,11 @@ namespace ProjectService.Data
     public interface IRequirementsRepository
     {
         IEnumerable<RequirementsDto> GetRequirements();
-        IEnumerable<RequirementsDto> GetRequirementsByProjectId(Guid ProjectId);
-        RequirementsDto GetRequirementById(Guid RequirementId);
+        IEnumerable<RequirementsDto> GetRequirementsByProjectId(Guid projectId);
+        RequirementsDto GetRequirementById(Guid requirementId);
         RequirementsConfirmationDto CreateRequirement(RequirementsCreationDto requirement);
-        RequirementsConfirmationDto UpdateRequirement(RequirementsUpdateDto requirement);
-        void DeleteRequirement(Guid RequirementId);
+        RequirementsConfirmationDto? UpdateRequirement(RequirementsUpdateDto requirement);
+        void DeleteRequirement(Guid requirementId);
         bool SaveChanges();
     }
 }

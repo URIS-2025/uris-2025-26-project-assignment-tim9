@@ -30,10 +30,10 @@ namespace ProjectService.Data
             return result;
         }
 
-        public IEnumerable<MilestoneDto> GetMilestonesByProjectId(Guid ProjectId)
+        public IEnumerable<MilestoneDto> GetMilestonesByProjectId(Guid projectId)
         {
             var milestones = _context.Milestones
-                .Where(m => m.ProjectId == ProjectId)
+                .Where(m => m.ProjectId == projectId)
                 .ToList();
 
             var result = new List<MilestoneDto>();
@@ -46,10 +46,10 @@ namespace ProjectService.Data
             return result;
         }
 
-        public MilestoneDto GetMilestoneById(Guid MilestoneId)
+        public MilestoneDto GetMilestoneById(Guid milestoneId)
         {
             var milestone = _context.Milestones
-                .FirstOrDefault(m => m.MilestoneId == MilestoneId);
+                .FirstOrDefault(m => m.MilestoneId == milestoneId);
 
             if (milestone == null)
                 return null;
@@ -77,28 +77,30 @@ namespace ProjectService.Data
             };
         }
 
-        public MilestoneConfirmationDto UpdateMilestone(MilestoneUpdateDto milestoneDto)
+        public MilestoneConfirmationDto? UpdateMilestone(MilestoneUpdateDto milestoneDto)
         {
             var existing = _context.Milestones
                 .FirstOrDefault(m => m.MilestoneId == milestoneDto.MilestoneId);
-            if (existing != null)
-            {
-                existing.ProjectId = milestoneDto.ProjectId;
-                existing.ExpectedDate = milestoneDto.ExpectedDate;
-                _context.SaveChanges();
-            }
+
+            if (existing == null)
+                return null;
+
+            existing.ProjectId = milestoneDto.ProjectId;
+            existing.ExpectedDate = milestoneDto.ExpectedDate;
+            _context.SaveChanges();
+
             return new MilestoneConfirmationDto
             {
-                MilestoneId = milestoneDto.MilestoneId,
-                ProjectId = milestoneDto.ProjectId,
-                ExpectedDate = milestoneDto.ExpectedDate
+                MilestoneId = existing.MilestoneId,
+                ProjectId = existing.ProjectId,
+                ExpectedDate = existing.ExpectedDate
             };
         }
 
-        public void DeleteMilestone(Guid MilestoneId)
+        public void DeleteMilestone(Guid milestoneId)
         {
             var milestone = _context.Milestones
-                .FirstOrDefault(m => m.MilestoneId == MilestoneId);
+                .FirstOrDefault(m => m.MilestoneId == milestoneId);
 
             if (milestone != null)
             {

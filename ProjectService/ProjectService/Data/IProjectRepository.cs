@@ -10,10 +10,10 @@ namespace ProjectService.Data
         IEnumerable<ProjectDto> GetProjectsByStatus(ProjectStatus status);
         IEnumerable<ProjectDto> GetProjectsByMemberId(Guid memberId);
         IEnumerable<ProjectDto> GetProjectsByUserId(Guid userId);
-        ProjectDto GetProjectById(Guid ProjectId);
+        ProjectDto GetProjectById(Guid projectId);
         ProjectConfirmationDto CreateProject(ProjectCreationDto project);
-        ProjectConfirmationDto UpdateProject(ProjectUpdateDto project);
-        void DeleteProject(Guid ProjectId);
+        ProjectConfirmationDto? UpdateProject(ProjectUpdateDto project);
+        void DeleteProject(Guid projectId);
         bool SaveChanges();
     }
 }

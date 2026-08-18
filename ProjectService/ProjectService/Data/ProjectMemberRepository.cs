@@ -30,10 +30,10 @@ namespace ProjectService.Data
             return result;
         }
 
-        public IEnumerable<ProjectMemberDto> GetMembersByProjectId(Guid ProjectId)
+        public IEnumerable<ProjectMemberDto> GetMembersByProjectId(Guid projectId)
         {
             var members = _context.ProjectMembers
-                .Where(pm => pm.ProjectId == ProjectId)
+                .Where(pm => pm.ProjectId == projectId)
                 .ToList();
 
             var result = new List<ProjectMemberDto>();
@@ -46,10 +46,10 @@ namespace ProjectService.Data
             return result;
         }
 
-        public ProjectMemberDto GetProjectMemberById(Guid ProjectMemberId)
+        public ProjectMemberDto GetProjectMemberById(Guid projectMemberId)
         {
             var member = _context.ProjectMembers
-                .FirstOrDefault(pm => pm.ProjectMemberId == ProjectMemberId);
+                .FirstOrDefault(pm => pm.ProjectMemberId == projectMemberId);
 
             if (member == null)
                 return null;
@@ -81,32 +81,34 @@ namespace ProjectService.Data
             };
         }
 
-        public ProjectMemberConfirmationDto UpdateProjectMember(ProjectMemberUpdateDto projectMemberDto)
+        public ProjectMemberConfirmationDto? UpdateProjectMember(ProjectMemberUpdateDto projectMemberDto)
         {
             var existing = _context.ProjectMembers
                 .FirstOrDefault(pm => pm.ProjectMemberId == projectMemberDto.ProjectMemberId);
-            if (existing != null)
-            {
-                existing.ProjectId = projectMemberDto.ProjectId;
-                existing.UserId = projectMemberDto.UserId;
-                existing.JoinedAt = projectMemberDto.JoinedAt;
-                existing.Status = projectMemberDto.Status;
-                _context.SaveChanges();
-            }
+
+            if (existing == null)
+                return null;
+
+            existing.ProjectId = projectMemberDto.ProjectId;
+            existing.UserId = projectMemberDto.UserId;
+            existing.JoinedAt = projectMemberDto.JoinedAt;
+            existing.Status = projectMemberDto.Status;
+            _context.SaveChanges();
+
             return new ProjectMemberConfirmationDto
             {
-                ProjectMemberId = projectMemberDto.ProjectMemberId,
-                ProjectId = projectMemberDto.ProjectId,
-                UserId = projectMemberDto.UserId,
-                JoinedAt = projectMemberDto.JoinedAt,
-                Status = projectMemberDto.Status
+                ProjectMemberId = existing.ProjectMemberId,
+                ProjectId = existing.ProjectId,
+                UserId = existing.UserId,
+                JoinedAt = existing.JoinedAt,
+                Status = existing.Status
             };
         }
 
-        public void DeleteProjectMember(Guid ProjectMemberId)
+        public void DeleteProjectMember(Guid projectMemberId)
         {
             var member = _context.ProjectMembers
-                .FirstOrDefault(pm => pm.ProjectMemberId == ProjectMemberId);
+                .FirstOrDefault(pm => pm.ProjectMemberId == projectMemberId);
 
             if (member != null)
             {

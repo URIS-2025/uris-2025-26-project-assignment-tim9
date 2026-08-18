@@ -78,6 +78,24 @@ namespace ProjectService.Context
                     Description = "Initial project requirements"
                 }
             );
+
+            builder.Entity<Milestone>()
+                .HasOne<Project>()
+                .WithMany()
+                .HasForeignKey(m => m.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<ProjectMember>()
+                .HasOne<Project>()
+                .WithMany()
+                .HasForeignKey(pm => pm.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<Requirement>()
+                .HasOne<Project>()
+                .WithMany()
+                .HasForeignKey(r => r.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

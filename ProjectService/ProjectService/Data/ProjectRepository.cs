@@ -46,9 +46,9 @@ namespace ProjectService.Data
             return result;
         }
 
-        public ProjectDto GetProjectById(Guid ProjectId)
+        public ProjectDto GetProjectById(Guid projectId)
         {
-            var project = _context.Projects.FirstOrDefault(p => p.ProjectId == ProjectId);
+            var project = _context.Projects.FirstOrDefault(p => p.ProjectId == projectId);
             if (project == null)
                 return null;
 
@@ -62,7 +62,7 @@ namespace ProjectService.Data
                 ProjectId = Guid.NewGuid(),
                 Name = projectDto.Name,
                 Budget = projectDto.Budget,
-                Status = projectDto.Status,
+                Status = projectDto.Status!.Value,
                 Deadline = projectDto.Deadline,
                 CreatedAt = DateTime.UtcNow
             };
@@ -81,33 +81,33 @@ namespace ProjectService.Data
             };
         }
 
-        public ProjectConfirmationDto UpdateProject(ProjectUpdateDto projectDto)
+        public ProjectConfirmationDto? UpdateProject(ProjectUpdateDto projectDto)
         {
             var existing = _context.Projects.FirstOrDefault(p => p.ProjectId == projectDto.ProjectId);
 
-            if (existing != null)
-            {
-                existing.Name = projectDto.Name;
-                existing.Budget = projectDto.Budget;
-                existing.Status = projectDto.Status;
-                existing.Deadline = projectDto.Deadline;
-                _context.SaveChanges();
-            }
+            if (existing == null)
+                return null;
+
+            existing.Name = projectDto.Name;
+            existing.Budget = projectDto.Budget;
+            existing.Status = projectDto.Status!.Value;
+            existing.Deadline = projectDto.Deadline;
+            _context.SaveChanges();
 
             return new ProjectConfirmationDto
             {
-                ProjectId = projectDto.ProjectId,
-                Name = projectDto.Name,
-                Budget = projectDto.Budget,
-                Status = projectDto.Status,
-                Deadline = projectDto.Deadline,
-                CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow
+                ProjectId = existing.ProjectId,
+                Name = existing.Name,
+                Budget = existing.Budget,
+                Status = existing.Status,
+                Deadline = existing.Deadline,
+                CreatedAt = existing.CreatedAt
             };
         }
 
-        public void DeleteProject(Guid ProjectId)
+        public void DeleteProject(Guid projectId)
         {
-            var project = _context.Projects.FirstOrDefault(p => p.ProjectId == ProjectId);
+            var project = _context.Projects.FirstOrDefault(p => p.ProjectId == projectId);
             if (project != null)
             {
                 _context.Remove(project);

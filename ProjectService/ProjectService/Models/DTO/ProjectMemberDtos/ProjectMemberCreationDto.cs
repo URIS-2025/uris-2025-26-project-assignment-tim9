@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using ProjectService.Validation;
+﻿using ProjectService.Validation;
 
 namespace ProjectService.Models.DTO.ProjectMemberDtos
 {
@@ -10,9 +9,5 @@ namespace ProjectService.Models.DTO.ProjectMemberDtos
 
         [NotEmptyGuid]
         public Guid UserId { get; set; }
-
-        public DateTime JoinedAt { get; set; }
-
-        public bool Status { get; set; }
     }
 }

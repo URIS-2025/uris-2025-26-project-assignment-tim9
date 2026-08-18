@@ -31,20 +31,20 @@ namespace ProjectService.Controllers
         }
 
         // GET milestone-ovi po projektu
-        [HttpGet("project/{ProjectId}")]
-        public ActionResult<IEnumerable<MilestoneDto>> GetMilestonesByProjectId(Guid ProjectId)
+        [HttpGet("project/{projectId}")]
+        public ActionResult<IEnumerable<MilestoneDto>> GetMilestonesByProjectId(Guid projectId)
         {
-            var milestones = _milestoneRepository.GetMilestonesByProjectId(ProjectId);
+            var milestones = _milestoneRepository.GetMilestonesByProjectId(projectId);
             if (milestones == null || !milestones.Any())
                 return NoContent();
             return Ok(milestones);
         }
 
         // GET milestone po ID
-        [HttpGet("{MilestoneId}")]
-        public ActionResult<MilestoneDto> GetMilestoneById(Guid MilestoneId)
+        [HttpGet("{milestoneId}")]
+        public ActionResult<MilestoneDto> GetMilestoneById(Guid milestoneId)
         {
-            var milestone = _milestoneRepository.GetMilestoneById(MilestoneId);
+            var milestone = _milestoneRepository.GetMilestoneById(milestoneId);
             if (milestone == null)
                 return NotFound();
             return Ok(milestone);
@@ -71,10 +71,9 @@ namespace ProjectService.Controllers
         {
             try
             {
-                var existing = _milestoneRepository.GetMilestoneById(milestoneDto.MilestoneId);
-                if (existing == null)
-                    return NotFound();
                 var updated = _milestoneRepository.UpdateMilestone(milestoneDto);
+                if (updated == null)
+                    return NotFound();
                 return Ok(updated);
             }
             catch
@@ -84,15 +83,15 @@ namespace ProjectService.Controllers
         }
 
         // DELETE 
-        [HttpDelete("{MilestoneId}")]
-        public IActionResult DeleteMilestone(Guid MilestoneId)
+        [HttpDelete("{milestoneId}")]
+        public IActionResult DeleteMilestone(Guid milestoneId)
         {
             try
             {
-                var milestone = _milestoneRepository.GetMilestoneById(MilestoneId);
+                var milestone = _milestoneRepository.GetMilestoneById(milestoneId);
                 if (milestone == null)
                     return NotFound();
-                _milestoneRepository.DeleteMilestone(MilestoneId);
+                _milestoneRepository.DeleteMilestone(milestoneId);
                 return NoContent();
             }
             catch

@@ -32,20 +32,20 @@ namespace ProjectService.Controllers
         }
 
         // GET zahtevi po projektu
-        [HttpGet("project/{ProjectId}")]
-        public ActionResult<IEnumerable<RequirementsDto>> GetRequirementsByProjectId(Guid ProjectId)
+        [HttpGet("project/{projectId}")]
+        public ActionResult<IEnumerable<RequirementsDto>> GetRequirementsByProjectId(Guid projectId)
         {
-            var requirements = _requirementsRepository.GetRequirementsByProjectId(ProjectId);
+            var requirements = _requirementsRepository.GetRequirementsByProjectId(projectId);
             if (requirements == null || !requirements.Any())
                 return NoContent();
             return Ok(requirements);
         }
 
         // GET zahtev po ID
-        [HttpGet("{RequirementId}")]
-        public ActionResult<RequirementsDto> GetRequirementById(Guid RequirementId)
+        [HttpGet("{requirementId}")]
+        public ActionResult<RequirementsDto> GetRequirementById(Guid requirementId)
         {
-            var requirement = _requirementsRepository.GetRequirementById(RequirementId);
+            var requirement = _requirementsRepository.GetRequirementById(requirementId);
             if (requirement == null)
                 return NotFound();
             return Ok(requirement);
@@ -72,10 +72,9 @@ namespace ProjectService.Controllers
         {
             try
             {
-                var existing = _requirementsRepository.GetRequirementById(requirementDto.RequirementId);
-                if (existing == null)
-                    return NotFound();
                 var updated = _requirementsRepository.UpdateRequirement(requirementDto);
+                if (updated == null)
+                    return NotFound();
                 return Ok(updated);
             }
             catch
@@ -85,15 +84,15 @@ namespace ProjectService.Controllers
         }
 
         // DELETE obrisi zahtev
-        [HttpDelete("{RequirementId}")]
-        public IActionResult DeleteRequirement(Guid RequirementId)
+        [HttpDelete("{requirementId}")]
+        public IActionResult DeleteRequirement(Guid requirementId)
         {
             try
             {
-                var requirement = _requirementsRepository.GetRequirementById(RequirementId);
+                var requirement = _requirementsRepository.GetRequirementById(requirementId);
                 if (requirement == null)
                     return NotFound();
-                _requirementsRepository.DeleteRequirement(RequirementId);
+                _requirementsRepository.DeleteRequirement(requirementId);
                 return NoContent();
             }
             catch

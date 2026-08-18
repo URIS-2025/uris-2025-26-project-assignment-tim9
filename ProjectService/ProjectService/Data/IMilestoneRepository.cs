@@ -6,11 +6,11 @@ namespace ProjectService.Data
     public interface IMilestoneRepository
     {
         IEnumerable<MilestoneDto> GetMilestones();
-        IEnumerable<MilestoneDto> GetMilestonesByProjectId(Guid ProjectId);
-        MilestoneDto GetMilestoneById(Guid MilestoneId);
+        IEnumerable<MilestoneDto> GetMilestonesByProjectId(Guid projectId);
+        MilestoneDto GetMilestoneById(Guid milestoneId);
         MilestoneConfirmationDto CreateMilestone(MilestoneCreationDto milestone);
-        MilestoneConfirmationDto UpdateMilestone(MilestoneUpdateDto milestone);
-        void DeleteMilestone(Guid MilestoneId);
+        MilestoneConfirmationDto? UpdateMilestone(MilestoneUpdateDto milestone);
+        void DeleteMilestone(Guid milestoneId);
         bool SaveChanges();
     }
 }

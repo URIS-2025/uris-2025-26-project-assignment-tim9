@@ -30,10 +30,10 @@ namespace ProjectService.Data
             return result;
         }
 
-        public IEnumerable<RequirementsDto> GetRequirementsByProjectId(Guid ProjectId)
+        public IEnumerable<RequirementsDto> GetRequirementsByProjectId(Guid projectId)
         {
             var requirements = _context.Requirements
-                .Where(r => r.ProjectId == ProjectId)
+                .Where(r => r.ProjectId == projectId)
                 .ToList();
 
             var result = new List<RequirementsDto>();
@@ -46,10 +46,10 @@ namespace ProjectService.Data
             return result;
         }
 
-        public RequirementsDto GetRequirementById(Guid RequirementId)
+        public RequirementsDto GetRequirementById(Guid requirementId)
         {
             var requirement = _context.Requirements
-                .FirstOrDefault(r => r.RequirementId == RequirementId);
+                .FirstOrDefault(r => r.RequirementId == requirementId);
 
             if (requirement == null)
                 return null;
@@ -77,28 +77,30 @@ namespace ProjectService.Data
             };
         }
 
-        public RequirementsConfirmationDto UpdateRequirement(RequirementsUpdateDto requirementDto)
+        public RequirementsConfirmationDto? UpdateRequirement(RequirementsUpdateDto requirementDto)
         {
             var existing = _context.Requirements
                 .FirstOrDefault(r => r.RequirementId == requirementDto.RequirementId);
-            if (existing != null)
-            {
-                existing.ProjectId = requirementDto.ProjectId;
-                existing.Description = requirementDto.Description;
-                _context.SaveChanges();
-            }
+
+            if (existing == null)
+                return null;
+
+            existing.ProjectId = requirementDto.ProjectId;
+            existing.Description = requirementDto.Description;
+            _context.SaveChanges();
+
             return new RequirementsConfirmationDto
             {
-                RequirementId = requirementDto.RequirementId,
-                ProjectId = requirementDto.ProjectId,
-                Description = requirementDto.Description
+                RequirementId = existing.RequirementId,
+                ProjectId = existing.ProjectId,
+                Description = existing.Description
             };
         }
 
-        public void DeleteRequirement(Guid RequirementId)
+        public void DeleteRequirement(Guid requirementId)
         {
             var requirement = _context.Requirements
-                .FirstOrDefault(r => r.RequirementId == RequirementId);
+                .FirstOrDefault(r => r.RequirementId == requirementId);
 
             if (requirement != null)
             {

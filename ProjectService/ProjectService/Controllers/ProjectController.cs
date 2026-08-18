@@ -64,10 +64,10 @@ namespace ProjectService.Controllers
         }
 
         // GET projekat po ID
-        [HttpGet("{ProjectId}")]
-        public ActionResult<ProjectDto> GetProjectById(Guid ProjectId)
+        [HttpGet("{projectId}")]
+        public ActionResult<ProjectDto> GetProjectById(Guid projectId)
         {
-            var project = _projectRepository.GetProjectById(ProjectId);
+            var project = _projectRepository.GetProjectById(projectId);
             if (project == null)
                 return NotFound();
             return Ok(project);
@@ -94,10 +94,9 @@ namespace ProjectService.Controllers
         {
             try
             {
-                var existing = _projectRepository.GetProjectById(projectDto.ProjectId);
-                if (existing == null)
-                    return NotFound();
                 var updated = _projectRepository.UpdateProject(projectDto);
+                if (updated == null)
+                    return NotFound();
                 return Ok(updated);
             }
             catch
@@ -107,15 +106,15 @@ namespace ProjectService.Controllers
         }
 
         // DELETE obrisi projekat
-        [HttpDelete("{ProjectId}")]
-        public IActionResult DeleteProject(Guid ProjectId)
+        [HttpDelete("{projectId}")]
+        public IActionResult DeleteProject(Guid projectId)
         {
             try
             {
-                var project = _projectRepository.GetProjectById(ProjectId);
+                var project = _projectRepository.GetProjectById(projectId);
                 if (project == null)
                     return NotFound();
-                _projectRepository.DeleteProject(ProjectId);
+                _projectRepository.DeleteProject(projectId);
                 return NoContent();
             }
             catch

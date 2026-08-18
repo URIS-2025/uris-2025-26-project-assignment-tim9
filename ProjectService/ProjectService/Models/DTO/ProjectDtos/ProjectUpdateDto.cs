@@ -17,7 +17,7 @@ namespace ProjectService.Models.DTO.ProjectDtos
         public int Budget { get; set; }
 
         [Required]
-        public ProjectStatus Status { get; set; }
+        public ProjectStatus? Status { get; set; }
 
         [FutureOrNullDate]
         public DateTime? Deadline { get; set; }

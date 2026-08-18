@@ -33,20 +33,20 @@ namespace ProjectService.Controllers
         }
 
         // GET clanovi po projektu
-        [HttpGet("project/{ProjectId}")]
-        public ActionResult<IEnumerable<ProjectMemberDto>> GetMembersByProjectId(Guid ProjectId)
+        [HttpGet("project/{projectId}")]
+        public ActionResult<IEnumerable<ProjectMemberDto>> GetMembersByProjectId(Guid projectId)
         {
-            var members = _projectMemberRepository.GetMembersByProjectId(ProjectId);
+            var members = _projectMemberRepository.GetMembersByProjectId(projectId);
             if (members == null || !members.Any())
                 return NoContent();
             return Ok(members);
         }
 
         // GET clan po ID
-        [HttpGet("{ProjectMemberId}")]
-        public ActionResult<ProjectMemberDto> GetProjectMemberById(Guid ProjectMemberId)
+        [HttpGet("{projectMemberId}")]
+        public ActionResult<ProjectMemberDto> GetProjectMemberById(Guid projectMemberId)
         {
-            var member = _projectMemberRepository.GetProjectMemberById(ProjectMemberId);
+            var member = _projectMemberRepository.GetProjectMemberById(projectMemberId);
             if (member == null)
                 return NotFound();
             return Ok(member);
@@ -73,10 +73,9 @@ namespace ProjectService.Controllers
         {
             try
             {
-                var existing = _projectMemberRepository.GetProjectMemberById(projectMemberDto.ProjectMemberId);
-                if (existing == null)
-                    return NotFound();
                 var updated = _projectMemberRepository.UpdateProjectMember(projectMemberDto);
+                if (updated == null)
+                    return NotFound();
                 return Ok(updated);
             }
             catch
@@ -86,15 +85,15 @@ namespace ProjectService.Controllers
         }
 
         // DELETE obrisi clana
-        [HttpDelete("{ProjectMemberId}")]
-        public IActionResult DeleteProjectMember(Guid ProjectMemberId)
+        [HttpDelete("{projectMemberId}")]
+        public IActionResult DeleteProjectMember(Guid projectMemberId)
         {
             try
             {
-                var member = _projectMemberRepository.GetProjectMemberById(ProjectMemberId);
+                var member = _projectMemberRepository.GetProjectMemberById(projectMemberId);
                 if (member == null)
                     return NotFound();
-                _projectMemberRepository.DeleteProjectMember(ProjectMemberId);
+                _projectMemberRepository.DeleteProjectMember(projectMemberId);
                 return NoContent();
             }
             catch
