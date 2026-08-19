@@ -1,4 +1,5 @@
 using PaymentService.Context;
+using PaymentService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 
 builder.Services.AddDbContext<PaymentContext>();
+
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IInvoiceItemRepository, InvoiceItemRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 var app = builder.Build();
 
