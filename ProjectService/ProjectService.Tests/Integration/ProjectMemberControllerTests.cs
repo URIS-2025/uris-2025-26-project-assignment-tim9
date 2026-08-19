@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using ProjectService.Models.DTO.ProjectMemberDtos;
@@ -17,6 +18,8 @@ namespace ProjectService.Tests.Integration
         {
             _factory = new CustomWebApplicationFactory();
             _client = _factory.CreateClient();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _factory.GenerateJwtToken(role: "Admin"));
         }
 
         public void Dispose()

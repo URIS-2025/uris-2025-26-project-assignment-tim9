@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using ProjectService.Models.DTO.ProjectDtos;
@@ -18,12 +19,20 @@ namespace ProjectService.Tests.Integration
         {
             _factory = new CustomWebApplicationFactory();
             _client = _factory.CreateClient();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _factory.GenerateJwtToken(role: "ProjectManager"));
         }
 
         public void Dispose()
         {
             _client.Dispose();
             _factory.Dispose();
+        }
+
+        private void UseRole(string role)
+        {
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _factory.GenerateJwtToken(role: role));
         }
 
         private static ProjectCreationDto ValidCreationDto() => new ProjectCreationDto
@@ -235,6 +244,7 @@ namespace ProjectService.Tests.Integration
             var created = await createResponse.Content.ReadFromJsonAsync<ProjectConfirmationDto>();
 
             // Act
+            UseRole("Admin"); // DELETE zahteva iskljucivo Admin
             var response = await _client.DeleteAsync($"/api/project/{created!.ProjectId}");
 
             // Assert
@@ -248,6 +258,7 @@ namespace ProjectService.Tests.Integration
         public async Task DeleteProject_WhenProjectDoesNotExist_ReturnsNotFound()
         {
             // Act
+            UseRole("Admin"); // DELETE zahteva iskljucivo Admin
             var response = await _client.DeleteAsync($"/api/project/{Guid.NewGuid()}");
 
             // Assert

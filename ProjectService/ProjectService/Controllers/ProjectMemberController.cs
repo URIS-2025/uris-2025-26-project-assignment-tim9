@@ -7,7 +7,7 @@ using ProjectService.Models.DTO.ProjectMemberDtos;
 
 namespace ProjectService.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProjectMemberController : ControllerBase
@@ -54,6 +54,7 @@ namespace ProjectService.Controllers
 
         // POST kreiraj clana
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public ActionResult<ProjectMemberConfirmationDto> CreateProjectMember([FromBody] ProjectMemberCreationDto projectMemberDto)
         {
             try
@@ -69,6 +70,7 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj clana
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public ActionResult<ProjectMemberConfirmationDto> UpdateProjectMember([FromBody] ProjectMemberUpdateDto projectMemberDto)
         {
             try
@@ -86,6 +88,7 @@ namespace ProjectService.Controllers
 
         // DELETE obrisi clana
         [HttpDelete("{projectMemberId}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult DeleteProjectMember(Guid projectMemberId)
         {
             try

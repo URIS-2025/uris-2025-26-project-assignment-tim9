@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectService.Data;
 using ProjectService.Models.DTO.MilestoneDtos;
 
 namespace ProjectService.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class MilestoneController : ControllerBase
@@ -52,6 +53,7 @@ namespace ProjectService.Controllers
 
         // POST
         [HttpPost]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<MilestoneConfirmationDto> CreateMilestone([FromBody] MilestoneCreationDto milestoneDto)
         {
             try
@@ -65,8 +67,9 @@ namespace ProjectService.Controllers
             }
         }
 
-        // PUT 
+        // PUT
         [HttpPut]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<MilestoneConfirmationDto> UpdateMilestone([FromBody] MilestoneUpdateDto milestoneDto)
         {
             try
@@ -82,8 +85,9 @@ namespace ProjectService.Controllers
             }
         }
 
-        // DELETE 
+        // DELETE
         [HttpDelete("{milestoneId}")]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public IActionResult DeleteMilestone(Guid milestoneId)
         {
             try

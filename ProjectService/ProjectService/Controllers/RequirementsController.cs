@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectService.Data;
 using ProjectService.Models;
@@ -6,7 +7,7 @@ using ProjectService.Models.DTO.RequirementsDtos;
 
 namespace ProjectService.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class RequirementsController : ControllerBase
@@ -53,6 +54,7 @@ namespace ProjectService.Controllers
 
         // POST kreiraj zahtev
         [HttpPost]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<RequirementsConfirmationDto> CreateRequirement([FromBody] RequirementsCreationDto requirementDto)
         {
             try
@@ -68,6 +70,7 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj zahtev
         [HttpPut]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<RequirementsConfirmationDto> UpdateRequirement([FromBody] RequirementsUpdateDto requirementDto)
         {
             try
@@ -85,6 +88,7 @@ namespace ProjectService.Controllers
 
         // DELETE obrisi zahtev
         [HttpDelete("{requirementId}")]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public IActionResult DeleteRequirement(Guid requirementId)
         {
             try

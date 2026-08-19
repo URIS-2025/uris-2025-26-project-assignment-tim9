@@ -8,7 +8,7 @@ using ProjectService.Models.Enums;
 
 namespace ProjectService.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class ProjectController : ControllerBase
@@ -75,6 +75,7 @@ namespace ProjectService.Controllers
 
         // POST kreiraj projekat
         [HttpPost]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<ProjectConfirmationDto> CreateProject([FromBody] ProjectCreationDto projectDto)
         {
             try
@@ -90,6 +91,7 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj projekat
         [HttpPut]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<ProjectConfirmationDto> UpdateProject([FromBody] ProjectUpdateDto projectDto)
         {
             try
@@ -107,6 +109,7 @@ namespace ProjectService.Controllers
 
         // DELETE obrisi projekat
         [HttpDelete("{projectId}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult DeleteProject(Guid projectId)
         {
             try
