@@ -39,7 +39,7 @@
         }
     },
     "ServiceUrls": {
-        "NotificationService": "http://localhost:5100/",
+        "NotificationService": "http://localhost:5000/",
         "ProjectService": "https://localhost:7065/"
     }
 }
