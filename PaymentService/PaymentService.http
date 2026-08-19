@@ -1,0 +1,4 @@
+@PaymentService_HostAddress = https://localhost:7090
+
+### Provera da li servis radi
+GET {{PaymentService_HostAddress}}/swagger/index.html
