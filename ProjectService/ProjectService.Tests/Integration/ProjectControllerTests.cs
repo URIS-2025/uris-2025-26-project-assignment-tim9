@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using ProjectService.Models.DTO.ProjectDtos;
+using ProjectService.Models.DTO.ProjectMemberDtos;
 using ProjectService.Models.Enums;
 using Xunit;
 
@@ -67,6 +68,42 @@ namespace ProjectService.Tests.Integration
             var projects = await response.Content.ReadFromJsonAsync<ProjectDto[]>();
             Assert.NotNull(projects);
             Assert.Single(projects!);
+        }
+
+        [Fact]
+        public async Task GetProjectsByUserId_ReturnsOnlyProjectsForGivenUser()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var otherUserId = Guid.NewGuid();
+
+            var projectAResponse = await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+            var projectA = await projectAResponse.Content.ReadFromJsonAsync<ProjectConfirmationDto>();
+
+            var projectBResponse = await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+            var projectB = await projectBResponse.Content.ReadFromJsonAsync<ProjectConfirmationDto>();
+
+            UseRole("Admin"); // ProjectMember POST zahteva Admin
+            await _client.PostAsJsonAsync("/api/projectmember", new ProjectMemberCreationDto
+            {
+                ProjectId = projectA!.ProjectId,
+                UserId = userId
+            });
+            await _client.PostAsJsonAsync("/api/projectmember", new ProjectMemberCreationDto
+            {
+                ProjectId = projectB!.ProjectId,
+                UserId = otherUserId
+            });
+
+            // Act
+            var response = await _client.GetAsync($"/api/project/user/{userId}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var projects = await response.Content.ReadFromJsonAsync<ProjectDto[]>();
+            Assert.NotNull(projects);
+            Assert.Single(projects!);
+            Assert.Equal(projectA.ProjectId, projects![0].ProjectId);
         }
 
         [Fact]

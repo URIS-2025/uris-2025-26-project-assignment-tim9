@@ -47,7 +47,7 @@ namespace ProjectService.Controllers
         {
             var milestone = _milestoneRepository.GetMilestoneById(milestoneId);
             if (milestone == null)
-                return NotFound();
+                return NotFound($"Milestone with ID {milestoneId} not found.");
             return Ok(milestone);
         }
 
@@ -76,7 +76,7 @@ namespace ProjectService.Controllers
             {
                 var updated = _milestoneRepository.UpdateMilestone(milestoneDto);
                 if (updated == null)
-                    return NotFound();
+                    return NotFound($"Milestone with ID {milestoneDto.MilestoneId} not found.");
                 return Ok(updated);
             }
             catch
@@ -94,7 +94,7 @@ namespace ProjectService.Controllers
             {
                 var milestone = _milestoneRepository.GetMilestoneById(milestoneId);
                 if (milestone == null)
-                    return NotFound();
+                    return NotFound($"Milestone with ID {milestoneId} not found.");
                 _milestoneRepository.DeleteMilestone(milestoneId);
                 return NoContent();
             }

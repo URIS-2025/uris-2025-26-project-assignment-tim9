@@ -8,7 +8,6 @@ namespace ProjectService.Data
     {
         IEnumerable<ProjectDto> GetProjects();
         IEnumerable<ProjectDto> GetProjectsByStatus(ProjectStatus status);
-        IEnumerable<ProjectDto> GetProjectsByMemberId(Guid memberId);
         IEnumerable<ProjectDto> GetProjectsByUserId(Guid userId);
         ProjectDto GetProjectById(Guid projectId);
         ProjectConfirmationDto CreateProject(ProjectCreationDto project);

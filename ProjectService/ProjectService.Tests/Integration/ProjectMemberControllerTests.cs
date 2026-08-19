@@ -58,6 +58,8 @@ namespace ProjectService.Tests.Integration
             var members = await response.Content.ReadFromJsonAsync<ProjectMemberDto[]>();
             Assert.NotNull(members);
             Assert.Single(members!);
+            Assert.Equal(FakeUserService.TestUsername, members![0].Username);
+            Assert.Equal(FakeUserService.TestRole, members[0].Role);
         }
 
         [Fact]
@@ -79,6 +81,8 @@ namespace ProjectService.Tests.Integration
             Assert.NotNull(members);
             Assert.Equal(2, members!.Length);
             Assert.All(members, m => Assert.Equal(projectAId, m.ProjectId));
+            Assert.All(members, m => Assert.Equal(FakeUserService.TestUsername, m.Username));
+            Assert.All(members, m => Assert.Equal(FakeUserService.TestRole, m.Role));
         }
 
         [Fact]
@@ -96,6 +100,8 @@ namespace ProjectService.Tests.Integration
             var member = await response.Content.ReadFromJsonAsync<ProjectMemberDto>();
             Assert.NotNull(member);
             Assert.Equal(created.ProjectMemberId, member!.ProjectMemberId);
+            Assert.Equal(FakeUserService.TestUsername, member.Username);
+            Assert.Equal(FakeUserService.TestRole, member.Role);
         }
 
         [Fact]
@@ -146,6 +152,20 @@ namespace ProjectService.Tests.Integration
             // Arrange
             var dto = ValidCreationDto();
             dto.UserId = Guid.Empty; // [NotEmptyGuid]
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/projectmember", dto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateProjectMember_WithNonExistentUser_ReturnsBadRequest()
+        {
+            // Arrange
+            var dto = ValidCreationDto();
+            dto.UserId = FakeUserService.UnknownUserId;
 
             // Act
             var response = await _client.PostAsJsonAsync("/api/projectmember", dto);

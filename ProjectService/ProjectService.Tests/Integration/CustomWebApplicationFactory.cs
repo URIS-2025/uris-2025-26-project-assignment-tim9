@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using ProjectService.Context;
+using ProjectService.ServiceCalls.User;
 
 namespace ProjectService.Tests.Integration
 {
@@ -38,6 +39,13 @@ namespace ProjectService.Tests.Integration
                 {
                     options.UseInMemoryDatabase(_databaseName);
                 });
+
+                var userServiceDescriptor = services.SingleOrDefault(
+                    d => d.ServiceType == typeof(IUserService));
+                if (userServiceDescriptor != null)
+                    services.Remove(userServiceDescriptor);
+
+                services.AddScoped<IUserService, FakeUserService>();
             });
         }
 

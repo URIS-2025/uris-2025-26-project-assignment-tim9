@@ -7,5 +7,7 @@
         public Guid UserId { get; set; }
         public DateTime JoinedAt { get; set; }
         public bool Status { get; set; }
+        public string? Username { get; set; }
+        public string? Role { get; set; }
     }
 }

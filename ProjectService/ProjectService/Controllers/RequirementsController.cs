@@ -48,7 +48,7 @@ namespace ProjectService.Controllers
         {
             var requirement = _requirementsRepository.GetRequirementById(requirementId);
             if (requirement == null)
-                return NotFound();
+                return NotFound($"Requirement with ID {requirementId} not found.");
             return Ok(requirement);
         }
 
@@ -77,7 +77,7 @@ namespace ProjectService.Controllers
             {
                 var updated = _requirementsRepository.UpdateRequirement(requirementDto);
                 if (updated == null)
-                    return NotFound();
+                    return NotFound($"Requirement with ID {requirementDto.RequirementId} not found.");
                 return Ok(updated);
             }
             catch
@@ -95,7 +95,7 @@ namespace ProjectService.Controllers
             {
                 var requirement = _requirementsRepository.GetRequirementById(requirementId);
                 if (requirement == null)
-                    return NotFound();
+                    return NotFound($"Requirement with ID {requirementId} not found.");
                 _requirementsRepository.DeleteRequirement(requirementId);
                 return NoContent();
             }

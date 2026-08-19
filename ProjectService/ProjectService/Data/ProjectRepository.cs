@@ -120,27 +120,6 @@ namespace ProjectService.Data
             return _context.SaveChanges() > 0;
         }
 
-        public IEnumerable<ProjectDto> GetProjectsByMemberId(Guid memberId)
-        {
-            var ProjectIds = _context.ProjectMembers
-                .Where(pm => pm.ProjectMemberId == memberId)
-                .Select(pm => pm.ProjectId)
-                .ToList();
-
-            var projects = _context.Projects
-                .Where(p => ProjectIds.Contains(p.ProjectId))
-                .ToList();
-
-            var result = new List<ProjectDto>();
-            foreach (var project in projects)
-            {
-                var dto = _mapper.Map<ProjectDto>(project);
-                result.Add(dto);
-            }
-
-            return result;
-        }
-
         public IEnumerable<ProjectDto> GetProjectsByUserId(Guid userId)
         {
             var projectIds = _context.ProjectMembers

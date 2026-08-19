@@ -43,16 +43,6 @@ namespace ProjectService.Controllers
             return Ok(projects);
         }
 
-        // GET projekti po clanu
-        [HttpGet("member/{memberId}")]
-        public ActionResult<IEnumerable<ProjectDto>> GetProjectsByMemberId(Guid memberId)
-        {
-            var projects = _projectRepository.GetProjectsByMemberId(memberId);
-            if (projects == null || !projects.Any())
-                return NoContent();
-            return Ok(projects);
-        }
-
         // GET projekti po korisniku
         [HttpGet("user/{userId}")]
         public ActionResult<IEnumerable<ProjectDto>> GetProjectsByUserId(Guid userId)
@@ -69,7 +59,7 @@ namespace ProjectService.Controllers
         {
             var project = _projectRepository.GetProjectById(projectId);
             if (project == null)
-                return NotFound();
+                return NotFound($"Project with ID {projectId} not found.");
             return Ok(project);
         }
 
@@ -98,7 +88,7 @@ namespace ProjectService.Controllers
             {
                 var updated = _projectRepository.UpdateProject(projectDto);
                 if (updated == null)
-                    return NotFound();
+                    return NotFound($"Project with ID {projectDto.ProjectId} not found.");
                 return Ok(updated);
             }
             catch
@@ -116,7 +106,7 @@ namespace ProjectService.Controllers
             {
                 var project = _projectRepository.GetProjectById(projectId);
                 if (project == null)
-                    return NotFound();
+                    return NotFound($"Project with ID {projectId} not found.");
                 _projectRepository.DeleteProject(projectId);
                 return NoContent();
             }

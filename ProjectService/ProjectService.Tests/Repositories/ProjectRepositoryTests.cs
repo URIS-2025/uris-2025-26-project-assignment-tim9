@@ -218,5 +218,34 @@ namespace ProjectService.Tests.Repositories
             Assert.Equal(2, result.Count);
             Assert.All(result, p => Assert.Equal(ProjectStatus.Active, p.Status));
         }
+
+        [Fact]
+        public void GetProjectsByUserId_ReturnsOnlyProjectsForGivenUser()
+        {
+            // Arrange
+            var context = CreateContext();
+
+            var userAId = Guid.NewGuid();
+            var userBId = Guid.NewGuid();
+
+            var projectA = new Project { ProjectId = Guid.NewGuid(), Name = "User A Project", Budget = 100, Status = ProjectStatus.Active, CreatedAt = DateTime.UtcNow };
+            var projectB = new Project { ProjectId = Guid.NewGuid(), Name = "User B Project", Budget = 200, Status = ProjectStatus.Active, CreatedAt = DateTime.UtcNow };
+            context.Projects.AddRange(projectA, projectB);
+
+            context.ProjectMembers.AddRange(
+                new ProjectMember { ProjectMemberId = Guid.NewGuid(), ProjectId = projectA.ProjectId, UserId = userAId, JoinedAt = DateTime.UtcNow, Status = true },
+                new ProjectMember { ProjectMemberId = Guid.NewGuid(), ProjectId = projectB.ProjectId, UserId = userBId, JoinedAt = DateTime.UtcNow, Status = true }
+            );
+            context.SaveChanges();
+
+            var repository = new ProjectRepository(context, CreateMapper());
+
+            // Act
+            var result = repository.GetProjectsByUserId(userAId).ToList();
+
+            // Assert
+            Assert.Single(result);
+            Assert.Equal(projectA.ProjectId, result[0].ProjectId);
+        }
     }
 }
