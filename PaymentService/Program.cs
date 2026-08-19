@@ -1,3 +1,5 @@
+using PaymentService.Context;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -9,6 +11,8 @@ builder.Services.AddSwaggerGen();
 
 //ucitava sve Profile klase iz ovog projekta
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
+
+builder.Services.AddDbContext<PaymentContext>();
 
 var app = builder.Build();
 
