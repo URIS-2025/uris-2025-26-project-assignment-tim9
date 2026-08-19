@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using PaymentService.Context;
 using PaymentService.Data;
 
@@ -5,7 +6,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+//enumi se u JSON-u salju kao tekst ("Unpaid") umesto kao broj (0)
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
