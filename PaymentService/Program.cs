@@ -7,6 +7,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//ucitava sve Profile klase iz ovog projekta
+builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
