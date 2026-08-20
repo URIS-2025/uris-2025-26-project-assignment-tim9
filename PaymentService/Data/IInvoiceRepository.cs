@@ -7,8 +7,8 @@ namespace PaymentService.Data
     {
         IEnumerable<InvoiceDTO> GetInvoices(Guid? projectId = null, InvoiceStatus? status = null);
         InvoiceDTO? GetInvoiceById(Guid invoiceId);
-        InvoiceConfirmationDTO CreateInvoice(InvoiceCreationDTO invoice, Guid issuedByUserId);
-        OperationResult<InvoiceConfirmationDTO> UpdateInvoice(Guid invoiceId, InvoiceUpdateDTO invoice);
+        Task<InvoiceConfirmationDTO> CreateInvoiceAsync(InvoiceCreationDTO invoice, Guid issuedByUserId);
+        Task<OperationResult<InvoiceConfirmationDTO>> UpdateInvoiceAsync(Guid invoiceId, InvoiceUpdateDTO invoice);
         OperationResult<bool> DeleteInvoice(Guid invoiceId);
     }
 }

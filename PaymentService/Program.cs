@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using PaymentService.Context;
 using PaymentService.Data;
+using PaymentService.ServiceCalls.Project;
+using PaymentService.ServiceCalls.User;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,27 @@ builder.Services.AddDbContext<PaymentContext>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IInvoiceItemRepository, InvoiceItemRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
+//adrese servisa dolaze iz appsettings.json, timeout da nas tudji servis ne blokira
+builder.Services.AddHttpClient<IUserService, UserService>((sp, client) =>
+{
+    var baseUrl = sp.GetRequiredService<IConfiguration>()["Services:UserService"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
+builder.Services.AddHttpClient<IProjectService, ProjectService>((sp, client) =>
+{
+    var baseUrl = sp.GetRequiredService<IConfiguration>()["Services:ProjectService"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 var app = builder.Build();
 

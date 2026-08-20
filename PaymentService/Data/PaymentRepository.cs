@@ -4,6 +4,8 @@ using PaymentService.Context;
 using PaymentService.Models;
 using PaymentService.Models.DTO.PaymentDTOs;
 using PaymentService.Models.Enums;
+using PaymentService.ServiceCalls.Project;
+using PaymentService.ServiceCalls.User;
 
 namespace PaymentService.Data
 {
@@ -11,11 +13,19 @@ namespace PaymentService.Data
     {
         private readonly PaymentContext _context;
         private readonly IMapper _mapper;
+        private readonly IUserService _userService;
+        private readonly IProjectService _projectService;
 
-        public PaymentRepository(PaymentContext context, IMapper mapper)
+        public PaymentRepository(
+            PaymentContext context,
+            IMapper mapper,
+            IUserService userService,
+            IProjectService projectService)
         {
             _context = context;
             _mapper = mapper;
+            _userService = userService;
+            _projectService = projectService;
         }
 
         public IEnumerable<PaymentDTO> GetPayments(Guid? invoiceId = null, Guid? paidByUserId = null)
@@ -42,7 +52,7 @@ namespace PaymentService.Data
             return payment is null ? null : _mapper.Map<PaymentDTO>(payment);
         }
 
-        public OperationResult<PaymentConfirmationDTO> CreatePayment(PaymentCreationDTO payment, Guid paidByUserId)
+        public async Task<OperationResult<PaymentConfirmationDTO>> CreatePaymentAsync(PaymentCreationDTO payment, Guid paidByUserId)
         {
             var invoice = LoadInvoice(payment.InvoiceId);
 
@@ -77,10 +87,10 @@ namespace PaymentService.Data
             RefreshInvoiceStatus(invoice);
             _context.SaveChanges();
 
-            return OperationResult<PaymentConfirmationDTO>.Ok(_mapper.Map<PaymentConfirmationDTO>(newPayment));
+            return OperationResult<PaymentConfirmationDTO>.Ok(await BuildConfirmationAsync(newPayment, invoice));
         }
 
-        public OperationResult<PaymentConfirmationDTO> UpdatePayment(Guid paymentId, PaymentUpdateDTO payment)
+        public async Task<OperationResult<PaymentConfirmationDTO>> UpdatePaymentAsync(Guid paymentId, PaymentUpdateDTO payment)
         {
             var existing = _context.Payments.FirstOrDefault(p => p.PaymentId == paymentId);
 
@@ -111,7 +121,7 @@ namespace PaymentService.Data
             RefreshInvoiceStatus(invoice);
             _context.SaveChanges();
 
-            return OperationResult<PaymentConfirmationDTO>.Ok(_mapper.Map<PaymentConfirmationDTO>(existing));
+            return OperationResult<PaymentConfirmationDTO>.Ok(await BuildConfirmationAsync(existing, invoice));
         }
 
         public OperationResult<bool> DeletePayment(Guid paymentId)
@@ -170,6 +180,20 @@ namespace PaymentService.Data
             invoice.Status = invoice.TotalAmount > 0 && PaidSoFar(invoice) >= invoice.TotalAmount
                 ? InvoiceStatus.Paid
                 : InvoiceStatus.Unpaid;
+        }
+
+        //ime platioca i naziv projekta dolaze iz drugih servisa
+        private async Task<PaymentConfirmationDTO> BuildConfirmationAsync(Payment payment, Invoice invoice)
+        {
+            var confirmation = _mapper.Map<PaymentConfirmationDTO>(payment);
+
+            var payer = await _userService.GetUserInfoAsync(payment.PaidByUserId);
+            var project = await _projectService.GetProjectInfoAsync(invoice.ProjectId);
+
+            confirmation.PaidByUsername = payer?.Username ?? "Nepoznat korisnik";
+            confirmation.ProjectName = project?.Name ?? "Nepoznat projekat";
+
+            return confirmation;
         }
     }
 }

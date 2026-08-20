@@ -49,14 +49,14 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public ActionResult<PaymentConfirmationDTO> CreatePayment([FromBody] PaymentCreationDTO payment)
+        public async Task<ActionResult<PaymentConfirmationDTO>> CreatePayment([FromBody] PaymentCreationDTO payment)
         {
             if (!Request.TryGetUserId(out var paidByUserId))
             {
                 return BadRequest($"Nedostaje ili je neispravan {UserHeader.Name} header.");
             }
 
-            var result = _paymentRepository.CreatePayment(payment, paidByUserId);
+            var result = await _paymentRepository.CreatePaymentAsync(payment, paidByUserId);
 
             if (!result.IsSuccess)
             {
@@ -71,9 +71,9 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public ActionResult<PaymentConfirmationDTO> UpdatePayment(Guid paymentId, [FromBody] PaymentUpdateDTO payment)
+        public async Task<ActionResult<PaymentConfirmationDTO>> UpdatePayment(Guid paymentId, [FromBody] PaymentUpdateDTO payment)
         {
-            var result = _paymentRepository.UpdatePayment(paymentId, payment);
+            var result = await _paymentRepository.UpdatePaymentAsync(paymentId, payment);
 
             if (!result.IsSuccess)
             {

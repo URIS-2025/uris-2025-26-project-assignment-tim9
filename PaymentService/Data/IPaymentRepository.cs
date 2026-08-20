@@ -6,8 +6,8 @@ namespace PaymentService.Data
     {
         IEnumerable<PaymentDTO> GetPayments(Guid? invoiceId = null, Guid? paidByUserId = null);
         PaymentDTO? GetPaymentById(Guid paymentId);
-        OperationResult<PaymentConfirmationDTO> CreatePayment(PaymentCreationDTO payment, Guid paidByUserId);
-        OperationResult<PaymentConfirmationDTO> UpdatePayment(Guid paymentId, PaymentUpdateDTO payment);
+        Task<OperationResult<PaymentConfirmationDTO>> CreatePaymentAsync(PaymentCreationDTO payment, Guid paidByUserId);
+        Task<OperationResult<PaymentConfirmationDTO>> UpdatePaymentAsync(Guid paymentId, PaymentUpdateDTO payment);
         OperationResult<bool> DeletePayment(Guid paymentId);
     }
 }

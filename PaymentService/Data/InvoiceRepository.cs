@@ -4,6 +4,8 @@ using PaymentService.Context;
 using PaymentService.Models;
 using PaymentService.Models.DTO.InvoiceDTOs;
 using PaymentService.Models.Enums;
+using PaymentService.ServiceCalls.Project;
+using PaymentService.ServiceCalls.User;
 
 namespace PaymentService.Data
 {
@@ -11,11 +13,19 @@ namespace PaymentService.Data
     {
         private readonly PaymentContext _context;
         private readonly IMapper _mapper;
+        private readonly IUserService _userService;
+        private readonly IProjectService _projectService;
 
-        public InvoiceRepository(PaymentContext context, IMapper mapper)
+        public InvoiceRepository(
+            PaymentContext context,
+            IMapper mapper,
+            IUserService userService,
+            IProjectService projectService)
         {
             _context = context;
             _mapper = mapper;
+            _userService = userService;
+            _projectService = projectService;
         }
 
         public IEnumerable<InvoiceDTO> GetInvoices(Guid? projectId = null, InvoiceStatus? status = null)
@@ -45,7 +55,7 @@ namespace PaymentService.Data
             return invoice is null ? null : _mapper.Map<InvoiceDTO>(invoice);
         }
 
-        public InvoiceConfirmationDTO CreateInvoice(InvoiceCreationDTO invoice, Guid issuedByUserId)
+        public async Task<InvoiceConfirmationDTO> CreateInvoiceAsync(InvoiceCreationDTO invoice, Guid issuedByUserId)
         {
             var newInvoice = _mapper.Map<Invoice>(invoice);
             newInvoice.InvoiceId = Guid.NewGuid();
@@ -65,10 +75,10 @@ namespace PaymentService.Data
             _context.Invoices.Add(newInvoice);
             _context.SaveChanges();
 
-            return _mapper.Map<InvoiceConfirmationDTO>(newInvoice);
+            return await BuildConfirmationAsync(newInvoice);
         }
 
-        public OperationResult<InvoiceConfirmationDTO> UpdateInvoice(Guid invoiceId, InvoiceUpdateDTO invoice)
+        public async Task<OperationResult<InvoiceConfirmationDTO>> UpdateInvoiceAsync(Guid invoiceId, InvoiceUpdateDTO invoice)
         {
             var existing = _context.Invoices
                 .Include(i => i.Items)
@@ -88,7 +98,7 @@ namespace PaymentService.Data
             _mapper.Map(invoice, existing);
             _context.SaveChanges();
 
-            return OperationResult<InvoiceConfirmationDTO>.Ok(_mapper.Map<InvoiceConfirmationDTO>(existing));
+            return OperationResult<InvoiceConfirmationDTO>.Ok(await BuildConfirmationAsync(existing));
         }
 
         public OperationResult<bool> DeleteInvoice(Guid invoiceId)
@@ -110,6 +120,20 @@ namespace PaymentService.Data
             _context.SaveChanges();
 
             return OperationResult<bool>.Ok(true);
+        }
+
+        //naziv projekta i korisnicko ime izdavaoca dolaze iz drugih servisa
+        private async Task<InvoiceConfirmationDTO> BuildConfirmationAsync(Invoice invoice)
+        {
+            var confirmation = _mapper.Map<InvoiceConfirmationDTO>(invoice);
+
+            var project = await _projectService.GetProjectInfoAsync(invoice.ProjectId);
+            var issuer = await _userService.GetUserInfoAsync(invoice.IssuedByUserId);
+
+            confirmation.ProjectName = project?.Name ?? "Nepoznat projekat";
+            confirmation.IssuedByUsername = issuer?.Username ?? "Nepoznat korisnik";
+
+            return confirmation;
         }
     }
 }

@@ -1,4 +1,70 @@
-@PaymentService_HostAddress = https://localhost:7090
+@host = http://localhost:5240
+@userId = 66666666-6666-6666-6666-666666666666
+@invoiceId = a1111111-1111-1111-1111-111111111111
 
-### Provera da li servis radi
-GET {{PaymentService_HostAddress}}/swagger/index.html
+### Sve fakture
+GET {{host}}/api/invoice
+
+### Fakture jednog projekta
+GET {{host}}/api/invoice?projectId=044f3de0-a9dd-4c2e-b745-89976a1b2a36
+
+### Jedna faktura
+GET {{host}}/api/invoice/{{invoiceId}}
+
+### Stavke fakture
+GET {{host}}/api/invoice/{{invoiceId}}/items
+
+### Nova faktura sa dve stavke
+POST {{host}}/api/invoice
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "projectId": "044f3de0-a9dd-4c2e-b745-89976a1b2a36",
+  "issueDate": "2026-08-19T00:00:00",
+  "items": [
+    { "description": "Konsultacije", "unitPrice": 80.00, "quantity": 5 },
+    { "description": "Testiranje", "unitPrice": 60.00, "quantity": 8 }
+  ]
+}
+
+### Dodavanje stavke na postojecu fakturu
+POST {{host}}/api/invoice/{{invoiceId}}/items
+Content-Type: application/json
+
+{
+  "description": "Dodatna obuka",
+  "unitPrice": 120.00,
+  "quantity": 2
+}
+
+### Uplata veca od duga - ocekuje se 409
+POST {{host}}/api/payment
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "invoiceId": "{{invoiceId}}",
+  "amount": 99999
+}
+
+### Uplata koja izmiruje fakturu - ocekuje se 201
+POST {{host}}/api/payment
+Content-Type: application/json
+X-User-Id: {{userId}}
+
+{
+  "invoiceId": "{{invoiceId}}",
+  "amount": 1500
+}
+
+### Izmena placene fakture - ocekuje se 409
+PUT {{host}}/api/invoice/{{invoiceId}}
+Content-Type: application/json
+
+{
+  "status": "Cancelled"
+}
+
+### Sve uplate
+GET {{host}}/api/payment

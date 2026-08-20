@@ -48,14 +48,14 @@ namespace PaymentService.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<InvoiceConfirmationDTO> CreateInvoice([FromBody] InvoiceCreationDTO invoice)
+        public async Task<ActionResult<InvoiceConfirmationDTO>> CreateInvoice([FromBody] InvoiceCreationDTO invoice)
         {
             if (!Request.TryGetUserId(out var issuedByUserId))
             {
                 return BadRequest($"Nedostaje ili je neispravan {UserHeader.Name} header.");
             }
 
-            var confirmation = _invoiceRepository.CreateInvoice(invoice, issuedByUserId);
+            var confirmation = await _invoiceRepository.CreateInvoiceAsync(invoice, issuedByUserId);
 
             return CreatedAtRoute("GetInvoiceById", new { invoiceId = confirmation.InvoiceId }, confirmation);
         }
@@ -65,9 +65,9 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public ActionResult<InvoiceConfirmationDTO> UpdateInvoice(Guid invoiceId, [FromBody] InvoiceUpdateDTO invoice)
+        public async Task<ActionResult<InvoiceConfirmationDTO>> UpdateInvoice(Guid invoiceId, [FromBody] InvoiceUpdateDTO invoice)
         {
-            var result = _invoiceRepository.UpdateInvoice(invoiceId, invoice);
+            var result = await _invoiceRepository.UpdateInvoiceAsync(invoiceId, invoice);
 
             if (!result.IsSuccess)
             {
