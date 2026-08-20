@@ -1,0 +1,71 @@
+@UserService_HostAddress = http://localhost:5231
+
+### Svi korisnici
+GET {{UserService_HostAddress}}/api/user
+Accept: application/json
+
+### Pretraga i filter
+GET {{UserService_HostAddress}}/api/user?search=admin&role=Admin&isActive=true
+Accept: application/json
+
+### Korisnik po ID-u
+GET {{UserService_HostAddress}}/api/user/11111111-1111-1111-1111-111111111111
+Accept: application/json
+
+### Korisnik po korisnickom imenu
+GET {{UserService_HostAddress}}/api/user/username/admin
+Accept: application/json
+
+### Audit log korisnika
+GET {{UserService_HostAddress}}/api/user/11111111-1111-1111-1111-111111111111/audit
+Accept: application/json
+
+### Registracija novog korisnika
+POST {{UserService_HostAddress}}/api/user
+Content-Type: application/json
+
+{
+  "name": "Test Testic",
+  "username": "testuser",
+  "email": "testuser@example.com",
+  "contactInfo": "+381601112223",
+  "password": "test123456"
+}
+
+### Validacija kredencijala (koristi AuthService)
+POST {{UserService_HostAddress}}/api/user/credentials/validate
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+### Azuriranje profila
+PUT {{UserService_HostAddress}}/api/user/33333333-3333-3333-3333-333333333333
+Content-Type: application/json
+
+{
+  "name": "Marko Clan Izmenjen",
+  "email": "member@example.com",
+  "contactInfo": "+381600000099"
+}
+
+### Deaktivacija korisnika (Admin)
+PATCH {{UserService_HostAddress}}/api/user/33333333-3333-3333-3333-333333333333/deactivate?performedBy=11111111-1111-1111-1111-111111111111
+
+### Aktivacija korisnika (Admin)
+PATCH {{UserService_HostAddress}}/api/user/33333333-3333-3333-3333-333333333333/activate?performedBy=11111111-1111-1111-1111-111111111111
+
+### Promena uloge (Admin)
+PATCH {{UserService_HostAddress}}/api/user/role
+Content-Type: application/json
+
+{
+  "userId": "33333333-3333-3333-3333-333333333333",
+  "newRole": "ProjectManager",
+  "changedBy": "11111111-1111-1111-1111-111111111111"
+}
+
+### Brisanje korisnika (Admin)
+DELETE {{UserService_HostAddress}}/api/user/44444444-4444-4444-4444-444444444444
