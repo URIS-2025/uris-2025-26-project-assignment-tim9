@@ -65,3 +65,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+//aplikacija koristi top-level statements, pa je klasa Program podrazumevano internal.
+//ovim postaje dostupna WebApplicationFactory-ju u integracionim testovima.
+public partial class Program { }
