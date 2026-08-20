@@ -83,7 +83,9 @@ namespace PaymentService.Data
             newPayment.Date = DateTime.Now;
             newPayment.Status = PaymentStatus.Completed;
 
-            invoice.Payments.Add(newPayment);
+            //isto kao kod stavke fakture - kroz DbSet, EF je sam vezuje za invoice.Payments
+            _context.Payments.Add(newPayment);
+
             RefreshInvoiceStatus(invoice);
             _context.SaveChanges();
 

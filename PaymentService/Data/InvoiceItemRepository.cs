@@ -53,7 +53,11 @@ namespace PaymentService.Data
             newItem.InvoiceId = invoiceId;
             newItem.TotalAmount = newItem.UnitPrice * newItem.Quantity;
 
-            invoice.Items.Add(newItem);
+            //dodavanje ide kroz DbSet - preko kolekcije fakture bi stavka zavrsila u
+            //stanju Modified jer joj je kljuc vec postavljen. EF je sam ubacuje u
+            //invoice.Items, pa je ovde ne dodajemo rucno.
+            _context.InvoiceItems.Add(newItem);
+
             RecalculateInvoice(invoice);
             _context.SaveChanges();
 
