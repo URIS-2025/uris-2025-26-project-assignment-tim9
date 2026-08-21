@@ -14,11 +14,11 @@ namespace SprintService.Tests.Integration
         private readonly HttpListener _listener;
         private readonly CancellationTokenSource _cts = new();
         private readonly Task _loop;
-        private readonly Func<string, (int StatusCode, string? Json)> _handler;
+        private readonly Func<HttpListenerRequest, (int StatusCode, string? Json)> _handler;
 
         public string BaseUrl { get; }
 
-        public FakeJsonServer(Func<string, (int StatusCode, string? Json)> handler)
+        public FakeJsonServer(Func<HttpListenerRequest, (int StatusCode, string? Json)> handler)
         {
             _handler = handler;
 
@@ -46,7 +46,7 @@ namespace SprintService.Tests.Integration
                     break;
                 }
 
-                var (statusCode, json) = _handler(context.Request.Url?.AbsolutePath ?? "/");
+                var (statusCode, json) = _handler(context.Request);
                 context.Response.StatusCode = statusCode;
 
                 if (json is not null)

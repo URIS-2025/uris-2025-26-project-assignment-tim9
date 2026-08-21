@@ -9,5 +9,8 @@ namespace SprintService.Data
         Task<SprintConfirmationDTO> CreateSprintAsync(Guid projectId, SprintCreationDTO sprint);
         Task<SprintConfirmationDTO?> UpdateSprintAsync(Guid sprintId, SprintUpdateDTO sprint);
         void DeleteSprint(Guid id);
+
+        Task<IEnumerable<SprintDTO>> GetSprintsForCallerAsync(Guid? projectId, Guid? clientUserId);
+        Task<SprintDTO?> GetSprintByIdForCallerAsync(Guid sprintId, Guid? clientUserId);
     }
 }

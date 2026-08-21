@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using SprintService.Context;
@@ -21,13 +22,47 @@ namespace SprintService.Tests.Integration
 
         public Task InitializeAsync()
         {
-            _projectServer = new FakeJsonServer(path =>
-                path.TrimStart('/').StartsWith($"api/project/{KnownProjectId}", StringComparison.OrdinalIgnoreCase)
-                    ? (200, $"{{\"milestoneID\":\"{KnownMilestoneId}\",\"expectedDate\":\"{KnownExpectedDate:O}\"}}")
-                    : (404, null));
+            // Mirrors ProjectService's real contract: GET api/milestone/project/{projectId}
+            // returns a JSON array of milestones (ProjectService.Models.DTO.MilestoneDtos.MilestoneDto),
+            // not a single object at api/project/{id}. Separately, GET api/project/{id} is the
+            // existence check SprintRepository now runs before every create/update - every
+            // project ID used elsewhere in this fixture's tests is treated as real here, since
+            // existence-check *rejection* itself is covered by dedicated tests with their own
+            // fixture instance below (e.g. CreateSprint_WithNonexistentProject_ReturnsBadRequest).
+            _projectServer = new FakeJsonServer(request =>
+            {
+                var path = request.Url?.AbsolutePath.TrimStart('/') ?? "";
+
+                if (path.StartsWith($"api/milestone/project/{KnownProjectId}", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (200, $"[{{\"milestoneId\":\"{KnownMilestoneId}\",\"projectId\":\"{KnownProjectId}\",\"expectedDate\":\"{KnownExpectedDate:O}\"}}]");
+                }
+
+                if (path.StartsWith("api/milestone/project/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (204, null); // some other project - exists, just no milestones
+                }
+
+                if (path.StartsWith("api/project/user/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (200, "[]"); // only exercised by dedicated Client-role tests below
+                }
+
+                if (path.StartsWith("api/project/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (200, "{}");
+                }
+
+                return (404, null);
+            });
 
             _factory = new SprintApiFactory(_projectServer.BaseUrl);
             Client = _factory.CreateClient();
+            // SprintService itself now requires a valid JWT on every endpoint. Admin by default
+            // so every existing CRUD/validation test keeps behaving exactly as before (full
+            // access, no project scoping) - role-specific behavior gets its own dedicated tests
+            // with their own client/token below, per-request headers override this default.
+            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TestTokens.ForRole("Admin"));
 
             using var scope = _factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<SprintContext>();

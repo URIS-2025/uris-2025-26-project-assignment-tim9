@@ -38,8 +38,43 @@ namespace SprintService.Data
             return sprint is null ? null : _mapper.Map<SprintDTO>(sprint);
         }
 
+        public async Task<IEnumerable<SprintDTO>> GetSprintsForCallerAsync(Guid? projectId, Guid? clientUserId)
+        {
+            if (projectId is not null)
+            {
+                await EnsureProjectExistsAsync(projectId.Value);
+            }
+
+            var sprints = GetSprints(projectId);
+            if (clientUserId is null)
+            {
+                return sprints;
+            }
+
+            var allowedProjectIds = await _projectService.GetProjectIdsForUserAsync(clientUserId.Value);
+            var allowed = allowedProjectIds.ToHashSet();
+            return sprints.Where(s => allowed.Contains(s.ProjectId));
+        }
+
+        public async Task<SprintDTO?> GetSprintByIdForCallerAsync(Guid sprintId, Guid? clientUserId)
+        {
+            var sprint = GetSprintById(sprintId);
+            if (sprint is null || clientUserId is null)
+            {
+                return sprint;
+            }
+
+            var allowedProjectIds = await _projectService.GetProjectIdsForUserAsync(clientUserId.Value);
+            return allowedProjectIds.Contains(sprint.ProjectId) ? sprint : null;
+        }
+
         public async Task<SprintConfirmationDTO> CreateSprintAsync(Guid projectId, SprintCreationDTO sprint)
         {
+            await EnsureProjectExistsAsync(projectId);
+
+            var projectData = await _projectService.GetProjectByIdAsync(projectId);
+            EnsureEndDateDoesNotPassMilestone(sprint.EndDate, projectData);
+
             var newSprint = _mapper.Map<Sprint>(sprint);
             newSprint.Id = Guid.NewGuid();
             newSprint.ProjectId = projectId;
@@ -48,8 +83,6 @@ namespace SprintService.Data
             _context.SaveChanges();
 
             var confirmation = _mapper.Map<SprintConfirmationDTO>(newSprint);
-
-            var projectData = await _projectService.GetProjectByIdAsync(newSprint.ProjectId);
             if (projectData is not null)
             {
                 confirmation.MilestoneId = projectData.MilestoneID;
@@ -67,12 +100,15 @@ namespace SprintService.Data
                 return null;
             }
 
+            await EnsureProjectExistsAsync(sprint.ProjectId);
+
+            var projectData = await _projectService.GetProjectByIdAsync(sprint.ProjectId);
+            EnsureEndDateDoesNotPassMilestone(sprint.EndDate, projectData);
+
             _mapper.Map(sprint, existingSprint);
             _context.SaveChanges();
 
             var confirmation = _mapper.Map<SprintConfirmationDTO>(existingSprint);
-
-            var projectData = await _projectService.GetProjectByIdAsync(existingSprint.ProjectId);
             if (projectData is not null)
             {
                 confirmation.MilestoneId = projectData.MilestoneID;
@@ -80,6 +116,35 @@ namespace SprintService.Data
             }
 
             return confirmation;
+        }
+
+        private static void EnsureEndDateDoesNotPassMilestone(
+            DateTime sprintEndDate, Models.DTO.Project.MilestoneDTO? projectData)
+        {
+            if (projectData is not null && sprintEndDate > projectData.ExpectedDate)
+            {
+                throw new SprintValidationException(
+                    $"Sprint end date ({sprintEndDate:yyyy-MM-dd}) must be on or before the " +
+                    $"project's next milestone due date ({projectData.ExpectedDate:yyyy-MM-dd}).");
+            }
+        }
+
+        private async Task EnsureProjectExistsAsync(Guid projectId)
+        {
+            var existence = await _projectService.CheckProjectExistsAsync(projectId);
+
+            switch (existence)
+            {
+                case ProjectExistence.NotFound:
+                    throw new ProjectNotFoundException(projectId);
+                case ProjectExistence.Unknown:
+                    throw new SprintValidationException(
+                        $"Could not verify that project {projectId} exists - Project Service is " +
+                        "unavailable or the request was unauthorized.");
+                case ProjectExistence.Exists:
+                default:
+                    return;
+            }
         }
 
         public void DeleteSprint(Guid id)

@@ -11,6 +11,7 @@
          CVE-2026-32933, uncontrolled recursion on deeply nested object graphs). 16.2.0 matches
          AttachmentService's pinned version and is outside every vulnerable range. -->
     <PackageReference Include="AutoMapper" Version="16.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.11" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
       <PrivateAssets>all</PrivateAssets>
