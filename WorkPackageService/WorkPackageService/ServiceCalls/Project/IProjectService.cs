@@ -2,6 +2,6 @@
 {
     public interface IProjectService
     {
-        Task<DateTime?> GetProjectDeadlineAsync(Guid projectId);
+        Task<DateTime?> GetProjectDeadlineAsync(Guid projectId, string? authToken);
     }
 }

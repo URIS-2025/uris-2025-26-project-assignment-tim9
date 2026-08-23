@@ -8,7 +8,6 @@ using WorkPackageService.ServiceCalls.Project;
 
 namespace WorkPackageService.Controllers
 {
-   
     [ApiController]
     [Route("api/[controller]")]
     public class WorkPackageController : ControllerBase
@@ -24,6 +23,13 @@ namespace WorkPackageService.Controllers
             _projectService = projectService;
         }
 
+        private string? GetBearerToken()
+        {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            return authHeader.StartsWith("Bearer ") ? authHeader.Substring("Bearer ".Length) : null;
+        }
+
+        [Authorize]
         [HttpGet]
         [HttpHead]
         public ActionResult<IEnumerable<WorkPackageDisplayDTO>> GetWorkPackages()
@@ -34,6 +40,7 @@ namespace WorkPackageService.Controllers
             return Ok(workPackages);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<WorkPackageDisplayDTO> GetWorkPackageById(Guid id)
         {
@@ -42,6 +49,7 @@ namespace WorkPackageService.Controllers
             return Ok(workPackage);
         }
 
+        [Authorize]
         [HttpGet("project/{projectId}")]
         public ActionResult<IEnumerable<WorkPackageDisplayDTO>> GetWorkPackagesByProject(Guid projectId)
         {
@@ -51,10 +59,12 @@ namespace WorkPackageService.Controllers
             return Ok(workPackages);
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPost]
         public async Task<ActionResult<WorkPackageDisplayDTO>> CreateWorkPackageAsync([FromBody] WorkPackageCreateDTO dto)
         {
-            var projectDeadline = await _projectService.GetProjectDeadlineAsync(dto.ProjectId);
+            var token = GetBearerToken();
+            var projectDeadline = await _projectService.GetProjectDeadlineAsync(dto.ProjectId, token);
             if (projectDeadline.HasValue && dto.Deadline > projectDeadline.Value)
             {
                 return BadRequest($"WorkPackage deadline cannot exceed project deadline ({projectDeadline.Value:yyyy-MM-dd}).");
@@ -70,15 +80,17 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPut]
-        public async Task <ActionResult<WorkPackageDisplayDTO>> UpdateWorkPackage([FromBody] WorkPackageUpdateDTO dto)
+        public async Task<ActionResult<WorkPackageDisplayDTO>> UpdateWorkPackage([FromBody] WorkPackageUpdateDTO dto)
         {
             if (dto.Deadline.HasValue)
             {
                 var existing = _workPackageRepository.GetById(dto.Id);
                 if (existing == null) return NotFound();
 
-                var projectDeadline = await _projectService.GetProjectDeadlineAsync(existing.ProjectId);
+                var token = GetBearerToken();
+                var projectDeadline = await _projectService.GetProjectDeadlineAsync(existing.ProjectId, token);
                 if (projectDeadline.HasValue && dto.Deadline.Value > projectDeadline.Value)
                 {
                     return BadRequest($"WorkPackage deadline cannot exceed project deadline ({projectDeadline.Value:yyyy-MM-dd}).");
@@ -96,6 +108,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpDelete("{id}")]
         public IActionResult DeleteWorkPackage(Guid id)
         {
