@@ -4,10 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using WorkPackageService.Data;
 using WorkPackageService.Exceptions;
 using WorkPackageService.Models.DTO.TaskDTOs;
+using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
 
 namespace WorkPackageService.Controllers
 {
-
     [ApiController]
     [Route("api/[controller]")]
     public class TaskController : ControllerBase
@@ -21,6 +22,7 @@ namespace WorkPackageService.Controllers
             _mapper = mapper;
         }
 
+        [Authorize]
         [HttpGet]
         [HttpHead]
         public ActionResult<IEnumerable<TaskDisplayDTO>> GetTasks()
@@ -31,6 +33,7 @@ namespace WorkPackageService.Controllers
             return Ok(tasks);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<TaskDisplayDTO> GetTaskById(Guid id)
         {
@@ -39,6 +42,7 @@ namespace WorkPackageService.Controllers
             return Ok(task);
         }
 
+        [Authorize]
         [HttpGet("workpackage/{workPackageId}")]
         public ActionResult<IEnumerable<TaskDisplayDTO>> GetTasksByWorkPackage(Guid workPackageId)
         {
@@ -48,6 +52,7 @@ namespace WorkPackageService.Controllers
             return Ok(tasks);
         }
 
+        [Authorize]
         [HttpGet("parent/{parentTaskId}")]
         public ActionResult<IEnumerable<TaskDisplayDTO>> GetSubTasks(Guid parentTaskId)
         {
@@ -57,6 +62,7 @@ namespace WorkPackageService.Controllers
             return Ok(subTasks);
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPost]
         public ActionResult<TaskDisplayDTO> CreateTask([FromBody] TaskCreateDTO dto)
         {
@@ -71,6 +77,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPut]
         public ActionResult<TaskDisplayDTO> UpdateTask([FromBody] TaskUpdateDTO dto)
         {
@@ -86,6 +93,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpDelete("{id}")]
         public IActionResult DeleteTask(Guid id)
         {
@@ -95,12 +103,18 @@ namespace WorkPackageService.Controllers
                 if (!deleted) return NotFound();
                 return NoContent();
             }
+            catch (DbUpdateException ex) when (ex.InnerException is MySqlException mySqlEx && mySqlEx.Number == 1451)
+            {
+                
+                return Conflict("Task cannot be deleted beacuse it has depenedencies or subtasks. Delete or move them.");
+            }
             catch
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Delete Error");
             }
         }
 
+        [Authorize]
         [HttpPatch("{id}/status")]
         public async Task<ActionResult<TaskDisplayDTO>> UpdateTaskStatus(Guid id, [FromQuery] Guid callerId, [FromBody] TaskStatusUpdateRequestDTO dto)
         {
@@ -123,6 +137,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPatch("{id}/reassign")]
         public async Task<ActionResult<TaskReassignResultDTO>> ReassignTask(Guid id, [FromBody] TaskReassignRequestDTO dto)
         {
@@ -146,6 +161,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPatch("{id}/move")]
         public ActionResult<TaskMoveResultDTO> MoveTask(Guid id, [FromBody] TaskMoveRequestDTO dto)
         {
@@ -153,9 +169,6 @@ namespace WorkPackageService.Controllers
             {
                 var result = _taskRepository.MoveToWorkPackage(id, dto.NewWorkPackageId);
                 if (result == null) return NotFound();
-
-                // 200 OK i kad je HasDependencyWarning true - premestanje se izvrsava,
-                // upozorenje je samo informativno i ne blokira operaciju.
                 return Ok(result);
             }
             catch

@@ -6,7 +6,6 @@ using WorkPackageService.Models.DTO.DependencyDTOs;
 
 namespace WorkPackageService.Controllers
 {
-  
     [ApiController]
     [Route("api/[controller]")]
     public class DependencyController : ControllerBase
@@ -20,6 +19,7 @@ namespace WorkPackageService.Controllers
             _mapper = mapper;
         }
 
+        [Authorize]
         [HttpGet]
         [HttpHead]
         public ActionResult<IEnumerable<DependencyDisplayDTO>> GetDependencies()
@@ -30,6 +30,7 @@ namespace WorkPackageService.Controllers
             return Ok(dependencies);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<DependencyDisplayDTO> GetDependencyById(Guid id)
         {
@@ -38,6 +39,7 @@ namespace WorkPackageService.Controllers
             return Ok(dependency);
         }
 
+        [Authorize]
         [HttpGet("task/{taskId}")]
         public ActionResult<IEnumerable<DependencyDisplayDTO>> GetDependenciesByTask(Guid taskId)
         {
@@ -47,6 +49,7 @@ namespace WorkPackageService.Controllers
             return Ok(dependencies);
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPost]
         public ActionResult<DependencyDisplayDTO> CreateDependency([FromBody] DependencyCreateDTO dto)
         {
@@ -55,8 +58,6 @@ namespace WorkPackageService.Controllers
                 var created = _dependencyRepository.Add(dto);
                 if (created == null)
                 {
-                    // Odbrana u dubinu - [NotEqualToProperty] na DTO-u vec hvata self-block
-                    // pre nego sto stigne ovde, ali repo i dalje proverava isto poslovno pravilo.
                     return BadRequest("Task ne moze blokirati sam sebe.");
                 }
                 return Created("", created);
@@ -67,6 +68,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPut]
         public ActionResult<DependencyDisplayDTO> UpdateDependency([FromBody] DependencyUpdateDTO dto)
         {
@@ -82,6 +84,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpDelete("{id}")]
         public IActionResult DeleteDependency(Guid id)
         {

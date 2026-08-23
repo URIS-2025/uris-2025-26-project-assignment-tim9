@@ -6,7 +6,6 @@ using WorkPackageService.Models.DTO.BacklogDTOs;
 
 namespace WorkPackageService.Controllers
 {
- 
     [ApiController]
     [Route("api/[controller]")]
     public class BacklogController : ControllerBase
@@ -20,6 +19,7 @@ namespace WorkPackageService.Controllers
             _mapper = mapper;
         }
 
+        [Authorize]
         [HttpGet]
         [HttpHead]
         public ActionResult<IEnumerable<BacklogDisplayDTO>> GetBacklogs()
@@ -30,6 +30,7 @@ namespace WorkPackageService.Controllers
             return Ok(backlogs);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<BacklogDisplayDTO> GetBacklogById(Guid id)
         {
@@ -38,6 +39,7 @@ namespace WorkPackageService.Controllers
             return Ok(backlog);
         }
 
+        [Authorize]
         [HttpGet("project/{projectId}")]
         public ActionResult<IEnumerable<BacklogDisplayDTO>> GetBacklogsByProject(Guid projectId)
         {
@@ -47,6 +49,7 @@ namespace WorkPackageService.Controllers
             return Ok(backlogs);
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPost]
         public ActionResult<BacklogDisplayDTO> CreateBacklog([FromBody] BacklogCreateDTO dto)
         {
@@ -61,6 +64,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpPut]
         public ActionResult<BacklogDisplayDTO> UpdateBacklog([FromBody] BacklogUpdateDTO dto)
         {
@@ -76,6 +80,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize(Roles = "ProjectManager,Admin")]
         [HttpDelete("{id}")]
         public IActionResult DeleteBacklog(Guid id)
         {

@@ -7,7 +7,6 @@ using WorkPackageService.Models.DTO.CommentDTOs;
 
 namespace WorkPackageService.Controllers
 {
-   
     [ApiController]
     [Route("api/[controller]")]
     public class CommentController : ControllerBase
@@ -21,6 +20,7 @@ namespace WorkPackageService.Controllers
             _mapper = mapper;
         }
 
+        [Authorize]
         [HttpGet]
         [HttpHead]
         public ActionResult<IEnumerable<CommentDisplayDTO>> GetComments()
@@ -31,6 +31,7 @@ namespace WorkPackageService.Controllers
             return Ok(comments);
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public ActionResult<CommentDisplayDTO> GetCommentById(Guid id)
         {
@@ -39,6 +40,7 @@ namespace WorkPackageService.Controllers
             return Ok(comment);
         }
 
+        [Authorize]
         [HttpGet("task/{taskId}")]
         public ActionResult<IEnumerable<CommentDisplayDTO>> GetCommentsByTask(Guid taskId)
         {
@@ -48,6 +50,8 @@ namespace WorkPackageService.Controllers
             return Ok(comments);
         }
 
+
+        [Authorize]
         [HttpPost]
         public ActionResult<CommentDisplayDTO> CreateComment([FromBody] CommentCreateDTO dto)
         {
@@ -62,7 +66,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
-  
+        [Authorize]
         [HttpPut]
         public ActionResult<CommentDisplayDTO> UpdateComment([FromQuery] Guid callerId, [FromBody] CommentUpdateDTO dto)
         {
@@ -85,6 +89,7 @@ namespace WorkPackageService.Controllers
             }
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public IActionResult DeleteComment(Guid id, [FromQuery] Guid callerId)
         {
