@@ -36,7 +36,7 @@ namespace TimelogService.Context
             {
                 Id = Guid.Parse("7a411c13-a195-48f7-8dbd-67596c3974c0"),
                 ProjectId = Guid.Parse("044f3de0-a9dd-4c2e-b745-89976a1b2a36"),
-                WorkPackageId = Guid.Parse("21ad52f8-0281-4241-98b0-481566d25e4f"),
+                TaskId = Guid.Parse("21ad52f8-0281-4241-98b0-481566d25e4f"),
                 HoursSpent = 4.5,
                 Date = new DateTime(2026, 4, 7),
                 LoggedByUserId = Guid.Parse("55555555-5555-5555-5555-555555555555")

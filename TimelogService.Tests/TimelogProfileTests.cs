@@ -29,7 +29,7 @@ namespace TimelogService.Tests
             var dto = new TimelogCreationDTO
             {
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
                 HoursSpent = 3.5,
                 Date = new DateTime(2026, 1, 1)
             };
@@ -37,7 +37,7 @@ namespace TimelogService.Tests
             var entity = mapper.Map<Timelog>(dto);
 
             Assert.Equal(dto.ProjectId, entity.ProjectId);
-            Assert.Equal(dto.WorkPackageId, entity.WorkPackageId);
+            Assert.Equal(dto.TaskId, entity.TaskId);
             Assert.Equal(dto.HoursSpent, entity.HoursSpent);
             Assert.Equal(dto.Date, entity.Date);
             Assert.Equal(Guid.Empty, entity.LoggedByUserId); // repository sets this, not the mapper
@@ -51,7 +51,7 @@ namespace TimelogService.Tests
             {
                 Id = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
                 HoursSpent = 2.25,
                 Date = new DateTime(2026, 1, 1),
                 LoggedByUserId = Guid.NewGuid()
@@ -61,7 +61,7 @@ namespace TimelogService.Tests
 
             Assert.Equal(entity.Id, dto.Id);
             Assert.Equal(entity.ProjectId, dto.ProjectId);
-            Assert.Equal(entity.WorkPackageId, dto.WorkPackageId);
+            Assert.Equal(entity.TaskId, dto.TaskId);
             Assert.Equal(entity.HoursSpent, dto.HoursSpent);
             Assert.Equal(entity.Date, dto.Date);
             Assert.Equal(entity.LoggedByUserId, dto.LoggedByUserId);
@@ -75,17 +75,17 @@ namespace TimelogService.Tests
             // This is the exact scenario that was broken: ForAllMembers(Condition(...)) does
             // not reliably skip a null Nullable<T> (Guid?, double?, DateTime?) source when the
             // destination is a non-nullable value type - it silently overwrote ProjectId/
-            // WorkPackageId/Date with their zero-defaults instead of leaving them alone. Fixed
+            // TaskId/Date with their zero-defaults instead of leaving them alone. Fixed
             // with per-member .ForMember(...).Condition(...) instead.
             var mapper = CreateMapper();
             var originalProjectId = Guid.NewGuid();
-            var originalWorkPackageId = Guid.NewGuid();
+            var originalTaskId = Guid.NewGuid();
             var originalDate = new DateTime(2026, 1, 1);
             var entity = new Timelog
             {
                 Id = Guid.NewGuid(),
                 ProjectId = originalProjectId,
-                WorkPackageId = originalWorkPackageId,
+                TaskId = originalTaskId,
                 HoursSpent = 3.0,
                 Date = originalDate,
                 LoggedByUserId = Guid.NewGuid()
@@ -96,7 +96,7 @@ namespace TimelogService.Tests
 
             Assert.Equal(7.25, entity.HoursSpent);
             Assert.Equal(originalProjectId, entity.ProjectId);
-            Assert.Equal(originalWorkPackageId, entity.WorkPackageId);
+            Assert.Equal(originalTaskId, entity.TaskId);
             Assert.Equal(originalDate, entity.Date);
         }
 
@@ -108,20 +108,20 @@ namespace TimelogService.Tests
             {
                 Id = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
                 HoursSpent = 3.0,
                 Date = new DateTime(2026, 1, 1),
                 LoggedByUserId = Guid.NewGuid()
             };
             var originalProjectId = entity.ProjectId;
-            var originalWorkPackageId = entity.WorkPackageId;
+            var originalTaskId = entity.TaskId;
             var originalHours = entity.HoursSpent;
             var originalDate = entity.Date;
 
             mapper.Map(new TimelogUpdateDTO(), entity);
 
             Assert.Equal(originalProjectId, entity.ProjectId);
-            Assert.Equal(originalWorkPackageId, entity.WorkPackageId);
+            Assert.Equal(originalTaskId, entity.TaskId);
             Assert.Equal(originalHours, entity.HoursSpent);
             Assert.Equal(originalDate, entity.Date);
         }
@@ -134,18 +134,18 @@ namespace TimelogService.Tests
             {
                 Id = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
                 HoursSpent = 3.0,
                 Date = new DateTime(2026, 1, 1),
                 LoggedByUserId = Guid.NewGuid()
             };
             var newProjectId = Guid.NewGuid();
-            var newWorkPackageId = Guid.NewGuid();
+            var newTaskId = Guid.NewGuid();
             var newDate = new DateTime(2026, 3, 1);
             var update = new TimelogUpdateDTO
             {
                 ProjectId = newProjectId,
-                WorkPackageId = newWorkPackageId,
+                TaskId = newTaskId,
                 HoursSpent = 9.5,
                 Date = newDate
             };
@@ -153,7 +153,7 @@ namespace TimelogService.Tests
             mapper.Map(update, entity);
 
             Assert.Equal(newProjectId, entity.ProjectId);
-            Assert.Equal(newWorkPackageId, entity.WorkPackageId);
+            Assert.Equal(newTaskId, entity.TaskId);
             Assert.Equal(9.5, entity.HoursSpent);
             Assert.Equal(newDate, entity.Date);
         }
@@ -166,7 +166,7 @@ namespace TimelogService.Tests
             {
                 Id = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
                 HoursSpent = 4,
                 Date = new DateTime(2026, 1, 1),
                 LoggedByUserId = Guid.NewGuid()
@@ -176,10 +176,13 @@ namespace TimelogService.Tests
 
             Assert.Equal(entity.Id, confirmation.Id);
             Assert.Equal(entity.HoursSpent, confirmation.HoursSpent);
-            // Username/WorkPackageTitle come from Project Service/WorkPackage Service, not
-            // from Timelog - the mapper must leave them at their default.
+            // Username/UserRole/TaskTitle/TaskStatus come from UserService/WorkPackageService,
+            // not from Timelog - the mapper must leave them at their default.
             Assert.Equal(string.Empty, confirmation.Username);
-            Assert.Equal(string.Empty, confirmation.WorkPackageTitle);
+            Assert.Equal(string.Empty, confirmation.Email);
+            Assert.Equal(string.Empty, confirmation.UserRole);
+            Assert.Equal(string.Empty, confirmation.TaskTitle);
+            Assert.Equal(string.Empty, confirmation.TaskStatus);
         }
     }
 }

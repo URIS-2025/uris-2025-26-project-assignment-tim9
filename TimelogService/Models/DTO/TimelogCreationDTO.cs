@@ -8,8 +8,8 @@ namespace TimelogService.Models.DTO
         [Required(ErrorMessage = "Project ID is required.")]
         public Guid ProjectId { get; set; }
 
-        [Required(ErrorMessage = "WorkPackage ID is required.")]
-        public Guid WorkPackageId { get; set; }
+        [Required(ErrorMessage = "Task ID is required.")]
+        public Guid TaskId { get; set; }
 
         [Range(0.01, 24, ErrorMessage = "Hours spent must be greater than 0 and no more than 24.")]
         public double HoursSpent { get; set; }
@@ -27,11 +27,11 @@ namespace TimelogService.Models.DTO
                     new[] { nameof(ProjectId) });
             }
 
-            if (WorkPackageId == Guid.Empty)
+            if (TaskId == Guid.Empty)
             {
                 yield return new ValidationResult(
-                    "WorkPackageId is required and cannot be an empty GUID.",
-                    new[] { nameof(WorkPackageId) });
+                    "TaskId is required and cannot be an empty GUID.",
+                    new[] { nameof(TaskId) });
             }
         }
     }

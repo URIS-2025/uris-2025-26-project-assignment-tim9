@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TimelogService.Data;
+using TimelogService.Exceptions;
 using TimelogService.Models.DTO;
 
 namespace TimelogService.Controllers
@@ -18,12 +19,25 @@ namespace TimelogService.Controllers
             _timelogRepository = timelogRepository;
         }
 
-        // GET: api/timelog
-        // GET: api/timelog?projectId={id}&workPackageId={id}
-        [HttpGet]
-        public ActionResult<IEnumerable<TimelogDTO>> GetTimelogs([FromQuery] Guid? projectId, [FromQuery] Guid? workPackageId)
+        private string? GetBearerToken()
         {
-            return Ok(_timelogRepository.GetTimelogs(projectId, workPackageId));
+            var authHeader = Request.Headers.Authorization.ToString();
+            return authHeader.StartsWith("Bearer ") ? authHeader["Bearer ".Length..] : null;
+        }
+
+        private bool TryGetActingUserId(out Guid userId)
+        {
+            userId = Guid.Empty;
+            return Request.Headers.TryGetValue(UserIdHeaderName, out var userIdHeader) &&
+                   Guid.TryParse(userIdHeader, out userId);
+        }
+
+        // GET: api/timelog
+        // GET: api/timelog?projectId={id}&taskId={id}
+        [HttpGet]
+        public ActionResult<IEnumerable<TimelogDTO>> GetTimelogs([FromQuery] Guid? projectId, [FromQuery] Guid? taskId)
+        {
+            return Ok(_timelogRepository.GetTimelogs(projectId, taskId));
         }
 
         // GET: api/timelog/{id}
@@ -42,39 +56,97 @@ namespace TimelogService.Controllers
         [HttpPost]
         public async Task<ActionResult<TimelogConfirmationDTO>> CreateTimelog(TimelogCreationDTO timelog)
         {
-            if (!Request.Headers.TryGetValue(UserIdHeaderName, out var userIdHeader) ||
-                !Guid.TryParse(userIdHeader, out var loggedByUserId))
+            if (!TryGetActingUserId(out var loggedByUserId))
             {
                 return BadRequest($"Missing or invalid {UserIdHeaderName} header - this is expected to be set by the API Gateway after authenticating the caller.");
             }
 
-            var confirmation = await _timelogRepository.CreateTimelogAsync(timelog, loggedByUserId);
-            return CreatedAtRoute("GetTimelogById", new { id = confirmation.Id }, confirmation);
+            try
+            {
+                var confirmation = await _timelogRepository.CreateTimelogAsync(timelog, loggedByUserId, GetBearerToken());
+                return CreatedAtRoute("GetTimelogById", new { id = confirmation.Id }, confirmation);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (ProjectNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UserNotProjectMemberException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+            }
+            catch (ClientCannotLogTimeException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+            }
         }
 
         // DELETE: api/timelog/{id}
         [HttpDelete("{id:guid}")]
-        public IActionResult DeleteTimelog(Guid id)
+        public async Task<IActionResult> DeleteTimelog(Guid id)
         {
+            if (!TryGetActingUserId(out var actingUserId))
+            {
+                return BadRequest($"Missing or invalid {UserIdHeaderName} header - this is expected to be set by the API Gateway after authenticating the caller.");
+            }
+
             if (_timelogRepository.GetTimelogById(id) is null)
             {
                 return NotFound();
             }
 
-            _timelogRepository.DeleteTimelog(id);
-            return NoContent();
+            try
+            {
+                await _timelogRepository.DeleteTimelogAsync(id, actingUserId, GetBearerToken());
+                return NoContent();
+            }
+            catch (NotTimelogOwnerException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+            }
         }
 
         // PUT: api/timelog/{id}
         [HttpPut("{id:guid}")]
         public async Task<ActionResult<TimelogConfirmationDTO>> UpdateTimelog(Guid id, TimelogUpdateDTO timelog)
         {
-            var updated = await _timelogRepository.UpdateTimelogAsync(id, timelog);
-            if (updated is null)
+            if (!TryGetActingUserId(out var actingUserId))
             {
-                return NotFound();
+                return BadRequest($"Missing or invalid {UserIdHeaderName} header - this is expected to be set by the API Gateway after authenticating the caller.");
             }
-            return Ok(updated);
+
+            try
+            {
+                var updated = await _timelogRepository.UpdateTimelogAsync(id, timelog, actingUserId, GetBearerToken());
+                if (updated is null)
+                {
+                    return NotFound();
+                }
+                return Ok(updated);
+            }
+            catch (TaskNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (ProjectNotFoundException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            catch (UserNotProjectMemberException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+            }
+            catch (ClientCannotLogTimeException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+            }
+            catch (NotTimelogOwnerException ex)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, ex.Message);
+            }
         }
     }
 }

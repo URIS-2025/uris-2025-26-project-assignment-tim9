@@ -16,7 +16,7 @@ namespace TimelogService.Tests
         private static TimelogCreationDTO ValidCreationDto() => new()
         {
             ProjectId = Guid.NewGuid(),
-            WorkPackageId = Guid.NewGuid(),
+            TaskId = Guid.NewGuid(),
             HoursSpent = 4,
             Date = DateTime.Now.AddDays(-1)
         };
@@ -41,14 +41,14 @@ namespace TimelogService.Tests
         }
 
         [Fact]
-        public void CreationDto_WithEmptyWorkPackageId_IsRejected()
+        public void CreationDto_WithEmptyTaskId_IsRejected()
         {
             var dto = ValidCreationDto();
-            dto.WorkPackageId = Guid.Empty;
+            dto.TaskId = Guid.Empty;
 
             var results = Validate(dto);
 
-            Assert.Contains(results, r => r.MemberNames.Contains(nameof(TimelogCreationDTO.WorkPackageId)));
+            Assert.Contains(results, r => r.MemberNames.Contains(nameof(TimelogCreationDTO.TaskId)));
         }
 
         [Theory]

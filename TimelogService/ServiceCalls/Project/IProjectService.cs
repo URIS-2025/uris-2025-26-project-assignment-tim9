@@ -1,9 +1,8 @@
-using TimelogService.Models.DTO.Project;
-
 namespace TimelogService.ServiceCalls.Project
 {
     public interface IProjectService
     {
-        Task<UserInfoDTO?> GetUserInfoAsync(Guid userId);
+        Task<ProjectMembershipResult> CheckMembershipAsync(Guid projectId, Guid userId, string? bearerToken);
+        Task<ProjectExistsResult> CheckProjectExistsAsync(Guid projectId, string? bearerToken);
     }
 }
