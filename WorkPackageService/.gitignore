@@ -1,0 +1,62 @@
+## .NET / Visual Studio standardni .gitignore
+
+# Build rezultati
+bin/
+obj/
+out/
+
+# Visual Studio fajlovi
+.vs/
+*.user
+*.userosscache
+*.suo
+*.userprefs
+
+# Rider / VS Code
+.idea/
+*.sln.iml
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+
+# Build rezultati alternativnih platformi
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Test rezultati
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.VisualState.xml
+TestResult.xml
+nunit-*.xml
+
+# EF Core
+*.dbmdl
+*.dbproj.schemaview
+
+# appsettings sa osetljivim podacima (opciono - otkomentarisi ako ne zelis da pushujes secrets)
+appsettings.Development.json
+# appsettings.Production.json
+
+# Ostalo
+*.DotSettings.user
+*.pfx
+*.publishsettings
+node_modules/
+.env
