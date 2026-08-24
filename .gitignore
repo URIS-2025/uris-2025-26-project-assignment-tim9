@@ -8,3 +8,6 @@ obj/
 *.user
 *.suo
 .env
+keys/
+PORTS.md
+
