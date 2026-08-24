@@ -4,13 +4,13 @@ namespace AttachmentService.Data
 {
     public interface IAttachmentRepository
     {
-        IEnumerable<AttachmentDTO> GetAttachments(Guid? projectId = null, Guid? workPackageId = null);
-        AttachmentDTO? GetAttachmentById(Guid id);
-        string? GetDownloadUrl(Guid id);
-        Task<AttachmentDetailsDTO?> GetAttachmentDetailsAsync(Guid id);
-        AttachmentUploadResponseDTO CreateAttachment(AttachmentCreationDTO attachment, Guid uploadedByUserId);
-        Task<ConfirmAttachmentResult> ConfirmAttachmentAsync(AttachmentConfirmationDTO confirmation);
-        AttachmentDTO? UpdateAttachment(Guid id, AttachmentUpdateDTO attachment);
-        void DeleteAttachment(Guid id);
+        Task<IEnumerable<AttachmentDTO>> GetAttachmentsAsync(Guid? projectId, Guid? taskId, Guid actingUserId, string? bearerToken);
+        Task<AttachmentDTO?> GetAttachmentByIdAsync(Guid id, Guid actingUserId, string? bearerToken);
+        Task<string?> GetDownloadUrlAsync(Guid id, Guid actingUserId, string? bearerToken);
+        Task<AttachmentDetailsDTO?> GetAttachmentDetailsAsync(Guid id, Guid actingUserId, string? bearerToken);
+        Task<AttachmentUploadResponseDTO> CreateAttachmentAsync(AttachmentCreationDTO attachment, Guid uploadedByUserId, string? bearerToken);
+        Task<ConfirmAttachmentResult> ConfirmAttachmentAsync(AttachmentConfirmationDTO confirmation, Guid actingUserId, string? bearerToken);
+        Task<AttachmentDTO?> UpdateAttachmentAsync(Guid id, AttachmentUpdateDTO attachment, Guid actingUserId, string? bearerToken);
+        Task<bool> DeleteAttachmentAsync(Guid id, Guid actingUserId, string? bearerToken);
     }
 }

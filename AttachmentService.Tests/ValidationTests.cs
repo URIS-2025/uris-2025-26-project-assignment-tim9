@@ -30,10 +30,10 @@ namespace AttachmentService.Tests
         }
 
         [Fact]
-        public void CreationDto_WithValidWorkPackageId_HasNoErrors()
+        public void CreationDto_WithValidTaskId_HasNoErrors()
         {
             var dto = ValidCreationDto();
-            dto.WorkPackageId = Guid.NewGuid();
+            dto.TaskId = Guid.NewGuid();
 
             var results = Validate(dto);
 
@@ -99,14 +99,14 @@ namespace AttachmentService.Tests
         }
 
         [Fact]
-        public void CreationDto_WithEmptyWorkPackageId_IsRejected()
+        public void CreationDto_WithEmptyTaskId_IsRejected()
         {
             var dto = ValidCreationDto();
-            dto.WorkPackageId = Guid.Empty;
+            dto.TaskId = Guid.Empty;
 
             var results = Validate(dto);
 
-            Assert.Contains(results, r => r.MemberNames.Contains(nameof(AttachmentCreationDTO.WorkPackageId)));
+            Assert.Contains(results, r => r.MemberNames.Contains(nameof(AttachmentCreationDTO.TaskId)));
         }
 
         [Fact]

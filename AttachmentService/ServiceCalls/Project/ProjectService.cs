@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using AttachmentService.Models.DTO.Project;
 
@@ -17,27 +19,79 @@ namespace AttachmentService.ServiceCalls.Project
             _httpClient = httpClient;
         }
 
-        public async Task<UserInfoDTO?> GetUserInfoAsync(Guid userId)
+        public async Task<ProjectExistsResult> CheckProjectExistsAsync(Guid projectId, string? bearerToken)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"api/project/users/{userId}");
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/project/{projectId}");
+                if (!string.IsNullOrEmpty(bearerToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                }
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return new ProjectExistsResult(ProjectExistsStatus.NotFound);
+                }
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return null;
+                    return new ProjectExistsResult(ProjectExistsStatus.ServiceUnavailable);
                 }
 
-                var content = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<UserInfoDTO>(content, JsonOptions);
+                return new ProjectExistsResult(ProjectExistsStatus.Exists);
             }
             catch (HttpRequestException)
             {
-                return null;
+                return new ProjectExistsResult(ProjectExistsStatus.ServiceUnavailable);
             }
             catch (TaskCanceledException)
             {
-                return null;
+                return new ProjectExistsResult(ProjectExistsStatus.ServiceUnavailable);
+            }
+        }
+
+        public async Task<ProjectMembershipResult> CheckMembershipAsync(Guid projectId, Guid userId, string? bearerToken)
+        {
+            try
+            {
+                var request = new HttpRequestMessage(HttpMethod.Get, $"api/projectmember/project/{projectId}");
+                if (!string.IsNullOrEmpty(bearerToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken);
+                }
+
+                var response = await _httpClient.SendAsync(request);
+
+                if (response.StatusCode == HttpStatusCode.NoContent)
+                {
+                    return new ProjectMembershipResult(ProjectMembershipStatus.NotMember);
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new ProjectMembershipResult(ProjectMembershipStatus.ServiceUnavailable);
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var members = JsonSerializer.Deserialize<List<ProjectMemberDTO>>(content, JsonOptions) ?? new List<ProjectMemberDTO>();
+
+                var isActiveMember = members.Any(m => m.UserId == userId && m.Status);
+                return new ProjectMembershipResult(isActiveMember ? ProjectMembershipStatus.Member : ProjectMembershipStatus.NotMember);
+            }
+            catch (HttpRequestException)
+            {
+                return new ProjectMembershipResult(ProjectMembershipStatus.ServiceUnavailable);
+            }
+            catch (TaskCanceledException)
+            {
+                return new ProjectMembershipResult(ProjectMembershipStatus.ServiceUnavailable);
+            }
+            catch (JsonException)
+            {
+                return new ProjectMembershipResult(ProjectMembershipStatus.ServiceUnavailable);
             }
         }
     }

@@ -1,5 +1,7 @@
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using AttachmentService.Exceptions;
 using Microsoft.Extensions.Options;
 
 namespace AttachmentService.Storage
@@ -59,6 +61,10 @@ namespace AttachmentService.Storage
             catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
             {
                 return false;
+            }
+            catch (Exception ex) when (ex is AmazonServiceException or HttpRequestException or TaskCanceledException)
+            {
+                throw new StorageUnavailableException(ex);
             }
         }
 

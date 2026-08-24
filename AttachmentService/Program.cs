@@ -1,11 +1,17 @@
+using System.Text;
 using Amazon.S3;
 using AttachmentService.Context;
 using AttachmentService.Data;
 using AttachmentService.ServiceCalls.Project;
+using AttachmentService.ServiceCalls.User;
 using AttachmentService.ServiceCalls.WorkPackage;
 using AttachmentService.Storage;
+using AttachmentService.Swagger;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +20,29 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Paste the accessToken from POST /api/auth/login (AuthService) here - no need to type \"Bearer \" first."
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+    options.OperationFilter<UserIdHeaderOperationFilter>();
+});
 
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
 builder.Services.AddDbContext<AttachmentContext>();
@@ -34,7 +62,7 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
 });
 builder.Services.AddScoped<IFileStorageService, S3FileStorageService>();
 
-builder.Services.AddHttpClient<IWorkPackageService, WorkPackageService>((sp, client) =>
+builder.Services.AddHttpClient<ITaskService, TaskService>((sp, client) =>
 {
     var baseUrl = sp.GetRequiredService<IConfiguration>()["Services:WorkPackageService"];
     if (!string.IsNullOrWhiteSpace(baseUrl))
@@ -52,6 +80,32 @@ builder.Services.AddHttpClient<IProjectService, ProjectService>((sp, client) =>
     }
     client.Timeout = TimeSpan.FromSeconds(5);
 });
+builder.Services.AddHttpClient<IUserService, UserService>((sp, client) =>
+{
+    var baseUrl = sp.GetRequiredService<IConfiguration>()["Services:UserService"];
+    if (!string.IsNullOrWhiteSpace(baseUrl))
+    {
+        client.BaseAddress = new Uri(baseUrl);
+    }
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSection = builder.Configuration.GetSection("Jwt");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+        };
+    });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -64,6 +118,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

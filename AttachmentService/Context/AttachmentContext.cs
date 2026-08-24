@@ -37,7 +37,7 @@ namespace AttachmentService.Context
             base.OnModelCreating(modelBuilder);
 
             var seedProjectId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-            var seedWorkPackageId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+            var seedTaskId = Guid.Parse("22222222-2222-2222-2222-222222222222");
             var seedUserId = Guid.Parse("55555555-5555-5555-5555-555555555555");
             var seededAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -56,7 +56,7 @@ namespace AttachmentService.Context
                     Status = AttachmentStatus.Ready,
                     DeletedAt = null,
                     ProjectId = seedProjectId,
-                    WorkPackageId = null,
+                    TaskId = null,
                     UploadedByUserId = seedUserId
                 },
                 new Attachment
@@ -64,16 +64,16 @@ namespace AttachmentService.Context
                     Id = Guid.Parse("44444444-4444-4444-4444-444444444444"),
                     FileName = "bug-screenshot.png",
                     OriginalFileName = "Screenshot 2026-01-01.png",
-                    StoragePath = $"projects/{seedProjectId}/workpackages/{seedWorkPackageId}/44444444-4444-4444-4444-444444444444.png",
+                    StoragePath = $"projects/{seedProjectId}/tasks/{seedTaskId}/44444444-4444-4444-4444-444444444444.png",
                     ContentType = "image/png",
                     FileSize = 102_400,
                     Checksum = null,
                     CreatedAt = seededAt,
-                    Description = "Seed data - attached to a workpackage, should also show up when listing the parent project's attachments.",
+                    Description = "Seed data - attached to a task, should also show up when listing the parent project's attachments.",
                     Status = AttachmentStatus.Ready,
                     DeletedAt = null,
                     ProjectId = seedProjectId,
-                    WorkPackageId = seedWorkPackageId,
+                    TaskId = seedTaskId,
                     UploadedByUserId = seedUserId
                 }
             );

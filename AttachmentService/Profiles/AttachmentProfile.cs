@@ -38,7 +38,7 @@ namespace AttachmentService.Profiles
                 .ForMember(dest => dest.Status, opt => opt.Ignore())
                 .ForMember(dest => dest.DeletedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.ProjectId, opt => opt.Ignore())
-                .ForMember(dest => dest.WorkPackageId, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskId, opt => opt.Ignore())
                 .ForMember(dest => dest.UploadedByUserId, opt => opt.Ignore());
 
             updateMap.ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));

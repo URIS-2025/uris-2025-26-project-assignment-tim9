@@ -1,5 +1,6 @@
 using AttachmentService.Controllers;
 using AttachmentService.Data;
+using AttachmentService.Exceptions;
 using AttachmentService.Models.DTO;
 using AttachmentService.Models.Enums;
 using Microsoft.AspNetCore.Http;
@@ -10,7 +11,7 @@ namespace AttachmentService.Tests
 {
     public class AttachmentControllerTests
     {
-        private static AttachmentController CreateController(Mock<IAttachmentRepository> repository, string? userIdHeader = null)
+        private static AttachmentController CreateController(Mock<IAttachmentRepository> repository, string? userIdHeader = null, string? bearerToken = null)
         {
             var controller = new AttachmentController(repository.Object);
             var httpContext = new DefaultHttpContext();
@@ -18,6 +19,11 @@ namespace AttachmentService.Tests
             if (userIdHeader is not null)
             {
                 httpContext.Request.Headers["X-User-Id"] = userIdHeader;
+            }
+
+            if (bearerToken is not null)
+            {
+                httpContext.Request.Headers.Authorization = $"Bearer {bearerToken}";
             }
 
             controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
@@ -38,87 +44,158 @@ namespace AttachmentService.Tests
         // ---------- GetAttachments ----------
 
         [Fact]
-        public void GetAttachments_ReturnsOkWithRepositoryResult()
+        public async Task GetAttachments_ReturnsOkWithRepositoryResult()
         {
             var repo = new Mock<IAttachmentRepository>();
             var projectId = Guid.NewGuid();
+            var userId = Guid.NewGuid();
             var expected = new List<AttachmentDTO> { SampleDto() };
-            repo.Setup(r => r.GetAttachments(projectId, null)).Returns(expected);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.GetAttachmentsAsync(projectId, null, userId, It.IsAny<string?>())).ReturnsAsync(expected);
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
-            var result = controller.GetAttachments(projectId, null);
+            var result = await controller.GetAttachments(projectId, null);
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Same(expected, ok.Value);
         }
 
         [Fact]
-        public void GetAttachmentsForTask_PassesTaskIdAsWorkPackageId()
+        public async Task GetAttachments_WithoutUserIdHeader_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            var controller = CreateController(repo, userIdHeader: null);
+
+            var result = await controller.GetAttachments(Guid.NewGuid(), null);
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+            repo.Verify(r => r.GetAttachmentsAsync(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid>(), It.IsAny<string?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetAttachments_WhenUserNotAProjectMember_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.GetAttachmentsAsync(It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new UserNotProjectMemberException(Guid.NewGuid(), Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.GetAttachments(Guid.NewGuid(), null);
+
+            var forbidden = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetAttachments_WithoutProjectContext_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.GetAttachmentsAsync(null, null, It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new ProjectContextRequiredException(Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.GetAttachments(null, null);
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task GetAttachmentsForTask_PassesTaskId()
         {
             var repo = new Mock<IAttachmentRepository>();
             var taskId = Guid.NewGuid();
-            repo.Setup(r => r.GetAttachments(null, taskId)).Returns(new List<AttachmentDTO>());
-            var controller = CreateController(repo);
+            var userId = Guid.NewGuid();
+            repo.Setup(r => r.GetAttachmentsAsync(null, taskId, userId, It.IsAny<string?>())).ReturnsAsync(new List<AttachmentDTO>());
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
-            controller.GetAttachmentsForTask(taskId);
+            await controller.GetAttachmentsForTask(taskId);
 
-            repo.Verify(r => r.GetAttachments(null, taskId), Times.Once);
+            repo.Verify(r => r.GetAttachmentsAsync(null, taskId, userId, It.IsAny<string?>()), Times.Once);
         }
 
         // ---------- GetAttachmentById ----------
 
         [Fact]
-        public void GetAttachmentById_WhenFound_ReturnsOk()
+        public async Task GetAttachmentById_WhenFound_ReturnsOk()
         {
             var repo = new Mock<IAttachmentRepository>();
             var dto = SampleDto();
-            repo.Setup(r => r.GetAttachmentById(dto.Id)).Returns(dto);
-            var controller = CreateController(repo);
+            var userId = Guid.NewGuid();
+            repo.Setup(r => r.GetAttachmentByIdAsync(dto.Id, userId, It.IsAny<string?>())).ReturnsAsync(dto);
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
-            var result = controller.GetAttachmentById(dto.Id);
+            var result = await controller.GetAttachmentById(dto.Id);
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Same(dto, ok.Value);
         }
 
         [Fact]
-        public void GetAttachmentById_WhenMissing_ReturnsNotFound()
+        public async Task GetAttachmentById_WhenMissing_ReturnsNotFound()
         {
             var repo = new Mock<IAttachmentRepository>();
-            repo.Setup(r => r.GetAttachmentById(It.IsAny<Guid>())).Returns((AttachmentDTO?)null);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.GetAttachmentByIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>())).ReturnsAsync((AttachmentDTO?)null);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
-            var result = controller.GetAttachmentById(Guid.NewGuid());
+            var result = await controller.GetAttachmentById(Guid.NewGuid());
 
             Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task GetAttachmentById_WhenUserNotAProjectMember_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.GetAttachmentByIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new UserNotProjectMemberException(Guid.NewGuid(), Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.GetAttachmentById(Guid.NewGuid());
+
+            var forbidden = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
         }
 
         // ---------- DownloadAttachment ----------
 
         [Fact]
-        public void DownloadAttachment_WhenUrlAvailable_ReturnsRedirect()
+        public async Task DownloadAttachment_WhenUrlAvailable_ReturnsRedirect()
         {
             var repo = new Mock<IAttachmentRepository>();
             var id = Guid.NewGuid();
-            repo.Setup(r => r.GetDownloadUrl(id)).Returns("https://storage.example/file");
-            var controller = CreateController(repo);
+            var userId = Guid.NewGuid();
+            repo.Setup(r => r.GetDownloadUrlAsync(id, userId, It.IsAny<string?>())).ReturnsAsync("https://storage.example/file");
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
-            var result = controller.DownloadAttachment(id);
+            var result = await controller.DownloadAttachment(id);
 
             var redirect = Assert.IsType<RedirectResult>(result);
             Assert.Equal("https://storage.example/file", redirect.Url);
         }
 
         [Fact]
-        public void DownloadAttachment_WhenNotReady_ReturnsNotFound()
+        public async Task DownloadAttachment_WhenNotReady_ReturnsNotFound()
         {
             var repo = new Mock<IAttachmentRepository>();
-            repo.Setup(r => r.GetDownloadUrl(It.IsAny<Guid>())).Returns((string?)null);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.GetDownloadUrlAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>())).ReturnsAsync((string?)null);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
-            var result = controller.DownloadAttachment(Guid.NewGuid());
+            var result = await controller.DownloadAttachment(Guid.NewGuid());
 
             Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task DownloadAttachment_WhenUserNotAProjectMember_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.GetDownloadUrlAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new UserNotProjectMemberException(Guid.NewGuid(), Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.DownloadAttachment(Guid.NewGuid());
+
+            var forbidden = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
         }
 
         // ---------- GetAttachmentDetails ----------
@@ -128,9 +205,10 @@ namespace AttachmentService.Tests
         {
             var repo = new Mock<IAttachmentRepository>();
             var id = Guid.NewGuid();
+            var userId = Guid.NewGuid();
             var details = new AttachmentDetailsDTO { Attachment = SampleDto(id) };
-            repo.Setup(r => r.GetAttachmentDetailsAsync(id)).ReturnsAsync(details);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.GetAttachmentDetailsAsync(id, userId, It.IsAny<string?>())).ReturnsAsync(details);
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
             var result = await controller.GetAttachmentDetails(id);
 
@@ -142,8 +220,8 @@ namespace AttachmentService.Tests
         public async Task GetAttachmentDetails_WhenMissing_ReturnsNotFound()
         {
             var repo = new Mock<IAttachmentRepository>();
-            repo.Setup(r => r.GetAttachmentDetailsAsync(It.IsAny<Guid>())).ReturnsAsync((AttachmentDetailsDTO?)null);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.GetAttachmentDetailsAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>())).ReturnsAsync((AttachmentDetailsDTO?)null);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
             var result = await controller.GetAttachmentDetails(Guid.NewGuid());
 
@@ -153,41 +231,41 @@ namespace AttachmentService.Tests
         // ---------- CreateAttachment ----------
 
         [Fact]
-        public void CreateAttachment_WithoutUserIdHeader_ReturnsBadRequest()
+        public async Task CreateAttachment_WithoutUserIdHeader_ReturnsBadRequest()
         {
             var repo = new Mock<IAttachmentRepository>();
             var controller = CreateController(repo, userIdHeader: null);
             var dto = new AttachmentCreationDTO { ProjectId = Guid.NewGuid() };
 
-            var result = controller.CreateAttachment(dto);
+            var result = await controller.CreateAttachment(dto);
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
-            repo.Verify(r => r.CreateAttachment(It.IsAny<AttachmentCreationDTO>(), It.IsAny<Guid>()), Times.Never);
+            repo.Verify(r => r.CreateAttachmentAsync(It.IsAny<AttachmentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()), Times.Never);
         }
 
         [Fact]
-        public void CreateAttachment_WithInvalidUserIdHeader_ReturnsBadRequest()
+        public async Task CreateAttachment_WithInvalidUserIdHeader_ReturnsBadRequest()
         {
             var repo = new Mock<IAttachmentRepository>();
             var controller = CreateController(repo, userIdHeader: "not-a-guid");
             var dto = new AttachmentCreationDTO { ProjectId = Guid.NewGuid() };
 
-            var result = controller.CreateAttachment(dto);
+            var result = await controller.CreateAttachment(dto);
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
-        public void CreateAttachment_WithValidUserIdHeader_ReturnsCreatedAtRoute()
+        public async Task CreateAttachment_WithValidUserIdHeader_ReturnsCreatedAtRoute()
         {
             var repo = new Mock<IAttachmentRepository>();
             var userId = Guid.NewGuid();
             var response = new AttachmentUploadResponseDTO { Attachment = SampleDto(), UploadUrl = "https://storage.example/upload" };
-            repo.Setup(r => r.CreateAttachment(It.IsAny<AttachmentCreationDTO>(), userId)).Returns(response);
+            repo.Setup(r => r.CreateAttachmentAsync(It.IsAny<AttachmentCreationDTO>(), userId, It.IsAny<string?>())).ReturnsAsync(response);
             var controller = CreateController(repo, userIdHeader: userId.ToString());
             var dto = new AttachmentCreationDTO { ProjectId = Guid.NewGuid() };
 
-            var result = controller.CreateAttachment(dto);
+            var result = await controller.CreateAttachment(dto);
 
             var created = Assert.IsType<CreatedAtRouteResult>(result.Result);
             Assert.Equal("GetAttachmentById", created.RouteName);
@@ -195,35 +273,92 @@ namespace AttachmentService.Tests
             Assert.Same(response, created.Value);
         }
 
+        [Fact]
+        public async Task CreateAttachment_WhenProjectDoesNotExist_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            var projectId = Guid.NewGuid();
+            repo.Setup(r => r.CreateAttachmentAsync(It.IsAny<AttachmentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new ProjectNotFoundException(projectId));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.CreateAttachment(new AttachmentCreationDTO { ProjectId = projectId });
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Contains(projectId.ToString(), badRequest.Value!.ToString());
+        }
+
+        [Fact]
+        public async Task CreateAttachment_WhenTaskDoesNotExist_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            var taskId = Guid.NewGuid();
+            repo.Setup(r => r.CreateAttachmentAsync(It.IsAny<AttachmentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new TaskNotFoundException(taskId));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.CreateAttachment(new AttachmentCreationDTO { ProjectId = Guid.NewGuid(), TaskId = taskId });
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task CreateAttachment_WhenUserNotAProjectMember_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.CreateAttachmentAsync(It.IsAny<AttachmentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new UserNotProjectMemberException(Guid.NewGuid(), Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.CreateAttachment(new AttachmentCreationDTO { ProjectId = Guid.NewGuid() });
+
+            var forbidden = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateAttachment_WhenRoleCannotUpload_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.CreateAttachmentAsync(It.IsAny<AttachmentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new RoleCannotUploadAttachmentsException(Guid.NewGuid(), "Client"));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.CreateAttachment(new AttachmentCreationDTO { ProjectId = Guid.NewGuid() });
+
+            var forbidden = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
+        }
+
         // ---------- CreateAttachmentForTask ----------
 
         [Fact]
-        public void CreateAttachmentForTask_OverridesWorkPackageIdFromRoute()
+        public async Task CreateAttachmentForTask_OverridesTaskIdFromRoute()
         {
             var repo = new Mock<IAttachmentRepository>();
             var taskId = Guid.NewGuid();
             var userId = Guid.NewGuid();
             var response = new AttachmentUploadResponseDTO { Attachment = SampleDto(), UploadUrl = "url" };
-            repo.Setup(r => r.CreateAttachment(It.Is<AttachmentCreationDTO>(d => d.WorkPackageId == taskId), userId))
-                .Returns(response);
+            repo.Setup(r => r.CreateAttachmentAsync(It.Is<AttachmentCreationDTO>(d => d.TaskId == taskId), userId, It.IsAny<string?>()))
+                .ReturnsAsync(response);
             var controller = CreateController(repo, userIdHeader: userId.ToString());
-            // Body doesn't mention a WorkPackageId at all - the route should still win.
+            // Body doesn't mention a TaskId at all - the route should still win.
             var dto = new AttachmentCreationDTO { ProjectId = Guid.NewGuid() };
 
-            var result = controller.CreateAttachmentForTask(taskId, dto);
+            var result = await controller.CreateAttachmentForTask(taskId, dto);
 
             Assert.IsType<CreatedAtRouteResult>(result.Result);
-            repo.Verify(r => r.CreateAttachment(It.Is<AttachmentCreationDTO>(d => d.WorkPackageId == taskId), userId), Times.Once);
+            repo.Verify(r => r.CreateAttachmentAsync(It.Is<AttachmentCreationDTO>(d => d.TaskId == taskId), userId, It.IsAny<string?>()), Times.Once);
         }
 
         [Fact]
-        public void CreateAttachmentForTask_WithoutUserIdHeader_ReturnsBadRequest()
+        public async Task CreateAttachmentForTask_WithoutUserIdHeader_ReturnsBadRequest()
         {
             var repo = new Mock<IAttachmentRepository>();
             var controller = CreateController(repo, userIdHeader: null);
             var dto = new AttachmentCreationDTO { ProjectId = Guid.NewGuid() };
 
-            var result = controller.CreateAttachmentForTask(Guid.NewGuid(), dto);
+            var result = await controller.CreateAttachmentForTask(Guid.NewGuid(), dto);
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
@@ -232,14 +367,15 @@ namespace AttachmentService.Tests
 
         [Theory]
         [InlineData(ConfirmAttachmentOutcome.NotFound, typeof(NotFoundResult))]
+        [InlineData(ConfirmAttachmentOutcome.Forbidden, typeof(ObjectResult))]
         [InlineData(ConfirmAttachmentOutcome.InvalidState, typeof(ConflictObjectResult))]
         [InlineData(ConfirmAttachmentOutcome.ObjectMissing, typeof(ConflictObjectResult))]
         public async Task ConfirmAttachment_MapsEachFailureOutcomeToExpectedStatusCode(ConfirmAttachmentOutcome outcome, Type expectedResultType)
         {
             var repo = new Mock<IAttachmentRepository>();
-            repo.Setup(r => r.ConfirmAttachmentAsync(It.IsAny<AttachmentConfirmationDTO>()))
+            repo.Setup(r => r.ConfirmAttachmentAsync(It.IsAny<AttachmentConfirmationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
                 .ReturnsAsync(new ConfirmAttachmentResult(outcome, null));
-            var controller = CreateController(repo);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
             var result = await controller.ConfirmAttachment(new AttachmentConfirmationDTO { AttachmentId = Guid.NewGuid() });
 
@@ -251,9 +387,9 @@ namespace AttachmentService.Tests
         {
             var repo = new Mock<IAttachmentRepository>();
             var dto = SampleDto();
-            repo.Setup(r => r.ConfirmAttachmentAsync(It.IsAny<AttachmentConfirmationDTO>()))
+            repo.Setup(r => r.ConfirmAttachmentAsync(It.IsAny<AttachmentConfirmationDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
                 .ReturnsAsync(new ConfirmAttachmentResult(ConfirmAttachmentOutcome.Success, dto));
-            var controller = CreateController(repo);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
             var result = await controller.ConfirmAttachment(new AttachmentConfirmationDTO { AttachmentId = dto.Id });
 
@@ -261,61 +397,124 @@ namespace AttachmentService.Tests
             Assert.Same(dto, ok.Value);
         }
 
+        [Fact]
+        public async Task ConfirmAttachment_WithoutUserIdHeader_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            var controller = CreateController(repo, userIdHeader: null);
+
+            var result = await controller.ConfirmAttachment(new AttachmentConfirmationDTO { AttachmentId = Guid.NewGuid() });
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
         // ---------- UpdateAttachment ----------
 
         [Fact]
-        public void UpdateAttachment_WhenFound_ReturnsOk()
+        public async Task UpdateAttachment_WhenFound_ReturnsOk()
         {
             var repo = new Mock<IAttachmentRepository>();
             var dto = SampleDto();
-            repo.Setup(r => r.UpdateAttachment(dto.Id, It.IsAny<AttachmentUpdateDTO>())).Returns(dto);
-            var controller = CreateController(repo);
+            var userId = Guid.NewGuid();
+            repo.Setup(r => r.UpdateAttachmentAsync(dto.Id, It.IsAny<AttachmentUpdateDTO>(), userId, It.IsAny<string?>())).ReturnsAsync(dto);
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
-            var result = controller.UpdateAttachment(dto.Id, new AttachmentUpdateDTO { Description = "x" });
+            var result = await controller.UpdateAttachment(dto.Id, new AttachmentUpdateDTO { Description = "x" });
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Same(dto, ok.Value);
         }
 
         [Fact]
-        public void UpdateAttachment_WhenMissing_ReturnsNotFound()
+        public async Task UpdateAttachment_WhenMissing_ReturnsNotFound()
         {
             var repo = new Mock<IAttachmentRepository>();
-            repo.Setup(r => r.UpdateAttachment(It.IsAny<Guid>(), It.IsAny<AttachmentUpdateDTO>())).Returns((AttachmentDTO?)null);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.UpdateAttachmentAsync(It.IsAny<Guid>(), It.IsAny<AttachmentUpdateDTO>(), It.IsAny<Guid>(), It.IsAny<string?>())).ReturnsAsync((AttachmentDTO?)null);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
-            var result = controller.UpdateAttachment(Guid.NewGuid(), new AttachmentUpdateDTO());
+            var result = await controller.UpdateAttachment(Guid.NewGuid(), new AttachmentUpdateDTO());
 
             Assert.IsType<NotFoundResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task UpdateAttachment_WithoutUserIdHeader_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            var controller = CreateController(repo, userIdHeader: null);
+
+            var result = await controller.UpdateAttachment(Guid.NewGuid(), new AttachmentUpdateDTO());
+
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task UpdateAttachment_WhenActingUserIsNotOwner_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.UpdateAttachmentAsync(It.IsAny<Guid>(), It.IsAny<AttachmentUpdateDTO>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new NotAttachmentOwnerException(Guid.NewGuid(), Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.UpdateAttachment(Guid.NewGuid(), new AttachmentUpdateDTO { Description = "x" });
+
+            var forbidden = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
         }
 
         // ---------- DeleteAttachment ----------
 
         [Fact]
-        public void DeleteAttachment_WhenFound_ReturnsNoContentAndCallsRepository()
+        public async Task DeleteAttachment_WhenFound_ReturnsNoContentAndCallsRepository()
         {
             var repo = new Mock<IAttachmentRepository>();
             var id = Guid.NewGuid();
-            repo.Setup(r => r.GetAttachmentById(id)).Returns(SampleDto(id));
-            var controller = CreateController(repo);
+            var userId = Guid.NewGuid();
+            repo.Setup(r => r.DeleteAttachmentAsync(id, userId, It.IsAny<string?>())).ReturnsAsync(true);
+            var controller = CreateController(repo, userIdHeader: userId.ToString());
 
-            var result = controller.DeleteAttachment(id);
+            var result = await controller.DeleteAttachment(id);
 
             Assert.IsType<NoContentResult>(result);
-            repo.Verify(r => r.DeleteAttachment(id), Times.Once);
+            repo.Verify(r => r.DeleteAttachmentAsync(id, userId, It.IsAny<string?>()), Times.Once);
         }
 
         [Fact]
-        public void DeleteAttachment_WhenMissing_ReturnsNotFoundAndDoesNotCallDelete()
+        public async Task DeleteAttachment_WhenMissing_ReturnsNotFound()
         {
             var repo = new Mock<IAttachmentRepository>();
-            repo.Setup(r => r.GetAttachmentById(It.IsAny<Guid>())).Returns((AttachmentDTO?)null);
-            var controller = CreateController(repo);
+            repo.Setup(r => r.DeleteAttachmentAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>())).ReturnsAsync(false);
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
 
-            var result = controller.DeleteAttachment(Guid.NewGuid());
+            var result = await controller.DeleteAttachment(Guid.NewGuid());
 
             Assert.IsType<NotFoundResult>(result);
-            repo.Verify(r => r.DeleteAttachment(It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteAttachment_WithoutUserIdHeader_ReturnsBadRequest()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            var controller = CreateController(repo, userIdHeader: null);
+
+            var result = await controller.DeleteAttachment(Guid.NewGuid());
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            repo.Verify(r => r.DeleteAttachmentAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task DeleteAttachment_WhenActingUserIsNotOwner_ReturnsForbidden()
+        {
+            var repo = new Mock<IAttachmentRepository>();
+            repo.Setup(r => r.DeleteAttachmentAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string?>()))
+                .ThrowsAsync(new NotAttachmentOwnerException(Guid.NewGuid(), Guid.NewGuid()));
+            var controller = CreateController(repo, userIdHeader: Guid.NewGuid().ToString());
+
+            var result = await controller.DeleteAttachment(Guid.NewGuid());
+
+            var forbidden = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(StatusCodes.Status403Forbidden, forbidden.StatusCode);
         }
     }
 }

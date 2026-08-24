@@ -19,7 +19,7 @@ namespace AttachmentService.Models.DTO
         [Required]
         public Guid ProjectId { get; set; }
 
-        public Guid? WorkPackageId { get; set; }
+        public Guid? TaskId { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
@@ -30,11 +30,11 @@ namespace AttachmentService.Models.DTO
                     new[] { nameof(ProjectId) });
             }
 
-            if (WorkPackageId.HasValue && WorkPackageId.Value == Guid.Empty)
+            if (TaskId.HasValue && TaskId.Value == Guid.Empty)
             {
                 yield return new ValidationResult(
-                    "WorkPackageId cannot be an empty GUID when provided - omit it instead to attach directly to the project.",
-                    new[] { nameof(WorkPackageId) });
+                    "TaskId cannot be an empty GUID when provided - omit it instead to attach directly to the project.",
+                    new[] { nameof(TaskId) });
             }
         }
     }

@@ -34,7 +34,7 @@ namespace AttachmentService.Tests
                 ContentType = "application/pdf",
                 FileSize = 500,
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid()
+                TaskId = Guid.NewGuid()
             };
 
             var entity = mapper.Map<Attachment>(dto);
@@ -43,7 +43,7 @@ namespace AttachmentService.Tests
             Assert.Equal(dto.ContentType, entity.ContentType);
             Assert.Equal(dto.FileSize, entity.FileSize);
             Assert.Equal(dto.ProjectId, entity.ProjectId);
-            Assert.Equal(dto.WorkPackageId, entity.WorkPackageId);
+            Assert.Equal(dto.TaskId, entity.TaskId);
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace AttachmentService.Tests
                 Description = "desc",
                 Status = AttachmentStatus.Ready,
                 ProjectId = Guid.NewGuid(),
-                WorkPackageId = Guid.NewGuid(),
+                TaskId = Guid.NewGuid(),
                 UploadedByUserId = Guid.NewGuid()
             };
 
@@ -78,7 +78,7 @@ namespace AttachmentService.Tests
             Assert.Equal(entity.Description, dto.Description);
             Assert.Equal(entity.Status, dto.Status);
             Assert.Equal(entity.ProjectId, dto.ProjectId);
-            Assert.Equal(entity.WorkPackageId, dto.WorkPackageId);
+            Assert.Equal(entity.TaskId, dto.TaskId);
             Assert.Equal(entity.UploadedByUserId, dto.UploadedByUserId);
         }
 

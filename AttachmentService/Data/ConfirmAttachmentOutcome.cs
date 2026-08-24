@@ -4,6 +4,7 @@ namespace AttachmentService.Data
     {
         Success,
         NotFound,
+        Forbidden,
         InvalidState,
         ObjectMissing
     }

@@ -21,7 +21,7 @@ namespace AttachmentService.Models
         public AttachmentStatus Status { get; set; } = AttachmentStatus.Uploading;
         public DateTime? DeletedAt { get; set; }
         public Guid ProjectId { get; set; }
-        public Guid? WorkPackageId { get; set; }
+        public Guid? TaskId { get; set; }
 
         public Guid UploadedByUserId { get; set; }
     }

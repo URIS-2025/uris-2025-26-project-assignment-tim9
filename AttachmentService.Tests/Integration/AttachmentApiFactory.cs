@@ -6,10 +6,11 @@ namespace AttachmentService.Tests.Integration
 {
     /// <summary>
     /// Boots the real app (real DI container, real routing, real AttachmentRepository,
-    /// real S3 SDK) against a dedicated integration-test MySQL database (separate from the
-    /// "attachment_db" used for manual dev, so this suite never collides with or depends on
-    /// leftover dev data) and the same local MinIO already used throughout manual testing.
-    /// WorkPackage/Project Service URLs point at FakeJsonServer instances supplied by the caller.
+    /// real S3 SDK, real JWT authentication) against a dedicated integration-test MySQL
+    /// database (separate from the "attachment_db" used for manual dev, so this suite never
+    /// collides with or depends on leftover dev data) and the same local MinIO already used
+    /// throughout manual testing. WorkPackage/Project/User Service URLs point at FakeJsonServer
+    /// instances supplied by the caller.
     /// </summary>
     public class AttachmentApiFactory : WebApplicationFactory<Program>
     {
@@ -17,11 +18,13 @@ namespace AttachmentService.Tests.Integration
 
         private readonly string _workPackageServiceUrl;
         private readonly string _projectServiceUrl;
+        private readonly string _userServiceUrl;
 
-        public AttachmentApiFactory(string workPackageServiceUrl, string projectServiceUrl)
+        public AttachmentApiFactory(string workPackageServiceUrl, string projectServiceUrl, string userServiceUrl)
         {
             _workPackageServiceUrl = workPackageServiceUrl;
             _projectServiceUrl = projectServiceUrl;
+            _userServiceUrl = userServiceUrl;
         }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -41,7 +44,8 @@ namespace AttachmentService.Tests.Integration
                     ["ObjectStorage:SecretKey"] = "minioadmin",
                     ["ObjectStorage:ForcePathStyle"] = "true",
                     ["Services:WorkPackageService"] = _workPackageServiceUrl,
-                    ["Services:ProjectService"] = _projectServiceUrl
+                    ["Services:ProjectService"] = _projectServiceUrl,
+                    ["Services:UserService"] = _userServiceUrl
                 });
             });
         }
