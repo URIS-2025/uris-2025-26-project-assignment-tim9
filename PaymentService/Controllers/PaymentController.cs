@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Data;
+using PaymentService.Swagger;
 using PaymentService.Models.DTO.PaymentDTOs;
 
 namespace PaymentService.Controllers
@@ -49,6 +50,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [RequiresUserId]
         public async Task<ActionResult<PaymentConfirmationDTO>> CreatePayment([FromBody] PaymentCreationDTO payment)
         {
             if (!Request.TryGetUserId(out var paidByUserId))

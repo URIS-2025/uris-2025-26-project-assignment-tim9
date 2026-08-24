@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Data;
+using PaymentService.Swagger;
 using PaymentService.Models.DTO.InvoiceDTOs;
 using PaymentService.Models.Enums;
 
@@ -48,6 +49,7 @@ namespace PaymentService.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [RequiresUserId]
         public async Task<ActionResult<InvoiceConfirmationDTO>> CreateInvoice([FromBody] InvoiceCreationDTO invoice)
         {
             if (!Request.TryGetUserId(out var issuedByUserId))

@@ -3,6 +3,7 @@ using PaymentService.Context;
 using PaymentService.Data;
 using PaymentService.ServiceCalls.Project;
 using PaymentService.ServiceCalls.User;
+using PaymentService.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,10 @@ builder.Services.AddControllers()
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.OperationFilter<UserIdHeaderOperationFilter>();
+});
 
 //ucitava sve Profile klase iz ovog projekta
 builder.Services.AddAutoMapper(config => config.AddMaps(typeof(Program).Assembly));
