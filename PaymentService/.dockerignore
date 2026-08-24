@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/.vs/
+*.user
+**/appsettings.Development.json
+PaymentService.sln
+Dockerfile
+.dockerignore

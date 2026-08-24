@@ -1,0 +1,140 @@
+using PaymentService.Data;
+using PaymentService.Models.DTO.InvoiceDTOs;
+using PaymentService.Models.DTO.InvoiceItemDTOs;
+using PaymentService.Models.Enums;
+
+namespace PaymentService.Tests
+{
+    public class InvoiceRepositoryTests
+    {
+        private static InvoiceCreationDTO NewInvoiceDto(Guid projectId) => new InvoiceCreationDTO
+        {
+            ProjectId = projectId,
+            IssueDate = new DateTime(2026, 8, 1),
+            Items = new List<InvoiceItemCreationDTO>
+            {
+                new InvoiceItemCreationDTO { Description = "Analiza", UnitPrice = 50m, Quantity = 10 },
+                new InvoiceItemCreationDTO { Description = "Razvoj", UnitPrice = 100m, Quantity = 10 }
+            }
+        };
+
+        [Fact]
+        public async Task CreateInvoice_CalculatesTotalFromItems()
+        {
+            var fx = new TestFixture();
+
+            var confirmation = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid());
+
+            //10*50 + 10*100
+            Assert.Equal(1500m, confirmation.TotalAmount);
+            Assert.Equal(2, confirmation.ItemCount);
+        }
+
+        [Fact]
+        public async Task CreateInvoice_SetsStatusToUnpaidAndFillsIssuer()
+        {
+            var fx = new TestFixture();
+            var issuer = Guid.NewGuid();
+
+            var confirmation = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), issuer);
+
+            Assert.Equal(InvoiceStatus.Unpaid, confirmation.Status);
+            Assert.Equal(TestFixture.KnownUsername, confirmation.IssuedByUsername);
+            Assert.Equal(TestFixture.KnownProjectName, confirmation.ProjectName);
+        }
+
+        [Fact]
+        public async Task CreateInvoice_CalculatesAmountForEachItem()
+        {
+            var fx = new TestFixture();
+
+            var confirmation = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid());
+            var items = fx.Items.GetItemsByInvoiceId(confirmation.InvoiceId).ToList();
+
+            Assert.Equal(500m, items.Single(i => i.Description == "Analiza").TotalAmount);
+            Assert.Equal(1000m, items.Single(i => i.Description == "Razvoj").TotalAmount);
+        }
+
+        [Fact]
+        public async Task UpdateInvoice_WhenInvoiceIsPaid_IsRejected()
+        {
+            var fx = new TestFixture();
+            var invoice = fx.SeedInvoice(InvoiceStatus.Paid);
+
+            var result = await fx.Invoices.UpdateInvoiceAsync(
+                invoice.InvoiceId,
+                new InvoiceUpdateDTO { Status = InvoiceStatus.Cancelled });
+
+            Assert.Equal(OperationOutcome.InvoiceIsPaid, result.Outcome);
+            Assert.Equal(InvoiceStatus.Paid, invoice.Status);
+        }
+
+        [Fact]
+        public async Task UpdateInvoice_WithPartialData_KeepsOtherFields()
+        {
+            var fx = new TestFixture();
+            var invoice = fx.SeedInvoice();
+            var originalProject = invoice.ProjectId;
+            var originalDate = invoice.IssueDate;
+
+            //salje se samo status, ostala polja moraju da ostanu netaknuta
+            var result = await fx.Invoices.UpdateInvoiceAsync(
+                invoice.InvoiceId,
+                new InvoiceUpdateDTO { Status = InvoiceStatus.Cancelled });
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(originalProject, invoice.ProjectId);
+            Assert.Equal(originalDate, invoice.IssueDate);
+            Assert.Equal(InvoiceStatus.Cancelled, invoice.Status);
+        }
+
+        [Fact]
+        public async Task UpdateInvoice_WhenMissing_ReturnsNotFound()
+        {
+            var fx = new TestFixture();
+
+            var result = await fx.Invoices.UpdateInvoiceAsync(Guid.NewGuid(), new InvoiceUpdateDTO());
+
+            Assert.Equal(OperationOutcome.NotFound, result.Outcome);
+        }
+
+        [Fact]
+        public void DeleteInvoice_WhenPaid_IsRejected()
+        {
+            var fx = new TestFixture();
+            var invoice = fx.SeedInvoice(InvoiceStatus.Paid);
+
+            var result = fx.Invoices.DeleteInvoice(invoice.InvoiceId);
+
+            Assert.Equal(OperationOutcome.InvoiceIsPaid, result.Outcome);
+            Assert.Single(fx.Context.Invoices);
+        }
+
+        [Fact]
+        public void DeleteInvoice_WhenUnpaid_RemovesIt()
+        {
+            var fx = new TestFixture();
+            var invoice = fx.SeedInvoice();
+
+            var result = fx.Invoices.DeleteInvoice(invoice.InvoiceId);
+
+            Assert.True(result.IsSuccess);
+            Assert.Empty(fx.Context.Invoices);
+        }
+
+        [Fact]
+        public void GetInvoices_FiltersByProjectAndStatus()
+        {
+            var fx = new TestFixture();
+            var paid = fx.SeedInvoice(InvoiceStatus.Paid);
+            fx.SeedInvoice();
+
+            var byProject = fx.Invoices.GetInvoices(projectId: paid.ProjectId).ToList();
+            var byStatus = fx.Invoices.GetInvoices(status: InvoiceStatus.Unpaid).ToList();
+
+            Assert.Single(byProject);
+            Assert.Single(byStatus);
+            Assert.Equal(InvoiceStatus.Unpaid, byStatus[0].Status);
+        }
+    }
+}
