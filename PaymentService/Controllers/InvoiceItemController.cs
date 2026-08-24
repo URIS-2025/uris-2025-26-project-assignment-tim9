@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Data;
 using PaymentService.Models.DTO.InvoiceItemDTOs;
 
 namespace PaymentService.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -46,6 +48,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<InvoiceItemConfirmationDTO> AddItem(Guid invoiceId, [FromBody] InvoiceItemCreationDTO item)
         {
             var result = _invoiceItemRepository.AddItem(invoiceId, item);
@@ -63,6 +66,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<InvoiceItemConfirmationDTO> UpdateItem(Guid invoiceItemId, [FromBody] InvoiceItemUpdateDTO item)
         {
             var result = _invoiceItemRepository.UpdateItem(invoiceItemId, item);
@@ -80,6 +84,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public IActionResult DeleteItem(Guid invoiceItemId)
         {
             var result = _invoiceItemRepository.DeleteItem(invoiceItemId);

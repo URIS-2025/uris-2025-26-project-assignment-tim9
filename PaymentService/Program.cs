@@ -1,6 +1,11 @@
+using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using PaymentService.Context;
 using PaymentService.Data;
+using PaymentService.ServiceCalls;
 using PaymentService.ServiceCalls.Project;
 using PaymentService.ServiceCalls.User;
 using PaymentService.Swagger;
@@ -20,6 +25,27 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Nalepi accessToken iz POST /api/auth/login (AuthService) - bez rec Bearer, Swagger je sam dodaje."
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+
     options.OperationFilter<UserIdHeaderOperationFilter>();
 });
 
@@ -32,6 +58,28 @@ builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
 builder.Services.AddScoped<IInvoiceItemRepository, InvoiceItemRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
+//ista Jwt konfiguracija kao u ostalim servisima tima - tokene izdaje AuthService
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwtSection = builder.Configuration.GetSection("Jwt");
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]!))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<AuthForwardingHandler>();
+
 //adrese servisa dolaze iz appsettings.json, timeout da nas tudji servis ne blokira
 builder.Services.AddHttpClient<IUserService, UserService>((sp, client) =>
 {
@@ -41,7 +89,8 @@ builder.Services.AddHttpClient<IUserService, UserService>((sp, client) =>
         client.BaseAddress = new Uri(baseUrl);
     }
     client.Timeout = TimeSpan.FromSeconds(5);
-});
+})
+    .AddHttpMessageHandler<AuthForwardingHandler>();
 
 builder.Services.AddHttpClient<IProjectService, ProjectService>((sp, client) =>
 {
@@ -51,7 +100,8 @@ builder.Services.AddHttpClient<IProjectService, ProjectService>((sp, client) =>
         client.BaseAddress = new Uri(baseUrl);
     }
     client.Timeout = TimeSpan.FromSeconds(5);
-});
+})
+    .AddHttpMessageHandler<AuthForwardingHandler>();
 
 var app = builder.Build();
 
@@ -64,6 +114,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

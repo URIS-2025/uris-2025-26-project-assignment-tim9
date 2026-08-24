@@ -47,16 +47,66 @@ namespace PaymentService.Tests.Integration
         }
 
         [Fact]
-        public async Task CreateInvoice_WithoutUserHeader_Returns400()
+        public async Task CreateInvoice_WhenTokenHasNoUserId_Returns400()
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "/api/invoice")
-            {
-                Content = JsonContent.Create(NewInvoicePayload())
-            };
+            using var client = _fixture.CreateClientWithoutSubject("ProjectManager");
 
-            var response = await _client.SendAsync(request);
+            var response = await client.PostAsJsonAsync("/api/invoice", NewInvoicePayload());
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        // ---------- autentifikacija i autorizacija ----------
+
+        [Fact]
+        public async Task RequestWithoutToken_Returns401()
+        {
+            var response = await _fixture.AnonymousClient.GetAsync("/api/invoice");
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task TeamMember_CanReadInvoices_ButCannotIssueThem()
+        {
+            using var client = _fixture.CreateClientFor("TeamMember", _fixture.KnownUserId);
+
+            var readResponse = await client.GetAsync("/api/invoice");
+            Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
+
+            var issueResponse = await client.PostAsJsonAsync("/api/invoice", NewInvoicePayload());
+            Assert.Equal(HttpStatusCode.Forbidden, issueResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task Client_CanPayInvoice_ButCannotIssueOne()
+        {
+            var invoiceId = await CreateInvoiceAsync();
+
+            using var client = _fixture.CreateClientFor("Client", _fixture.KnownUserId);
+
+            var issueResponse = await client.PostAsJsonAsync("/api/invoice", NewInvoicePayload());
+            Assert.Equal(HttpStatusCode.Forbidden, issueResponse.StatusCode);
+
+            var payResponse = await client.PostAsJsonAsync("/api/payment", new { invoiceId, amount = 880.00m });
+            Assert.Equal(HttpStatusCode.Created, payResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task DeletingPayment_IsAllowedOnlyForAdmin()
+        {
+            var invoiceId = await CreateInvoiceAsync();
+
+            var paymentResponse = await PostAsync("/api/payment", new { invoiceId, amount = 880.00m });
+            var payment = await ReadAsync<PaymentConfirmationDTO>(paymentResponse);
+
+            //ProjectManager ne sme da brise uplate
+            var forbidden = await _client.DeleteAsync($"/api/payment/{payment!.PaymentId}");
+            Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+
+            using var admin = _fixture.CreateClientFor("Admin", _fixture.KnownUserId);
+            var allowed = await admin.DeleteAsync($"/api/payment/{payment.PaymentId}");
+            Assert.Equal(HttpStatusCode.NoContent, allowed.StatusCode);
         }
 
         [Fact]
@@ -69,7 +119,7 @@ namespace PaymentService.Tests.Integration
                 items = Array.Empty<object>()
             };
 
-            var response = await PostAsync("/api/invoice", payload, withUserHeader: true);
+            var response = await PostAsync("/api/invoice", payload);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
@@ -77,7 +127,7 @@ namespace PaymentService.Tests.Integration
         [Fact]
         public async Task CreateInvoice_ComputesTotalAndFillsDataFromOtherServices()
         {
-            var response = await PostAsync("/api/invoice", NewInvoicePayload(), withUserHeader: true);
+            var response = await PostAsync("/api/invoice", NewInvoicePayload());
 
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
@@ -155,7 +205,7 @@ namespace PaymentService.Tests.Integration
             var invoiceId = await CreateInvoiceAsync();
 
             var response = await PostAsync("/api/payment",
-                new { invoiceId, amount = 99999.00m }, withUserHeader: true);
+                new { invoiceId, amount = 99999.00m });
 
             Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         }
@@ -166,7 +216,7 @@ namespace PaymentService.Tests.Integration
             var invoiceId = await CreateInvoiceAsync();
 
             var paymentResponse = await PostAsync("/api/payment",
-                new { invoiceId, amount = 880.00m }, withUserHeader: true);
+                new { invoiceId, amount = 880.00m });
 
             Assert.Equal(HttpStatusCode.Created, paymentResponse.StatusCode);
 
@@ -197,7 +247,7 @@ namespace PaymentService.Tests.Integration
             var invoiceId = await CreateInvoiceAsync();
 
             var first = await PostAsync("/api/payment",
-                new { invoiceId, amount = 300.00m }, withUserHeader: true);
+                new { invoiceId, amount = 300.00m });
             Assert.Equal(HttpStatusCode.Created, first.StatusCode);
 
             var invoiceResponse = await _client.GetAsync($"/api/invoice/{invoiceId}");
@@ -206,11 +256,11 @@ namespace PaymentService.Tests.Integration
 
             //ostalo je 580, pokusaj sa 600 mora da padne
             var tooMuch = await PostAsync("/api/payment",
-                new { invoiceId, amount = 600.00m }, withUserHeader: true);
+                new { invoiceId, amount = 600.00m });
             Assert.Equal(HttpStatusCode.Conflict, tooMuch.StatusCode);
 
             var exact = await PostAsync("/api/payment",
-                new { invoiceId, amount = 580.00m }, withUserHeader: true);
+                new { invoiceId, amount = 580.00m });
             Assert.Equal(HttpStatusCode.Created, exact.StatusCode);
         }
 
@@ -218,7 +268,7 @@ namespace PaymentService.Tests.Integration
         public async Task CreatePayment_ForUnknownInvoice_Returns404()
         {
             var response = await PostAsync("/api/payment",
-                new { invoiceId = Guid.NewGuid(), amount = 10.00m }, withUserHeader: true);
+                new { invoiceId = Guid.NewGuid(), amount = 10.00m });
 
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
@@ -239,26 +289,17 @@ namespace PaymentService.Tests.Integration
         //vraca id nove fakture na 880, da svaki test radi nad svojom fakturom
         private async Task<Guid> CreateInvoiceAsync()
         {
-            var response = await PostAsync("/api/invoice", NewInvoicePayload(), withUserHeader: true);
+            var response = await PostAsync("/api/invoice", NewInvoicePayload());
             response.EnsureSuccessStatusCode();
 
             var confirmation = await ReadAsync<InvoiceConfirmationDTO>(response);
             return confirmation!.InvoiceId;
         }
 
-        private async Task<HttpResponseMessage> PostAsync(string url, object payload, bool withUserHeader = false)
+        //salje zahtev kao ProjectManager, identitet korisnika stize iz tokena
+        private async Task<HttpResponseMessage> PostAsync(string url, object payload)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, url)
-            {
-                Content = JsonContent.Create(payload)
-            };
-
-            if (withUserHeader)
-            {
-                request.Headers.Add("X-User-Id", _fixture.KnownUserId.ToString());
-            }
-
-            return await _client.SendAsync(request);
+            return await _client.PostAsJsonAsync(url, payload);
         }
 
         private static async Task<T?> ReadAsync<T>(HttpResponseMessage response)

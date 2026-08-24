@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Data;
 using PaymentService.Swagger;
@@ -6,6 +7,7 @@ using PaymentService.Models.Enums;
 
 namespace PaymentService.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -50,6 +52,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [RequiresUserId]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public async Task<ActionResult<InvoiceConfirmationDTO>> CreateInvoice([FromBody] InvoiceCreationDTO invoice)
         {
             if (!Request.TryGetUserId(out var issuedByUserId))
@@ -67,6 +70,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public async Task<ActionResult<InvoiceConfirmationDTO>> UpdateInvoice(Guid invoiceId, [FromBody] InvoiceUpdateDTO invoice)
         {
             var result = await _invoiceRepository.UpdateInvoiceAsync(invoiceId, invoice);
@@ -84,6 +88,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public IActionResult DeleteInvoice(Guid invoiceId)
         {
             var result = _invoiceRepository.DeleteInvoice(invoiceId);

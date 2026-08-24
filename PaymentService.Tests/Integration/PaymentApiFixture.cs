@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,11 @@ namespace PaymentService.Tests.Integration
         private FakeJsonServer _projectServer = null!;
         private PaymentApiFactory _factory = null!;
 
+        //podrazumevani klijent je prijavljen kao ProjectManager, jer vecina operacija to trazi
         public HttpClient Client { get; private set; } = null!;
+
+        //klijent bez tokena, za provere odgovora 401
+        public HttpClient AnonymousClient { get; private set; } = null!;
 
         public Task InitializeAsync()
         {
@@ -40,7 +45,9 @@ namespace PaymentService.Tests.Integration
                     : (404, null));
 
             _factory = new PaymentApiFactory(_userServer.BaseUrl, _projectServer.BaseUrl);
-            Client = _factory.CreateClient();
+
+            Client = CreateClientFor("ProjectManager", KnownUserId);
+            AnonymousClient = _factory.CreateClient();
 
             using var scope = _factory.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<PaymentContext>();
@@ -48,6 +55,24 @@ namespace PaymentService.Tests.Integration
             context.Database.EnsureCreated();
 
             return Task.CompletedTask;
+        }
+
+        //klijent prijavljen u zadatoj ulozi
+        public HttpClient CreateClientFor(string role, Guid? userId = null)
+        {
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", TestTokens.ForRole(role, userId));
+            return client;
+        }
+
+        //klijent sa ispravnim tokenom, ali bez identiteta korisnika u njemu
+        public HttpClient CreateClientWithoutSubject(string role)
+        {
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", TestTokens.WithoutSubject(role));
+            return client;
         }
 
         public Task DisposeAsync()
@@ -59,6 +84,7 @@ namespace PaymentService.Tests.Integration
             }
 
             Client.Dispose();
+            AnonymousClient.Dispose();
             _factory.Dispose();
             _userServer.Dispose();
             _projectServer.Dispose();

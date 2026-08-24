@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PaymentService.Data;
 using PaymentService.Swagger;
@@ -5,6 +6,7 @@ using PaymentService.Models.DTO.PaymentDTOs;
 
 namespace PaymentService.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -51,6 +53,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
         [RequiresUserId]
+        [Authorize(Roles = "Admin,ProjectManager,Client")]
         public async Task<ActionResult<PaymentConfirmationDTO>> CreatePayment([FromBody] PaymentCreationDTO payment)
         {
             if (!Request.TryGetUserId(out var paidByUserId))
@@ -73,6 +76,7 @@ namespace PaymentService.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public async Task<ActionResult<PaymentConfirmationDTO>> UpdatePayment(Guid paymentId, [FromBody] PaymentUpdateDTO payment)
         {
             var result = await _paymentRepository.UpdatePaymentAsync(paymentId, payment);
@@ -89,6 +93,7 @@ namespace PaymentService.Controllers
         [HttpDelete("{paymentId:guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [Authorize(Roles = "Admin")]
         public IActionResult DeletePayment(Guid paymentId)
         {
             var result = _paymentRepository.DeletePayment(paymentId);
