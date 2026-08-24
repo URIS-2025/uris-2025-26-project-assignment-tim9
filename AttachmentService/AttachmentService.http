@@ -1,0 +1,6 @@
+@AttachmentService_HostAddress = http://localhost:5278
+
+GET {{AttachmentService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
