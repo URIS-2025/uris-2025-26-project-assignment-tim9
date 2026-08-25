@@ -22,6 +22,12 @@ namespace PaymentService.Controllers
                 OperationOutcome.AmountExceedsRemainingDebt =>
                     new ConflictObjectResult("Iznos uplate premasuje preostali dug po fakturi."),
 
+                OperationOutcome.NotProjectMember =>
+                    new ObjectResult("Korisnik nije clan projekta na koji se faktura odnosi.")
+                    {
+                        StatusCode = StatusCodes.Status403Forbidden
+                    },
+
                 _ => new StatusCodeResult(StatusCodes.Status500InternalServerError)
             };
         }

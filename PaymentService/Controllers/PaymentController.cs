@@ -61,7 +61,7 @@ namespace PaymentService.Controllers
                 return BadRequest($"Nedostaje ili je neispravan {UserHeader.Name} header.");
             }
 
-            var result = await _paymentRepository.CreatePaymentAsync(payment, paidByUserId);
+            var result = await _paymentRepository.CreatePaymentAsync(payment, paidByUserId, User.IsInRole("Admin"));
 
             if (!result.IsSuccess)
             {

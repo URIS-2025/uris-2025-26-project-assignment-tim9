@@ -40,9 +40,22 @@ namespace PaymentService.Tests.Integration
                     : (404, null));
 
             _projectServer = new FakeJsonServer(path =>
-                path.TrimStart('/').Equals($"api/project/{KnownProjectId}", StringComparison.OrdinalIgnoreCase)
-                    ? (200, $"{{\"projectId\":\"{KnownProjectId}\",\"name\":\"{KnownProjectName}\",\"budget\":50000}}")
-                    : (404, null));
+            {
+                var p = path.TrimStart('/');
+
+                if (p.Equals($"api/project/{KnownProjectId}", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (200, $"{{\"projectId\":\"{KnownProjectId}\",\"name\":\"{KnownProjectName}\",\"budget\":50000}}");
+                }
+
+                //clanovi projekta - samo KnownUserId je aktivan clan
+                if (p.Equals($"api/projectmember/project/{KnownProjectId}", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (200, $"[{{\"userId\":\"{KnownUserId}\",\"status\":true}}]");
+                }
+
+                return (404, null);
+            });
 
             _factory = new PaymentApiFactory(_userServer.BaseUrl, _projectServer.BaseUrl);
 

@@ -273,6 +273,41 @@ namespace PaymentService.Tests.Integration
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
+        // ---------- clanstvo na projektu ----------
+
+        [Fact]
+        public async Task UserWhoIsNotProjectMember_CannotIssueInvoice()
+        {
+            //ProjectManager, ali nije na listi clanova ovog projekta
+            using var stranac = _fixture.CreateClientFor("ProjectManager", Guid.NewGuid());
+
+            var response = await stranac.PostAsJsonAsync("/api/invoice", NewInvoicePayload());
+
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UserWhoIsNotProjectMember_CannotPayInvoice()
+        {
+            var invoiceId = await CreateInvoiceAsync();
+
+            using var stranac = _fixture.CreateClientFor("Client", Guid.NewGuid());
+
+            var response = await stranac.PostAsJsonAsync("/api/payment", new { invoiceId, amount = 100.00m });
+
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task AdminCanIssueInvoice_EvenWhenNotProjectMember()
+        {
+            using var admin = _fixture.CreateClientFor("Admin", Guid.NewGuid());
+
+            var response = await admin.PostAsJsonAsync("/api/invoice", NewInvoicePayload());
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
         // ---------- pomocne metode ----------
 
         private object NewInvoicePayload() => new

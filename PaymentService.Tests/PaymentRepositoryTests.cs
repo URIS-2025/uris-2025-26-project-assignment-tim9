@@ -15,7 +15,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = Guid.NewGuid(), Amount = 100m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(OperationOutcome.NotFound, result.Outcome);
         }
@@ -28,7 +28,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 1500m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(OperationOutcome.AmountExceedsRemainingDebt, result.Outcome);
             Assert.Empty(fx.Context.Payments);
@@ -42,7 +42,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 1000m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.True(result.IsSuccess);
             Assert.Equal(InvoiceStatus.Paid, invoice.Status);
@@ -57,7 +57,7 @@ namespace PaymentService.Tests
 
             await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 400m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(InvoiceStatus.Unpaid, invoice.Status);
         }
@@ -70,15 +70,15 @@ namespace PaymentService.Tests
             var payer = Guid.NewGuid();
 
             await fx.Payments.CreatePaymentAsync(
-                new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 400m }, payer);
+                new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 400m }, payer, false);
 
             var tooMuch = await fx.Payments.CreatePaymentAsync(
-                new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 700m }, payer);
+                new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 700m }, payer, false);
 
             Assert.Equal(OperationOutcome.AmountExceedsRemainingDebt, tooMuch.Outcome);
 
             var exact = await fx.Payments.CreatePaymentAsync(
-                new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 600m }, payer);
+                new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 600m }, payer, false);
 
             Assert.True(exact.IsSuccess);
             Assert.Equal(InvoiceStatus.Paid, invoice.Status);
@@ -92,7 +92,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 10m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(OperationOutcome.InvoiceIsPaid, result.Outcome);
         }
@@ -105,7 +105,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 10m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(OperationOutcome.InvoiceIsCancelled, result.Outcome);
         }
@@ -118,7 +118,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 100m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(TestFixture.KnownUsername, result.Value!.PaidByUsername);
             Assert.Equal(TestFixture.KnownProjectName, result.Value.ProjectName);
@@ -137,7 +137,7 @@ namespace PaymentService.Tests
 
             var result = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 100m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.True(result.IsSuccess);
             Assert.Equal("Nepoznat korisnik", result.Value!.PaidByUsername);
@@ -151,7 +151,7 @@ namespace PaymentService.Tests
 
             var created = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 500m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             //povecanje sa 500 na 800 je ispravno jer se stara uplata ne racuna dva puta
             var updated = await fx.Payments.UpdatePaymentAsync(
@@ -170,7 +170,7 @@ namespace PaymentService.Tests
 
             var created = await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = invoice.InvoiceId, Amount = 1000m },
-                Guid.NewGuid());
+                Guid.NewGuid(), false);
 
             Assert.Equal(InvoiceStatus.Paid, invoice.Status);
 
@@ -188,9 +188,9 @@ namespace PaymentService.Tests
             var second = fx.SeedInvoice();
 
             await fx.Payments.CreatePaymentAsync(
-                new PaymentCreationDTO { InvoiceId = first.InvoiceId, Amount = 100m }, Guid.NewGuid());
+                new PaymentCreationDTO { InvoiceId = first.InvoiceId, Amount = 100m }, Guid.NewGuid(), false);
             await fx.Payments.CreatePaymentAsync(
-                new PaymentCreationDTO { InvoiceId = second.InvoiceId, Amount = 200m }, Guid.NewGuid());
+                new PaymentCreationDTO { InvoiceId = second.InvoiceId, Amount = 200m }, Guid.NewGuid(), false);
 
             var payments = fx.Payments.GetPayments(invoiceId: first.InvoiceId).ToList();
 

@@ -36,7 +36,7 @@ namespace PaymentService.Tests
             var response = await controller.CreatePayment(new PaymentCreationDTO());
 
             Assert.IsType<BadRequestObjectResult>(response.Result);
-            repository.Verify(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>()), Times.Never);
+            repository.Verify(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace PaymentService.Tests
         {
             var repository = new Mock<IPaymentRepository>();
             repository
-                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>()))
+                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<bool>()))
                 .ReturnsAsync(OperationResult<PaymentConfirmationDTO>.Fail(OperationOutcome.NotFound));
 
             var controller = BuildController(repository);
@@ -59,7 +59,7 @@ namespace PaymentService.Tests
         {
             var repository = new Mock<IPaymentRepository>();
             repository
-                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>()))
+                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<bool>()))
                 .ReturnsAsync(OperationResult<PaymentConfirmationDTO>.Fail(OperationOutcome.InvoiceIsPaid));
 
             var controller = BuildController(repository);
@@ -76,7 +76,7 @@ namespace PaymentService.Tests
 
             var repository = new Mock<IPaymentRepository>();
             repository
-                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>()))
+                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<bool>()))
                 .ReturnsAsync(OperationResult<PaymentConfirmationDTO>.Ok(confirmation));
 
             var controller = BuildController(repository);
@@ -92,7 +92,7 @@ namespace PaymentService.Tests
         {
             var repository = new Mock<IPaymentRepository>();
             repository
-                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>()))
+                .Setup(r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), It.IsAny<Guid>(), It.IsAny<bool>()))
                 .ReturnsAsync(OperationResult<PaymentConfirmationDTO>.Ok(new PaymentConfirmationDTO()));
 
             var controller = BuildController(repository);
@@ -100,7 +100,7 @@ namespace PaymentService.Tests
             await controller.CreatePayment(new PaymentCreationDTO());
 
             repository.Verify(
-                r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), Guid.Parse(UserId)),
+                r => r.CreatePaymentAsync(It.IsAny<PaymentCreationDTO>(), Guid.Parse(UserId), It.IsAny<bool>()),
                 Times.Once);
         }
 
