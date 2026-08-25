@@ -1,0 +1,318 @@
+networks:
+  uris-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  minio-data:
+  integration-keys:
+
+services:
+  # ---------------------------------------------------------------------
+  # Infrastructure
+  # ---------------------------------------------------------------------
+  mysql:
+    image: mysql:8.0
+    container_name: uris-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - uris-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: uris-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - uris-network
+
+  # One-shot job that creates the "attachments" bucket AttachmentService expects.
+  minio-init:
+    image: minio/mc:latest
+    container_name: uris-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb -p local/attachments &&
+      mc anonymous set download local/attachments &&
+      exit 0
+      "
+    networks:
+      - uris-network
+
+  # ---------------------------------------------------------------------
+  # Microservices
+  # ---------------------------------------------------------------------
+  authservice:
+    build:
+      context: .
+      dockerfile: AuthService/Dockerfile
+    container_name: authservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__AuthDB: "Server=mysql;Port=3306;Database=AuthDB;User=root;Password=root;"
+      Services__UserService: "http://userservice:8080/"
+    ports:
+      - "5232:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  userservice:
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+    container_name: userservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__UserDB: "Server=mysql;Port=3306;Database=UserDB;User=root;Password=root;"
+      Services__AuthService: "http://authservice:8080/"
+      Services__NotificationService: "http://notificationservice:8080/"
+    ports:
+      - "5231:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  projectservice:
+    build:
+      context: ./ProjectService
+      dockerfile: Dockerfile
+    container_name: projectservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__ProjectDB: "Server=mysql;Port=3306;Database=ProjectDB;User=root;Password=root;"
+      Services__UserService: "http://userservice:8080/"
+    ports:
+      - "5230:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  sprintservice:
+    build:
+      context: ./SprintService
+      dockerfile: Dockerfile
+    container_name: sprintservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__SprintDB: "Server=mysql;Port=3306;Database=SprintDB;User=root;Password=root;"
+      Services__ProjectService: "http://projectservice:8080/"
+    ports:
+      - "5130:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  timelogservice:
+    build:
+      context: ./TimelogService
+      dockerfile: Dockerfile
+    container_name: timelogservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__TimelogDB: "Server=mysql;Port=3306;Database=TimelogDB;User=root;Password=root;"
+      Services__ProjectService: "http://projectservice:8080/"
+      Services__WorkPackageService: "http://workpackageservice:8080/"
+      Services__UserService: "http://userservice:8080/"
+    ports:
+      - "5273:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  workpackageservice:
+    build:
+      context: ./WorkPackageService
+      dockerfile: Dockerfile
+    container_name: workpackageservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__WorkPackageServiceConnection: "Server=mysql;Port=3306;Database=workpackageservicedb;User=root;Password=root;"
+      ServiceUrls__NotificationService: "http://notificationservice:8080/"
+      ServiceUrls__ProjectService: "http://projectservice:8080/"
+    ports:
+      - "5037:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  paymentservice:
+    build:
+      context: ./PaymentService
+      dockerfile: Dockerfile
+    container_name: paymentservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__PaymentDB: "Server=mysql;Port=3306;Database=PaymentDB;User=root;Password=root;"
+      Services__UserService: "http://userservice:8080/"
+      Services__ProjectService: "http://projectservice:8080/"
+    ports:
+      - "5240:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  notificationservice:
+    build:
+      context: ./NotificationService
+      dockerfile: Dockerfile
+    container_name: notificationservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__NotificationServiceConnection: "Server=mysql;Port=3306;Database=NotificationServiceDB;User=root;Password=root;"
+    ports:
+      - "5100:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  integrationservice:
+    build:
+      context: ./IntegrationService
+      dockerfile: Dockerfile
+    container_name: integrationservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__IntegrationServiceConnection: "Server=mysql;Port=3306;Database=IntegrationServiceDB;User=root;Password=root;"
+    ports:
+      - "5110:8080"
+    volumes:
+      # IntegrationService encrypts stored API keys with a DataProtection key ring
+      # persisted to ./keys (see its Program.cs comment) - without a volume, a
+      # container recreate rotates the keys and any secrets already in
+      # IntegrationServiceDB become permanently undecryptable.
+      - integration-keys:/app/keys
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - uris-network
+
+  attachmentservice:
+    build:
+      context: ./AttachmentService
+      dockerfile: Dockerfile
+    container_name: attachmentservice
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__AttachmentDB: "Server=mysql;Port=3306;Database=attachment_db;User=root;Password=root;"
+      ObjectStorage__ServiceUrl: "http://minio:9000"
+      ObjectStorage__BucketName: "attachments"
+      ObjectStorage__AccessKey: "minioadmin"
+      ObjectStorage__SecretKey: "minioadmin"
+      ObjectStorage__ForcePathStyle: "true"
+      Services__WorkPackageService: "http://workpackageservice:8080/"
+      Services__ProjectService: "http://projectservice:8080/"
+      Services__UserService: "http://userservice:8080/"
+      Jwt__Key: "uris-2025-26-tim9-super-secret-key-min-32-chars"
+      Jwt__Issuer: "AuthService"
+      Jwt__Audience: "UrisApi"
+    ports:
+      - "5278:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - uris-network
+
+  apigateway:
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    container_name: apigateway
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ReverseProxy__Clusters__notification-cluster__Destinations__destination1__Address: "http://notificationservice:8080/"
+      ReverseProxy__Clusters__integration-cluster__Destinations__destination1__Address: "http://integrationservice:8080/"
+      ReverseProxy__Clusters__project-cluster__Destinations__destination1__Address: "http://projectservice:8080/"
+      ReverseProxy__Clusters__sprint-cluster__Destinations__destination1__Address: "http://sprintservice:8080/"
+      ReverseProxy__Clusters__timelog-cluster__Destinations__destination1__Address: "http://timelogservice:8080/"
+      ReverseProxy__Clusters__workpackage-cluster__Destinations__destination1__Address: "http://workpackageservice:8080/"
+      ReverseProxy__Clusters__attachment-cluster__Destinations__destination1__Address: "http://attachmentservice:8080/"
+      ReverseProxy__Clusters__auth-cluster__Destinations__destination1__Address: "http://authservice:8080/"
+      ReverseProxy__Clusters__user-cluster__Destinations__destination1__Address: "http://userservice:8080/"
+      ReverseProxy__Clusters__payment-cluster__Destinations__destination1__Address: "http://paymentservice:8080/"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - authservice
+      - userservice
+      - projectservice
+      - sprintservice
+      - timelogservice
+      - workpackageservice
+      - paymentservice
+      - notificationservice
+      - integrationservice
+      - attachmentservice
+    networks:
+      - uris-network
