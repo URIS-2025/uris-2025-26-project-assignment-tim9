@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using TimelogService.Context;
 using TimelogService.Data;
@@ -72,6 +73,15 @@ builder.Services.AddHttpClient<ITaskService, TaskService>((sp, client) =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TimelogContext>();
+    if (context.Database.IsRelational())
+    {
+        context.Database.Migrate();
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
