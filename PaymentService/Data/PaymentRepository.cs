@@ -52,13 +52,24 @@ namespace PaymentService.Data
             return payment is null ? null : _mapper.Map<PaymentDTO>(payment);
         }
 
-        public async Task<OperationResult<PaymentConfirmationDTO>> CreatePaymentAsync(PaymentCreationDTO payment, Guid paidByUserId)
+        public async Task<OperationResult<PaymentConfirmationDTO>> CreatePaymentAsync(PaymentCreationDTO payment, Guid paidByUserId, bool isAdmin)
         {
             var invoice = LoadInvoice(payment.InvoiceId);
 
             if (invoice is null)
             {
                 return OperationResult<PaymentConfirmationDTO>.Fail(OperationOutcome.NotFound);
+            }
+
+            //placa samo clan projekta kome je faktura izdata - admin je izuzet
+            if (!isAdmin)
+            {
+                var membership = await _projectService.CheckMembershipAsync(invoice.ProjectId, paidByUserId);
+
+                if (membership.Status == ProjectMembershipStatus.NotMember)
+                {
+                    return OperationResult<PaymentConfirmationDTO>.Fail(OperationOutcome.NotProjectMember);
+                }
             }
 
             if (invoice.Status == InvoiceStatus.Cancelled)

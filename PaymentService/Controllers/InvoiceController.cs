@@ -51,6 +51,7 @@ namespace PaymentService.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [RequiresUserId]
         [Authorize(Roles = "Admin,ProjectManager")]
         public async Task<ActionResult<InvoiceConfirmationDTO>> CreateInvoice([FromBody] InvoiceCreationDTO invoice)
@@ -60,9 +61,14 @@ namespace PaymentService.Controllers
                 return BadRequest($"Nedostaje ili je neispravan {UserHeader.Name} header.");
             }
 
-            var confirmation = await _invoiceRepository.CreateInvoiceAsync(invoice, issuedByUserId);
+            var result = await _invoiceRepository.CreateInvoiceAsync(invoice, issuedByUserId, User.IsInRole("Admin"));
 
-            return CreatedAtRoute("GetInvoiceById", new { invoiceId = confirmation.InvoiceId }, confirmation);
+            if (!result.IsSuccess)
+            {
+                return OutcomeMapper.ToResponse(result.Outcome);
+            }
+
+            return CreatedAtRoute("GetInvoiceById", new { invoiceId = result.Value!.InvoiceId }, result.Value);
         }
 
         // PUT: api/invoice/{invoiceId}

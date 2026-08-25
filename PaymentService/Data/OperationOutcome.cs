@@ -7,6 +7,7 @@ namespace PaymentService.Data
         NotFound,
         InvoiceIsPaid,
         InvoiceIsCancelled,
-        AmountExceedsRemainingDebt
+        AmountExceedsRemainingDebt,
+        NotProjectMember
     }
 }

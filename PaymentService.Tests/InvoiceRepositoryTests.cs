@@ -1,7 +1,9 @@
+using Moq;
 using PaymentService.Data;
 using PaymentService.Models.DTO.InvoiceDTOs;
 using PaymentService.Models.DTO.InvoiceItemDTOs;
 using PaymentService.Models.Enums;
+using PaymentService.ServiceCalls.Project;
 
 namespace PaymentService.Tests
 {
@@ -23,7 +25,7 @@ namespace PaymentService.Tests
         {
             var fx = new TestFixture();
 
-            var confirmation = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid());
+            var confirmation = (await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid(), false)).Value!;
 
             //10*50 + 10*100
             Assert.Equal(1500m, confirmation.TotalAmount);
@@ -36,7 +38,7 @@ namespace PaymentService.Tests
             var fx = new TestFixture();
             var issuer = Guid.NewGuid();
 
-            var confirmation = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), issuer);
+            var confirmation = (await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), issuer, false)).Value!;
 
             Assert.Equal(InvoiceStatus.Unpaid, confirmation.Status);
             Assert.Equal(TestFixture.KnownUsername, confirmation.IssuedByUsername);
@@ -48,7 +50,7 @@ namespace PaymentService.Tests
         {
             var fx = new TestFixture();
 
-            var confirmation = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid());
+            var confirmation = (await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid(), false)).Value!;
             var items = fx.Items.GetItemsByInvoiceId(confirmation.InvoiceId).ToList();
 
             Assert.Equal(500m, items.Single(i => i.Description == "Analiza").TotalAmount);
@@ -136,5 +138,47 @@ namespace PaymentService.Tests
             Assert.Single(byStatus);
             Assert.Equal(InvoiceStatus.Unpaid, byStatus[0].Status);
         }
+        [Fact]
+        public async Task CreateInvoice_WhenIssuerIsNotProjectMember_Fails()
+        {
+            var fx = new TestFixture();
+            fx.ProjectService
+                .Setup(s => s.CheckMembershipAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .ReturnsAsync(new ProjectMembershipResult(ProjectMembershipStatus.NotMember));
+
+            var result = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid(), false);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(OperationOutcome.NotProjectMember, result.Outcome);
+        }
+
+        [Fact]
+        public async Task CreateInvoice_WhenProjectServiceIsUnavailable_StillSucceeds()
+        {
+            var fx = new TestFixture();
+            fx.ProjectService
+                .Setup(s => s.CheckMembershipAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .ReturnsAsync(new ProjectMembershipResult(ProjectMembershipStatus.ServiceUnavailable));
+
+            var result = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid(), false);
+
+            Assert.True(result.IsSuccess);
+        }
+
+        [Fact]
+        public async Task CreateInvoice_AsAdmin_SkipsMembershipCheck()
+        {
+            var fx = new TestFixture();
+            fx.ProjectService
+                .Setup(s => s.CheckMembershipAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .ReturnsAsync(new ProjectMembershipResult(ProjectMembershipStatus.NotMember));
+
+            var result = await fx.Invoices.CreateInvoiceAsync(NewInvoiceDto(Guid.NewGuid()), Guid.NewGuid(), true);
+
+            Assert.True(result.IsSuccess);
+            fx.ProjectService.Verify(
+                s => s.CheckMembershipAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+        }
+
     }
 }

@@ -55,8 +55,19 @@ namespace PaymentService.Data
             return invoice is null ? null : _mapper.Map<InvoiceDTO>(invoice);
         }
 
-        public async Task<InvoiceConfirmationDTO> CreateInvoiceAsync(InvoiceCreationDTO invoice, Guid issuedByUserId)
+        public async Task<OperationResult<InvoiceConfirmationDTO>> CreateInvoiceAsync(InvoiceCreationDTO invoice, Guid issuedByUserId, bool isAdmin)
         {
+            //fakturu izdaje samo clan projekta - admin ima pristup svim projektima
+            if (!isAdmin)
+            {
+                var membership = await _projectService.CheckMembershipAsync(invoice.ProjectId, issuedByUserId);
+
+                if (membership.Status == ProjectMembershipStatus.NotMember)
+                {
+                    return OperationResult<InvoiceConfirmationDTO>.Fail(OperationOutcome.NotProjectMember);
+                }
+            }
+
             var newInvoice = _mapper.Map<Invoice>(invoice);
             newInvoice.InvoiceId = Guid.NewGuid();
             newInvoice.IssuedByUserId = issuedByUserId;
@@ -75,7 +86,7 @@ namespace PaymentService.Data
             _context.Invoices.Add(newInvoice);
             _context.SaveChanges();
 
-            return await BuildConfirmationAsync(newInvoice);
+            return OperationResult<InvoiceConfirmationDTO>.Ok(await BuildConfirmationAsync(newInvoice));
         }
 
         public async Task<OperationResult<InvoiceConfirmationDTO>> UpdateInvoiceAsync(Guid invoiceId, InvoiceUpdateDTO invoice)
