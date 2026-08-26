@@ -1,0 +1,135 @@
+.task-list {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.task-row {
+  display: grid;
+  grid-template-columns: 2fr auto auto 110px auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.task-title {
+  font-weight: 500;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-description {
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-due {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  text-align: right;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badge.neutral {
+  background: var(--code-bg);
+  color: var(--text);
+}
+
+.badge.in-progress {
+  background: rgba(232, 163, 61, 0.15);
+  color: var(--color-status-in-progress);
+}
+
+.badge.done {
+  background: rgba(79, 157, 105, 0.15);
+  color: var(--color-status-done);
+}
+
+.badge.critical {
+  background: rgba(214, 69, 69, 0.15);
+  color: var(--color-status-critical);
+}
+
+.badge.outline {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.icon-button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sans);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.icon-button:hover {
+  border-color: var(--accent-border);
+}
+
+.icon-button.danger {
+  color: var(--color-status-critical);
+}
+
+.icon-button.danger:hover {
+  border-color: var(--color-status-critical);
+}
+
+.icon-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.task-list-empty {
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .task-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .task-due {
+    text-align: left;
+  }
+}
