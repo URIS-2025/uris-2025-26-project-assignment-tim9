@@ -1,0 +1,5 @@
+:root {
+  --color-status-in-progress: #e8a33d;
+  --color-status-done: #4f9d69;
+  --color-status-critical: #d64545;
+}
