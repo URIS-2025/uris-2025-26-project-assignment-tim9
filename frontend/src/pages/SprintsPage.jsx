@@ -22,8 +22,14 @@ function formatDate(iso) {
   return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+// SprintController's create-sprint and TaskController's create-task routes
+// are both [Authorize(Roles = "Admin,ProjectManager")] - keep this in sync
+// with those if the backend's allowed roles ever change.
+const CAN_MANAGE_ROLES = ['Admin', 'ProjectManager'];
+
 export default function SprintsPage() {
   const { token, username, role, logout } = useAuth();
+  const canManage = CAN_MANAGE_ROLES.includes(role);
 
   const [projects, setProjects] = useState([]);
   const [sprints, setSprints] = useState([]);
@@ -233,9 +239,15 @@ export default function SprintsPage() {
                 mock data
               </span>
             </h4>
-            <button type="button" className="primary-button" onClick={() => setShowTaskForm(true)}>
-              + New task
-            </button>
+            {canManage && (
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => setShowTaskForm(true)}
+              >
+                + New task
+              </button>
+            )}
           </div>
 
           {taskActionError && <div className="form-message error">{taskActionError}</div>}
@@ -246,20 +258,24 @@ export default function SprintsPage() {
         <>
           <div className="sprints-toolbar">
             <h2>Current sprints</h2>
-            <button
-              type="button"
-              className="fab"
-              title="New sprint"
-              aria-label="New sprint"
-              onClick={() => setShowSprintForm(true)}
-            >
-              +
-            </button>
+            {canManage && (
+              <button
+                type="button"
+                className="fab"
+                title="New sprint"
+                aria-label="New sprint"
+                onClick={() => setShowSprintForm(true)}
+              >
+                +
+              </button>
+            )}
           </div>
 
           {sprints.length === 0 ? (
             <div className="sprint-list-empty">
-              No sprints yet. Use the + button to create the first one.
+              {canManage
+                ? 'No sprints yet. Use the + button to create the first one.'
+                : 'No sprints yet.'}
             </div>
           ) : (
             <div className="sprint-pager">
