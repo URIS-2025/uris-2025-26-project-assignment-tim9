@@ -49,16 +49,34 @@ builder.Services.AddDbContext<AttachmentContext>();
 builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
 
 builder.Services.Configure<ObjectStorageOptions>(builder.Configuration.GetSection("ObjectStorage"));
-builder.Services.AddSingleton<IAmazonS3>(sp =>
+
+static AmazonS3Client BuildS3Client(ObjectStorageOptions options, string serviceUrl)
 {
-    var options = sp.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
     var config = new AmazonS3Config
     {
-        ServiceURL = options.ServiceUrl,
+        ServiceURL = serviceUrl,
         ForcePathStyle = options.ForcePathStyle,
-        UseHttp = options.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+        UseHttp = serviceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
     };
     return new AmazonS3Client(options.AccessKey, options.SecretKey, config);
+}
+
+// Server-to-server client (HeadObject, etc.) - talks to storage over
+// options.ServiceUrl, which in docker-compose is the internal container
+// hostname (e.g. "http://minio:9000").
+builder.Services.AddKeyedSingleton<IAmazonS3>(S3ClientKeys.Internal, (sp, _) =>
+{
+    var options = sp.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
+    return BuildS3Client(options, options.ServiceUrl);
+});
+
+// Presigning-only client - its ServiceUrl is baked into the Host header of the
+// signature, so it must use whatever endpoint the browser can actually reach
+// (options.EffectivePublicServiceUrl), not the internal one.
+builder.Services.AddKeyedSingleton<IAmazonS3>(S3ClientKeys.Public, (sp, _) =>
+{
+    var options = sp.GetRequiredService<IOptions<ObjectStorageOptions>>().Value;
+    return BuildS3Client(options, options.EffectivePublicServiceUrl);
 });
 builder.Services.AddScoped<IFileStorageService, S3FileStorageService>();
 
