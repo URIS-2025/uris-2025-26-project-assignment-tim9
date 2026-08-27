@@ -53,6 +53,16 @@ namespace WorkPackageService.Controllers
         }
 
         [Authorize]
+        [HttpGet("sprint/{sprintId}")]
+        public ActionResult<IEnumerable<TaskDisplayDTO>> GetTasksBySprint(Guid sprintId)
+        {
+            var tasks = _taskRepository.GetTasksBySprintId(sprintId);
+            if (tasks == null || !tasks.Any())
+                return NoContent();
+            return Ok(tasks);
+        }
+
+        [Authorize]
         [HttpGet("parent/{parentTaskId}")]
         public ActionResult<IEnumerable<TaskDisplayDTO>> GetSubTasks(Guid parentTaskId)
         {
