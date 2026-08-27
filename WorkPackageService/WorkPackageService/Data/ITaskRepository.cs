@@ -13,6 +13,7 @@ namespace WorkPackageService.Data
         bool SaveChanges();
 
         IEnumerable<TaskDisplayDTO> GetTasksByWorkPackageId(Guid workPackageId);
+        IEnumerable<TaskDisplayDTO> GetTasksBySprintId(Guid sprintId);
         IEnumerable<TaskDisplayDTO> GetSubTasks(Guid parentTaskId);
         Task<TaskDisplayDTO?> UpdateStatus(Guid taskId, Guid callerId, TaskStatus newStatus);
         TaskMoveResultDTO? MoveToWorkPackage(Guid taskId, Guid newWorkPackageId);
