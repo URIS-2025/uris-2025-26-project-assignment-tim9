@@ -1,0 +1,289 @@
+.modal-card.attachments-modal {
+  --bg: #282527;
+  --text: #a8a29e;
+  --text-h: #f5f2ed;
+  --border: #3a3532;
+  --code-bg: #272220;
+  --accent-bg: rgba(109, 94, 245, 0.18);
+}
+
+.attachments-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachments-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.attachments-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: left;
+}
+
+.attachment-upload {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.attachment-upload-text {
+  flex: 1 1 100%;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.attachment-upload-hint {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.attachment-file-input {
+  /* Hidden but still focusable/clickable via the ref - visibility:hidden or
+     display:none would break that in some browsers, so tuck it off-screen
+     instead. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.attachment-list-section h3 {
+  margin: 0 0 12px;
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.attachment-empty {
+  color: var(--text);
+  font-size: 14px;
+  padding: 12px 0;
+}
+
+.attachment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.attachment-row:last-child {
+  border-bottom: none;
+}
+
+.attachment-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.attachment-name {
+  font-weight: 500;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+button.attachment-name {
+  font: inherit;
+  font-family: var(--sans);
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.attachment-name-preview {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--accent-border);
+  text-underline-offset: 2px;
+}
+
+.attachment-name-preview:hover {
+  text-decoration-color: var(--accent);
+}
+
+.attachment-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 23, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  z-index: 200;
+}
+
+.attachment-lightbox {
+  position: relative;
+  max-width: min(90vw, 1000px);
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attachment-lightbox img {
+  max-width: 100%;
+  max-height: 85vh;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: block;
+}
+
+.attachment-lightbox .status-hint,
+.attachment-lightbox .form-message {
+  background: var(--bg);
+  padding: 16px 20px;
+  border-radius: 8px;
+}
+
+.attachment-lightbox-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  font-size: 28px;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.attachment-lightbox-close:hover {
+  opacity: 0.8;
+}
+
+.attachment-meta {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.attachment-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.attachment-actions .icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+
+/* Portal-rendered straight to document.body (see AttachmentsButton.jsx) so
+   it's never clipped by the scrolling list or the modal's own overflow -
+   position:fixed + top/right come from an inline style computed from the
+   trigger button's location when it opens. It's therefore not a descendant
+   of .attachments-modal, so its dark colors are hardcoded here rather than
+   inherited from that scope. */
+.attachment-menu {
+  position: fixed;
+  min-width: 130px;
+  background: #2a2624;
+  border: 1px solid #44403c;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  z-index: 150;
+}
+
+.attachment-menu button {
+  font: inherit;
+  font-family: var(--sans);
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #f5f2ed;
+  cursor: pointer;
+}
+
+.attachment-menu button:hover {
+  background: #3a3532;
+}
+
+.attachment-menu button.danger {
+  color: var(--color-status-critical);
+}
+
+.attachment-edit-form {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.attachment-edit-form .form-message {
+  flex: 1 1 100%;
+}
+
+.attachment-edit-name,
+.attachment-edit-desc {
+  font: inherit;
+  font-family: var(--sans);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.attachment-edit-name {
+  flex: 1 1 160px;
+}
+
+.attachment-edit-desc {
+  flex: 2 1 200px;
+}
+
+.attachment-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
