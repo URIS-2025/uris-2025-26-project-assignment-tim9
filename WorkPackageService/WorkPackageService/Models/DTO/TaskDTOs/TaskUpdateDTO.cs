@@ -21,6 +21,7 @@ namespace WorkPackageService.Models.DTO.TaskDTOs
         public TaskPriority? Priority { get; set; }
         public Guid? AssigneeId { get; set; }
         public Guid? ApproverId { get; set; }
+        public Guid? SprintId { get; set; }
 
         [FutureOrNullDate]
         public DateTime? DueDate { get; set; }

@@ -13,6 +13,8 @@ namespace WorkPackageService.Models.DTO.TaskDTOs
 
         public Guid? ParentTaskId { get; set; }
 
+        public Guid? SprintId { get; set; }
+
         [Required]
         [StringLength(200)]
         public string Title { get; set; } = string.Empty;

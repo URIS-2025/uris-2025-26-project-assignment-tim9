@@ -83,6 +83,12 @@ namespace WorkPackageService.Data
             return _mapper.Map<IEnumerable<TaskDisplayDTO>>(entities);
         }
 
+        public IEnumerable<TaskDisplayDTO> GetTasksBySprintId(Guid sprintId)
+        {
+            var entities = _context.Tasks.Where(t => t.SprintId == sprintId).ToList();
+            return _mapper.Map<IEnumerable<TaskDisplayDTO>>(entities);
+        }
+
         public IEnumerable<TaskDisplayDTO> GetSubTasks(Guid parentTaskId)
         {
             var entities = _context.Tasks.Where(t => t.ParentTaskId == parentTaskId).ToList();

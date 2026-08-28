@@ -12,6 +12,9 @@ namespace WorkPackageService.Tests.IntegrationTests
         public WorkPackageControllerTests(CustomWebApplicationFactory factory)
         {
             _client = factory.CreateClient();
+            _client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer", factory.GenerateJwtToken(role: "ProjectManager"));
         }
 
         [Fact]
