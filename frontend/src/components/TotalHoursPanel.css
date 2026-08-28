@@ -1,0 +1,81 @@
+.total-hours-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  text-align: left;
+}
+
+.total-hours-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.total-hours-header h2 {
+  margin: 0;
+}
+
+.grand-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.grand-total-value {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.grand-total-label {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.project-hour-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.project-hour-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--code-bg);
+}
+
+.project-hour-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.project-hour-value {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.project-hour-value .unit {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-left: 2px;
+}
+
+.empty-hint {
+  color: var(--text);
+  font-size: 14px;
+}

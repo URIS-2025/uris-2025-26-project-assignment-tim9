@@ -1,0 +1,138 @@
+.timelogs-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  text-align: left;
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-header h1 {
+  margin: 0;
+  text-align: left;
+  /* The global h1 rule is sized for a landing-page hero (56px) - way too
+     big for a compact dashboard header, and its line-height was crowding
+     the subtitle right underneath it. */
+  font-size: 28px;
+}
+
+.page-subtitle {
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.user-badge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-badge > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.status-hint {
+  color: var(--text);
+}
+
+.timelog-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timelog-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.timelog-section-header h2 {
+  margin: 0;
+}
+
+.fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.fab:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.timelog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.timelog-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.timelog-filters select {
+  font: inherit;
+  font-family: var(--sans);
+  min-width: 200px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  letter-spacing: normal;
+}
+
+.timelog-filters select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+.timelog-filters select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
