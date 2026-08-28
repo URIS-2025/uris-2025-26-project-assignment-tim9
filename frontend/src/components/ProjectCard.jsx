@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import ProjectStatusBadge from './ProjectStatusBadge';
 import { resolveStatus } from '../utils/projectStatus';
 
@@ -21,13 +22,30 @@ function isOverdue(value, statusKey) {
 }
 
 // A single project card: name + status badge, then budget and deadline.
+// The whole card is a link to /projects/{id}.
 export default function ProjectCard({ project }) {
+  const navigate = useNavigate();
   const status = resolveStatus(project.status);
   const deadline = formatDeadline(project.deadline);
   const overdue = isOverdue(project.deadline, status.key);
 
+  const open = () => {
+    if (project.projectId) navigate(`/projects/${project.projectId}`);
+  };
+
   return (
-    <article className="project-card">
+    <article
+      className="project-card"
+      role="link"
+      tabIndex={0}
+      onClick={open}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      }}
+    >
       <div className="project-card__head">
         <h2 className="project-card__name">{project.name}</h2>
         <ProjectStatusBadge status={project.status} />
