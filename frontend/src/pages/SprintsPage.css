@@ -273,6 +273,13 @@
   font-size: 20px;
 }
 
+.sprint-details-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .sprint-meta {
   color: var(--text);
   font-size: 14px;

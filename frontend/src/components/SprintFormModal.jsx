@@ -1,27 +1,38 @@
 import { useMemo, useState } from 'react';
 import Modal from './Modal';
 import { useAuth } from '../auth/useAuth';
-import { createSprint } from '../api/sprintApi';
+import { createSprint, updateSprint } from '../api/sprintApi';
 import { SPRINT_STATUSES } from '../shared/enums';
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// <input type="date"> wants YYYY-MM-DD; the backend sends a full ISO
+// DateTime (e.g. "2026-08-27T00:00:00").
+function toDateInputValue(iso) {
+  return iso ? iso.slice(0, 10) : today();
+}
+
 /**
+ * Doubles as the create and edit form - pass `sprint` to edit it in place
+ * (fields prefilled, PUT on submit) or omit it to create a new one (POST).
+ *
  * @param {object} props
  * @param {Array<{projectId: string, name: string}>} props.projects
+ * @param {object} [props.sprint] - the sprint being edited; omit to create instead
  * @param {() => void} props.onClose
- * @param {(sprint: object) => void} props.onCreated - receives the created sprint (with .projectId)
+ * @param {(sprint: object) => void} props.onSaved - receives the created/updated sprint (with .projectId)
  */
-export default function SprintFormModal({ projects, onClose, onCreated }) {
+export default function SprintFormModal({ projects, sprint, onClose, onSaved }) {
   const { token } = useAuth();
+  const isEditing = Boolean(sprint);
 
-  const [projectId, setProjectId] = useState('');
-  const [name, setName] = useState('');
-  const [status, setStatus] = useState('0');
-  const [startDate, setStartDate] = useState(today());
-  const [endDate, setEndDate] = useState(today());
+  const [projectId, setProjectId] = useState(sprint?.projectId ?? '');
+  const [name, setName] = useState(sprint?.name ?? '');
+  const [status, setStatus] = useState(String(sprint?.status ?? 0));
+  const [startDate, setStartDate] = useState(toDateInputValue(sprint?.startDate));
+  const [endDate, setEndDate] = useState(toDateInputValue(sprint?.endDate));
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -51,21 +62,20 @@ export default function SprintFormModal({ projects, onClose, onCreated }) {
 
     setSubmitting(true);
     try {
-      const created = await createSprint(
-        projectId,
-        { name: name.trim(), status: Number(status), startDate, endDate },
-        token
-      );
-      onCreated(created);
+      const payload = { name: name.trim(), status: Number(status), startDate, endDate };
+      const saved = isEditing
+        ? await updateSprint(sprint.id, { projectId, ...payload }, token)
+        : await createSprint(projectId, payload, token);
+      onSaved(saved);
     } catch (err) {
-      setError(err.message || 'Could not create the sprint.');
+      setError(err.message || `Could not ${isEditing ? 'save' : 'create'} the sprint.`);
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <Modal title="New sprint" onClose={onClose}>
+    <Modal title={isEditing ? 'Edit sprint' : 'New sprint'} onClose={onClose}>
       {!hasProjects ? (
         <div className="form-message error">
           There are no projects to attach a sprint to yet.
@@ -130,7 +140,13 @@ export default function SprintFormModal({ projects, onClose, onCreated }) {
               Cancel
             </button>
             <button type="submit" className="primary-button" disabled={submitting}>
-              {submitting ? 'Creating…' : 'Create sprint'}
+              {submitting
+                ? isEditing
+                  ? 'Saving…'
+                  : 'Creating…'
+                : isEditing
+                  ? 'Save changes'
+                  : 'Create sprint'}
             </button>
           </div>
         </form>

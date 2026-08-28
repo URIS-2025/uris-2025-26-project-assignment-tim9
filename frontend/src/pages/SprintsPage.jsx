@@ -44,6 +44,7 @@ export default function SprintsPage() {
   const [taskActionError, setTaskActionError] = useState(null);
 
   const [showSprintForm, setShowSprintForm] = useState(false);
+  const [editingSprint, setEditingSprint] = useState(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   // Sprints are paged 3-at-a-time, stepping one sprint per arrow click
@@ -157,10 +158,11 @@ export default function SprintsPage() {
     setPageStart((p) => Math.min(maxPageStart, Math.min(p, maxPageStart) + 1));
   }
 
-  function handleSprintCreated(created) {
+  function handleSprintSaved(saved) {
     setShowSprintForm(false);
+    setEditingSprint(null);
     setSprintsVersion((v) => v + 1);
-    setSelectedSprintId(created.id);
+    setSelectedSprintId(saved.id);
   }
 
   async function handleDeleteSprint(sprint) {
@@ -242,14 +244,25 @@ export default function SprintsPage() {
                 {formatDate(selectedSprint.startDate)} – {formatDate(selectedSprint.endDate)}
               </p>
             </div>
-            <button
-              type="button"
-              className="icon-button danger"
-              disabled={deletingSprintId === selectedSprint.id}
-              onClick={() => handleDeleteSprint(selectedSprint)}
-            >
-              {deletingSprintId === selectedSprint.id ? 'Deleting…' : 'Delete sprint'}
-            </button>
+            {canManage && (
+              <div className="sprint-details-actions">
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => setEditingSprint(selectedSprint)}
+                >
+                  Edit sprint
+                </button>
+                <button
+                  type="button"
+                  className="icon-button danger"
+                  disabled={deletingSprintId === selectedSprint.id}
+                  onClick={() => handleDeleteSprint(selectedSprint)}
+                >
+                  {deletingSprintId === selectedSprint.id ? 'Deleting…' : 'Delete sprint'}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="sprint-tasks-toolbar">
@@ -270,7 +283,11 @@ export default function SprintsPage() {
           {tasksLoading && !tasksBySprintId[selectedSprint.id] ? (
             <p className="status-hint">Loading tasks…</p>
           ) : (
-            <TaskList tasks={tasks} onDelete={handleDeleteTask} deletingId={deletingTaskId} />
+            <TaskList
+              tasks={tasks}
+              onDelete={canManage ? handleDeleteTask : undefined}
+              deletingId={deletingTaskId}
+            />
           )}
         </section>
       ) : (
@@ -325,18 +342,20 @@ export default function SprintsPage() {
                         }
                       }}
                     >
-                      <button
-                        type="button"
-                        className="sprint-card-delete"
-                        aria-label={`Delete sprint ${sprint.name}`}
-                        disabled={deletingSprintId === sprint.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSprint(sprint);
-                        }}
-                      >
-                        ×
-                      </button>
+                      {canManage && (
+                        <button
+                          type="button"
+                          className="sprint-card-delete"
+                          aria-label={`Delete sprint ${sprint.name}`}
+                          disabled={deletingSprintId === sprint.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSprint(sprint);
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
                       <div className="sprint-card-body">
                         <span className="sprint-card-name">{sprint.name}</span>
                         <span className="badge outline">
@@ -372,11 +391,15 @@ export default function SprintsPage() {
         </>
       )}
 
-      {showSprintForm && (
+      {(showSprintForm || editingSprint) && (
         <SprintFormModal
           projects={projects}
-          onClose={() => setShowSprintForm(false)}
-          onCreated={handleSprintCreated}
+          sprint={editingSprint}
+          onClose={() => {
+            setShowSprintForm(false);
+            setEditingSprint(null);
+          }}
+          onSaved={handleSprintSaved}
         />
       )}
 
