@@ -1,0 +1,115 @@
+.timelog-list {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  text-align: left;
+}
+
+.timelog-row {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr 1fr 0.7fr 1.3fr;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.timelog-row:last-child {
+  border-bottom: none;
+}
+
+.timelog-row-head {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  background: var(--code-bg);
+}
+
+.timelog-task,
+.timelog-project {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.timelog-project {
+  color: var(--text);
+  font-weight: 400;
+}
+
+.timelog-date {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.timelog-hours {
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.align-right {
+  text-align: right;
+  justify-self: end;
+}
+
+.timelog-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sans);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  border-color: var(--accent-border);
+}
+
+.icon-button.danger {
+  color: var(--color-status-critical);
+}
+
+.icon-button.danger:hover {
+  border-color: var(--color-status-critical);
+}
+
+.icon-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.timelog-list-empty {
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .timelog-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .timelog-row-head {
+    display: none;
+  }
+  .align-right {
+    text-align: left;
+    justify-self: start;
+  }
+}
