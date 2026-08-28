@@ -4,8 +4,9 @@ import { useAuth } from '../../auth/useAuth';
 import { getProjectById } from '../../api/projectApi';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ProjectsState from '../../components/ProjectsState';
-// ProjectsState's styles live in ProjectListPage.css; import it here too so
-// the shared error/empty panel renders correctly on this page as well.
+import MilestoneList from '../../components/MilestoneList';
+import RequirementList from '../../components/RequirementList';
+// ProjectsState styles live in ProjectListPage.css
 import './ProjectListPage.css';
 import './ProjectDetailsPage.css';
 
@@ -135,22 +136,27 @@ export default function ProjectDetailsPage() {
       )}
 
       {phase === 'ready' && (
-        <article className="pd-card">
-          <dl className="pd-rows">
-            <DetailRow label="Status">
-              <ProjectStatusBadge status={project.status} />
-            </DetailRow>
-            <DetailRow label="Budget">
-              <span className="pd-budget">{numberFormat.format(project.budget ?? 0)}</span>
-            </DetailRow>
-            <DetailRow label="Deadline" muted={!deadline}>
-              {deadline ?? 'Not set'}
-            </DetailRow>
-            <DetailRow label="Created" muted={!createdAt}>
-              {createdAt ?? 'Unknown'}
-            </DetailRow>
-          </dl>
-        </article>
+        <>
+          <article className="pd-card">
+            <dl className="pd-rows">
+              <DetailRow label="Status">
+                <ProjectStatusBadge status={project.status} />
+              </DetailRow>
+              <DetailRow label="Budget">
+                <span className="pd-budget">{numberFormat.format(project.budget ?? 0)}</span>
+              </DetailRow>
+              <DetailRow label="Deadline" muted={!deadline}>
+                {deadline ?? 'Not set'}
+              </DetailRow>
+              <DetailRow label="Created" muted={!createdAt}>
+                {createdAt ?? 'Unknown'}
+              </DetailRow>
+            </dl>
+          </article>
+
+          <MilestoneList projectId={project.projectId} token={token} />
+          <RequirementList projectId={project.projectId} token={token} />
+        </>
       )}
     </section>
   );

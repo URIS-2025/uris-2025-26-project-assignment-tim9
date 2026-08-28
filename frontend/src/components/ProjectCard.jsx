@@ -21,8 +21,7 @@ function isOverdue(value, statusKey) {
   return !Number.isNaN(parsed.getTime()) && parsed.getTime() < Date.now();
 }
 
-// A single project card: name + status badge, then budget and deadline.
-// The whole card is a link to /projects/{id}.
+// One project card; links to /projects/{id}
 export default function ProjectCard({ project }) {
   const navigate = useNavigate();
   const status = resolveStatus(project.status);

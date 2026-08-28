@@ -1,5 +1,4 @@
-// Placeholder card shown while the project list is loading. Mirrors the
-// layout of ProjectCard so the swap to real content doesn't shift things.
+// Loading placeholder for one card
 export default function ProjectCardSkeleton() {
   return (
     <article className="project-card project-card--skeleton">

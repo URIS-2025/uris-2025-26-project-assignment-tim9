@@ -1,9 +1,4 @@
-// Shared status logic for the Projects pages: maps a ProjectStatus (numeric
-// index or string) to a display label and a colour "tone" used by the CSS.
-//
-// ProjectService serialises ProjectStatus as its numeric index (no
-// JsonStringEnumConverter is registered), but we still accept the string
-// form so this keeps working if that ever changes.
+// ProjectStatus (numeric index or string) -> label + colour tone
 export const STATUS_ORDER = ['Planned', 'Active', 'OnHold', 'Completed', 'Cancelled'];
 
 export const STATUS_META = {

@@ -1,6 +1,4 @@
-// Full-width panel used for the non-list states of the projects page:
-// `variant="empty"` (no projects yet) and `variant="error"` (load failed).
-// Pass `onRetry` to render the "Try again" button (error case).
+// Empty / error panel for the projects page
 export default function ProjectsState({ variant = 'empty', title, children, onRetry }) {
   return (
     <div
