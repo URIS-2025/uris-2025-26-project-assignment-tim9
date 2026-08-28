@@ -5,6 +5,7 @@ import { getProjectById } from '../../api/projectApi';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ProjectsState from '../../components/ProjectsState';
 import MilestoneList from '../../components/MilestoneList';
+import RequirementList from '../../components/RequirementList';
 // ProjectsState's styles live in ProjectListPage.css; import it here too so
 // the shared error/empty panel renders correctly on this page as well.
 import './ProjectListPage.css';
@@ -155,6 +156,7 @@ export default function ProjectDetailsPage() {
           </article>
 
           <MilestoneList projectId={project.projectId} token={token} />
+          <RequirementList projectId={project.projectId} token={token} />
         </>
       )}
     </section>
