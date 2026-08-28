@@ -3,13 +3,7 @@ import { useAuth } from '../auth/useAuth';
 import { ApiError } from '../api/httpClient';
 import { getAllProjects } from '../api/projectApi';
 import { getAllSprints, deleteSprint } from '../api/sprintApi';
-import { deleteTask } from '../api/taskApi';
-import {
-  getMockTasksForSprint,
-  removeMockTaskFromSprint,
-  removeMockLinksForSprint,
-  isMockOnlyTask,
-} from '../mock/sprintTaskLinks';
+import { deleteTask, getTasksBySprint } from '../api/taskApi';
 import { SPRINT_STATUSES, labelFor } from '../shared/enums';
 import TaskList from '../components/TaskList';
 import SprintFormModal from '../components/SprintFormModal';
@@ -39,9 +33,12 @@ export default function SprintsPage() {
   const [sprintsVersion, setSprintsVersion] = useState(0);
   const [deletingSprintId, setDeletingSprintId] = useState(null);
 
-  // Sprint<->task links are mocked (see ../mock/sprintTaskLinks.js) - reading
-  // them is a synchronous, local operation, so there's no loading/error
-  // state here the way there is for the real API calls above.
+  // Tasks per sprint, keyed by sprint id - populated for whichever sprints
+  // are currently on screen (the visible page of cards, plus the open
+  // sprint's detail view). tasksVersion isn't read directly; it's how
+  // creating/deleting a task forces a refetch.
+  const [tasksBySprintId, setTasksBySprintId] = useState({});
+  const [tasksLoading, setTasksLoading] = useState(false);
   const [tasksVersion, setTasksVersion] = useState(0);
   const [deletingTaskId, setDeletingTaskId] = useState(null);
   const [taskActionError, setTaskActionError] = useState(null);
@@ -104,13 +101,6 @@ export default function SprintsPage() {
     [projects]
   );
 
-  // Mocked previews for the list view - tasksVersion isn't read directly,
-  // it's how creating/deleting a task forces this to recompute.
-  const tasksBySprintId = useMemo(() => {
-    void tasksVersion;
-    return Object.fromEntries(sprints.map((s) => [s.id, getMockTasksForSprint(s.id)]));
-  }, [sprints, tasksVersion]);
-
   const selectedSprint = sprints.find((s) => s.id === selectedSprintId) ?? null;
   const tasks = selectedSprintId ? tasksBySprintId[selectedSprintId] || [] : [];
 
@@ -121,6 +111,43 @@ export default function SprintsPage() {
   const visibleSprints = sprints.slice(visibleStart, visibleStart + PAGE_SIZE);
   const canGoPrev = visibleStart > 0;
   const canGoNext = visibleStart < maxPageStart;
+
+  // Real per-sprint task lists, fetched from WorkPackageService's
+  // GET /api/task/sprint/{sprintId} - only for sprints actually on screen
+  // (the visible page of cards, plus whichever sprint's detail view is
+  // open), not every sprint that exists.
+  const idsToLoad = useMemo(() => {
+    const ids = new Set(visibleSprints.map((s) => s.id));
+    if (selectedSprintId) ids.add(selectedSprintId);
+    return [...ids];
+  }, [visibleSprints, selectedSprintId]);
+  const idsToLoadKey = idsToLoad.join(',');
+
+  useEffect(() => {
+    if (idsToLoad.length === 0) return undefined;
+    let cancelled = false;
+    (async () => {
+      setTasksLoading(true);
+      try {
+        const entries = await Promise.all(
+          idsToLoad.map(async (id) => [id, await getTasksBySprint(id, token)])
+        );
+        if (!cancelled) {
+          setTasksBySprintId((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+        }
+      } catch (err) {
+        if (!cancelled && !handleAuthError(err)) {
+          setTaskActionError(err.message || 'Could not load tasks for one or more sprints.');
+        }
+      } finally {
+        if (!cancelled) setTasksLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- idsToLoadKey is the stable form of idsToLoad
+  }, [idsToLoadKey, tasksVersion, token, handleAuthError]);
 
   function goToPrevSprint() {
     setPageStart((p) => Math.max(0, Math.min(p, maxPageStart) - 1));
@@ -142,7 +169,6 @@ export default function SprintsPage() {
     setDeletingSprintId(sprint.id);
     try {
       await deleteSprint(sprint.id, token);
-      removeMockLinksForSprint(sprint.id);
       if (selectedSprintId === sprint.id) setSelectedSprintId(null);
       setSprintsVersion((v) => v + 1);
     } catch (err) {
@@ -164,10 +190,7 @@ export default function SprintsPage() {
     setTaskActionError(null);
     setDeletingTaskId(task.taskId);
     try {
-      if (!isMockOnlyTask(task.taskId)) {
-        await deleteTask(task.taskId, token);
-      }
-      removeMockTaskFromSprint(selectedSprintId, task.taskId);
+      await deleteTask(task.taskId, token);
       setTasksVersion((v) => v + 1);
     } catch (err) {
       if (!handleAuthError(err)) {
@@ -230,15 +253,7 @@ export default function SprintsPage() {
           </div>
 
           <div className="sprint-tasks-toolbar">
-            <h4>
-              Tasks in this sprint{' '}
-              <span
-                className="mock-badge"
-                title="WorkPackageService doesn't link tasks to sprints yet - this list is stored locally, not on the backend."
-              >
-                mock data
-              </span>
-            </h4>
+            <h4>Tasks in this sprint</h4>
             {canManage && (
               <button
                 type="button"
@@ -252,7 +267,11 @@ export default function SprintsPage() {
 
           {taskActionError && <div className="form-message error">{taskActionError}</div>}
 
-          <TaskList tasks={tasks} onDelete={handleDeleteTask} deletingId={deletingTaskId} />
+          {tasksLoading && !tasksBySprintId[selectedSprint.id] ? (
+            <p className="status-hint">Loading tasks…</p>
+          ) : (
+            <TaskList tasks={tasks} onDelete={handleDeleteTask} deletingId={deletingTaskId} />
+          )}
         </section>
       ) : (
         <>

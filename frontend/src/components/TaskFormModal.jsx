@@ -3,15 +3,12 @@ import Modal from './Modal';
 import { useAuth } from '../auth/useAuth';
 import { getWorkPackagesByProject } from '../api/workPackageApi';
 import { createTask } from '../api/taskApi';
-import { addMockTaskToSprint } from '../mock/sprintTaskLinks';
 import { TASK_STATUSES, TASK_PRIORITIES } from '../shared/enums';
 
 /**
- * Creates a real task via WorkPackageService, then records it as belonging
- * to `sprintId` - the sprint isn't a field the user picks, it's implicit
- * from which sprint's "+ New Task" button opened this modal. That
- * sprint<->task link is mocked locally for now: WorkPackageService's Task
- * has no SprintId yet (see the handoff spec for that service's owner).
+ * Creates a real task via WorkPackageService, scoped to `sprintId` - the
+ * sprint isn't a field the user picks, it's implicit from which sprint's
+ * "+ New Task" button opened this modal.
  *
  * @param {object} props
  * @param {string} props.sprintId
@@ -66,9 +63,10 @@ export default function TaskFormModal({ sprintId, projectId, onClose, onCreated 
 
     setSubmitting(true);
     try {
-      const created = await createTask(
+      await createTask(
         {
           workPackageId,
+          sprintId,
           title: title.trim(),
           description: description.trim() || null,
           status: Number(status),
@@ -77,8 +75,6 @@ export default function TaskFormModal({ sprintId, projectId, onClose, onCreated 
         },
         token
       );
-      // Real task, mocked sprint link (see comment above).
-      addMockTaskToSprint(sprintId, created);
       onCreated();
     } catch (err) {
       setError(err.message || 'Could not create the task.');
