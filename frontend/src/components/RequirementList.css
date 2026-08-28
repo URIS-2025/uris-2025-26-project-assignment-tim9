@@ -37,7 +37,7 @@
   border-top: 1px solid var(--border);
 }
 
-/* Accent bullet, echoing the dot on the status pills. */
+/* Bullet */
 .requirement-row::before {
   content: '';
   flex-shrink: 0;

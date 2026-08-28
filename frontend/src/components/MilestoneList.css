@@ -45,7 +45,7 @@
   color: var(--text-h);
 }
 
-/* Pill — mirrors .status-pill from the projects list. */
+/* Pill */
 .milestone-pill {
   display: inline-flex;
   align-items: center;

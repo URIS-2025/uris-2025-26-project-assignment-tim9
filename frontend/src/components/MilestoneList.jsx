@@ -14,8 +14,7 @@ function formatDate(value) {
   return Number.isNaN(parsed.getTime()) ? null : dateFormat.format(parsed);
 }
 
-// A milestone in ProjectService is just an expected date, so the state is
-// derived: a date in the past is "Overdue", otherwise "Upcoming".
+// past date -> Overdue, otherwise Upcoming
 function resolveMilestoneState(expectedDate) {
   const parsed = new Date(expectedDate);
   if (Number.isNaN(parsed.getTime())) return { label: 'Unknown', tone: 'neutral' };

@@ -6,8 +6,7 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ProjectsState from '../../components/ProjectsState';
 import MilestoneList from '../../components/MilestoneList';
 import RequirementList from '../../components/RequirementList';
-// ProjectsState's styles live in ProjectListPage.css; import it here too so
-// the shared error/empty panel renders correctly on this page as well.
+// ProjectsState styles live in ProjectListPage.css
 import './ProjectListPage.css';
 import './ProjectDetailsPage.css';
 
