@@ -17,7 +17,7 @@ export default defineConfig({
     proxy: {
       '/api': { target: GATEWAY_URL, changeOrigin: true },
       '/sprints': { target: GATEWAY_URL, changeOrigin: true },
-      '/projects': { target: GATEWAY_URL, changeOrigin: true },
+      '^/projects/[^/]+/sprints': { target: GATEWAY_URL, changeOrigin: true },
       '/attachments': { target: GATEWAY_URL, changeOrigin: true },
     },
   },

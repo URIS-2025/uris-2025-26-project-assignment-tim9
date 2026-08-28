@@ -91,7 +91,15 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// Iza API Gateway-a (YARP) koji prosleđuje HTTP na :5230, UseHttpsRedirection
+// vraća 307 na HTTPS port (:7065); browser prati taj cross-origin redirect,
+// zaobilazi Gateway i gubi Authorization header -> CORS blok + 401.
+// U Production-u (bez tog reverse-proxy hopa) redirect na HTTPS zadržavamo.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
