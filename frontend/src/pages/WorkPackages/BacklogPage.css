@@ -1,0 +1,23 @@
+.backlog-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: left;
+}
+
+.backlog-page__back {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.backlog-page__back:hover {
+  text-decoration: underline;
+}
+
+.backlog-page h1 {
+  margin-top: 0;
+}

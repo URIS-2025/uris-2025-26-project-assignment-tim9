@@ -1,0 +1,130 @@
+.task-board {
+  text-align: left;
+}
+
+.task-board__columns {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.task-column {
+  flex: 1;
+  min-width: 0;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.task-column__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.task-column__header h3 {
+  margin: 0;
+  font-family: var(--heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.task-column__add {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-column__add:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.task-card {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.task-card__delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.task-card__delete:hover {
+  background: var(--code-bg);
+  color: var(--color-status-critical);
+}
+
+.task-card__title {
+  margin: 0;
+  padding-right: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.task-card__meta {
+  margin: 4px 0 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.task-card__status {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: var(--sans);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .task-board__columns {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-card {
+    transition: none;
+  }
+}

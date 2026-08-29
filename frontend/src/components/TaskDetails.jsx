@@ -2,8 +2,8 @@ import { useState } from 'react';
 
 const MOCK_TASK = {
   id: '2',
-  title: 'Dodati role-based authorization',
-  description: 'Implementirati [Authorize(Roles = "ProjectManager,Admin")] na svim write endpoint-ima.',
+  title: 'Add role-based authorization',
+  description: 'Implement [Authorize(Roles = "ProjectManager,Admin")] on all write endpoints.',
   status: 'InProgress',
   priority: 'Critical',
   assignee: 'Sara',
@@ -12,17 +12,17 @@ const MOCK_TASK = {
 const MOCK_DEPENDENCIES = [
   {
     id: 'd1',
-    blockerTask: { id: '1', title: 'Napraviti JWT middleware', status: 'Done', assignee: 'Sara' },
+    blockerTask: { id: '1', title: 'Build JWT middleware', status: 'Done', assignee: 'Sara' },
   },
   {
     id: 'd2',
-    blockerTask: { id: '4', title: 'Dodati validaciju za Deadline', status: 'InProgress', assignee: 'Sara' },
+    blockerTask: { id: '4', title: 'Add validation for Deadline', status: 'InProgress', assignee: 'Sara' },
   },
 ];
 
 const MOCK_COMMENTS = [
-  { id: 'c1', author: 'Marko', text: 'Da li ovo pokriva i Admin rolu za DELETE?', createdAt: '2026-08-20T10:15:00' },
-  { id: 'c2', author: 'Sara', text: 'Da, dodala sam oba u isti atribut.', createdAt: '2026-08-20T11:02:00' },
+  { id: 'c1', author: 'Marko', text: 'Does this also cover the Admin role for DELETE?', createdAt: '2026-08-20T10:15:00' },
+  { id: 'c2', author: 'Sara', text: 'Yes, I added both to the same attribute.', createdAt: '2026-08-20T11:02:00' },
 ];
 
 const STATUS_COLORS = {
@@ -34,8 +34,8 @@ const STATUS_COLORS = {
 function DependencyList({ dependencies }) {
   return (
     <div style={{ marginTop: '16px' }}>
-      <h3 style={{ fontSize: '16px' }}>Blokira ga</h3>
-      {dependencies.length === 0 && <p style={{ fontSize: '14px', color: 'var(--text)' }}>Nema zavisnosti.</p>}
+      <h3 style={{ fontSize: '16px' }}>Blocked by</h3>
+      {dependencies.length === 0 && <p style={{ fontSize: '14px', color: 'var(--text)' }}>No dependencies.</p>}
       {dependencies.map((dep) => {
         const isBlocking = dep.blockerTask.status !== 'Done';
         return (
@@ -71,7 +71,7 @@ function CommentSection({ comments }) {
 
   return (
     <div style={{ marginTop: '16px' }}>
-      <h3 style={{ fontSize: '16px' }}>Komentari</h3>
+      <h3 style={{ fontSize: '16px' }}>Comments</h3>
       {comments.map((comment) => (
         <div
           key={comment.id}
@@ -87,14 +87,14 @@ function CommentSection({ comments }) {
           <p style={{ margin: 0, fontWeight: 600, fontSize: '14px' }}>{comment.author}</p>
           <p style={{ margin: '2px 0', fontSize: '14px' }}>{comment.text}</p>
           <p style={{ margin: 0, fontSize: '12px', color: 'var(--text)' }}>
-            {new Date(comment.createdAt).toLocaleString('sr-RS')}
+            {new Date(comment.createdAt).toLocaleString('en-GB')}
           </p>
         </div>
       ))}
       <textarea
         value={newComment}
         onChange={(e) => setNewComment(e.target.value)}
-        placeholder="Dodaj komentar..."
+        placeholder="Add a comment..."
         style={{
           width: '100%',
           minHeight: '60px',
@@ -115,7 +115,7 @@ export default function TaskDetails({ taskId }) {
 
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'left' }}>
-      <h2 style={{ textAlign: 'center' }}>Detalji zadatka</h2>
+      <h2 style={{ textAlign: 'center' }}>Task Details</h2>
       <div
         style={{
           border: '1px solid var(--border)',
@@ -127,7 +127,7 @@ export default function TaskDetails({ taskId }) {
         <h3 style={{ margin: 0 }}>{task.title}</h3>
         <p style={{ color: 'var(--text)' }}>{task.description}</p>
         <p style={{ fontSize: '13px' }}>
-          Status: <strong>{task.status}</strong> • Prioritet: <strong>{task.priority}</strong> • Zadužen:{' '}
+          Status: <strong>{task.status}</strong> • Priority: <strong>{task.priority}</strong> • Assignee:{' '}
           <strong>{task.assignee}</strong>
         </p>
       </div>
