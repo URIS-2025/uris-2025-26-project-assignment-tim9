@@ -1,13 +1,13 @@
 const MOCK_SUBTASKS = [
   {
     id: '1',
-    title: 'Dizajnirati bazu podataka',
+    title: 'Design the database',
     status: 'Done',
     subTasks: [
-      { id: '1-1', title: 'Definisati entitete', status: 'Done', subTasks: [] },
+      { id: '1-1', title: 'Define entities', status: 'Done', subTasks: [] },
       {
         id: '1-2',
-        title: 'Napraviti migracije',
+        title: 'Create migrations',
         status: 'InProgress',
         subTasks: [
           { id: '1-2-1', title: 'Initial migration', status: 'Done', subTasks: [] },
@@ -18,7 +18,7 @@ const MOCK_SUBTASKS = [
   },
   {
     id: '2',
-    title: 'Implementirati autentifikaciju',
+    title: 'Implement authentication',
     status: 'ToDo',
     subTasks: [],
   },
@@ -63,7 +63,7 @@ function SubTaskItem({ task, depth = 0 }) {
 export default function SubTaskTree({ taskId }) {
   return (
     <div>
-      <h2>Sub-Task-ovi</h2>
+      <h2>Sub-Tasks</h2>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         {MOCK_SUBTASKS.map((task) => (
           <SubTaskItem key={task.id} task={task} depth={0} />
