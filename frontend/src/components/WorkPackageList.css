@@ -1,0 +1,128 @@
+.wp-list {
+  text-align: left;
+}
+
+.wp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.wp-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.wp-card:hover,
+.wp-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow);
+  outline: none;
+}
+
+.wp-card__delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wp-card__delete:hover {
+  background: var(--code-bg);
+  color: var(--color-status-critical);
+}
+
+.wp-card__badge {
+  align-self: flex-start;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.wp-card__badge:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.wp-card__badge option {
+  background: var(--bg);
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.wp-card__title {
+  margin: 0;
+  padding-right: 20px;
+  font-family: var(--heading);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.wp-card__desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.wp-card--add {
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  border-style: dashed;
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wp-card--add:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+.wp-list__error {
+  color: var(--color-status-critical);
+}
+
+@media (max-width: 600px) {
+  .wp-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wp-card {
+    transition: none;
+  }
+}

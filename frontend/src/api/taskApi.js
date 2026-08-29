@@ -28,6 +28,17 @@ export function createTask({ workPackageId, sprintId, title, description, status
   });
 }
 
+// PUT /api/task (via gateway) -> WorkPackageService
+// Requires ProjectManager/Admin. All fields but id are optional - only send
+// what's actually being changed.
+export function updateTask({ id, title, description, status, priority, assigneeId, approverId, sprintId, dueDate }, token) {
+  return apiRequest('/api/task', {
+    method: 'PUT',
+    token,
+    body: { id, title, description, status, priority, assigneeId, approverId, sprintId, dueDate },
+  });
+}
+
 // DELETE /api/task/{id} (via gateway) -> WorkPackageService
 // Requires ProjectManager/Admin.
 export function deleteTask(taskId, token) {

@@ -2,38 +2,48 @@ import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { useAuth } from '../auth/useAuth';
 import { getWorkPackages } from '../api/workPackageApi';
-import { createTask } from '../api/taskApi';
+import { createTask, updateTask } from '../api/taskApi';
 import { TASK_STATUSES, TASK_PRIORITIES } from '../shared/enums';
 
 /**
- * Creates a real task via WorkPackageService, scoped to `sprintId` - the
- * sprint isn't a field the user picks, it's implicit from which sprint's
- * "+ New Task" button opened this modal.
+ * Creates or edits a task via WorkPackageService.
+ *
+ * Create mode: pass `sprintId` + `projectId`, omit `task`. The sprint isn't
+ * a field the user picks, it's implicit from which sprint's "+ New Task"
+ * button opened this modal; the work package is asked for since that's
+ * fixed at creation time.
+ *
+ * Edit mode: pass an existing `task` to edit it in place. Its work package
+ * isn't shown or editable - TaskUpdateDTO has no WorkPackageId field, the
+ * backend doesn't support moving a task to a different work package.
  *
  * @param {object} props
- * @param {string} props.sprintId
- * @param {string} props.projectId - the sprint's project; scopes the work package picker
+ * @param {string} [props.sprintId] - required when creating
+ * @param {string} [props.projectId] - required when creating; scopes the work package picker
+ * @param {object} [props.task] - the task being edited; omit to create instead
  * @param {() => void} props.onClose
- * @param {() => void} props.onCreated
+ * @param {() => void} props.onSaved
  */
-export default function TaskFormModal({ sprintId, projectId, onClose, onCreated }) {
+export default function TaskFormModal({ sprintId, projectId, task, onClose, onSaved }) {
   const { token } = useAuth();
+  const isEditing = Boolean(task);
 
   const [workPackages, setWorkPackages] = useState([]);
-  const [wpLoading, setWpLoading] = useState(true);
+  const [wpLoading, setWpLoading] = useState(!isEditing);
   const [wpError, setWpError] = useState(null);
 
   const [workPackageId, setWorkPackageId] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('0');
-  const [priority, setPriority] = useState('1');
-  const [dueDate, setDueDate] = useState('');
+  const [title, setTitle] = useState(task?.title ?? '');
+  const [description, setDescription] = useState(task?.description ?? '');
+  const [status, setStatus] = useState(String(task?.status ?? 0));
+  const [priority, setPriority] = useState(String(task?.priority ?? 1));
+  const [dueDate, setDueDate] = useState(task?.dueDate ? task.dueDate.slice(0, 10) : '');
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (isEditing) return undefined; // the work package is fixed once the task exists
     let cancelled = false;
     (async () => {
       setWpLoading(true);
@@ -50,48 +60,67 @@ export default function TaskFormModal({ sprintId, projectId, onClose, onCreated 
     return () => {
       cancelled = true;
     };
-  }, [projectId, token]);
+  }, [isEditing, projectId, token]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
 
-    if (!workPackageId || !title.trim()) {
+    if (!isEditing && !workPackageId) {
       setError('Pick a work package and give the task a title.');
+      return;
+    }
+    if (!title.trim()) {
+      setError('Give the task a title.');
       return;
     }
 
     setSubmitting(true);
     try {
-      await createTask(
-        {
-          workPackageId,
-          sprintId,
-          title: title.trim(),
-          description: description.trim() || null,
-          status: Number(status),
-          priority: Number(priority),
-          dueDate: dueDate || null,
-        },
-        token
-      );
-      onCreated();
+      if (isEditing) {
+        await updateTask(
+          {
+            id: task.taskId,
+            title: title.trim(),
+            description: description.trim() || null,
+            status: Number(status),
+            priority: Number(priority),
+            dueDate: dueDate || null,
+          },
+          token
+        );
+      } else {
+        await createTask(
+          {
+            workPackageId,
+            sprintId,
+            title: title.trim(),
+            description: description.trim() || null,
+            status: Number(status),
+            priority: Number(priority),
+            dueDate: dueDate || null,
+          },
+          token
+        );
+      }
+      onSaved();
     } catch (err) {
-      setError(err.message || 'Could not create the task.');
+      setError(err.message || `Could not ${isEditing ? 'save' : 'create'} the task.`);
     } finally {
       setSubmitting(false);
     }
   }
 
   const hasWorkPackages = workPackages.length > 0;
+  const blockedByNoWorkPackages = !isEditing && !wpLoading && !wpError && !hasWorkPackages;
 
   return (
-    <Modal title="New task" onClose={onClose}>
-      {wpLoading ? (
+    <Modal title={isEditing ? 'Edit task' : 'New task'} onClose={onClose}>
+      {!isEditing && wpLoading ? (
         <p className="status-hint">Loading work packages…</p>
-      ) : wpError ? (
+      ) : !isEditing && wpError ? (
         <div className="form-message error">{wpError}</div>
-      ) : !hasWorkPackages ? (
+      ) : blockedByNoWorkPackages ? (
         <div className="form-message error">
           This project has no work packages yet. Create one first, then you can add tasks to it.
         </div>
@@ -99,19 +128,21 @@ export default function TaskFormModal({ sprintId, projectId, onClose, onCreated 
         <form className="stacked-form" onSubmit={handleSubmit}>
           {error && <div className="form-message error">{error}</div>}
 
-          <label>
-            Work package
-            <select required value={workPackageId} onChange={(e) => setWorkPackageId(e.target.value)}>
-              <option value="" disabled>
-                Select a work package…
-              </option>
-              {workPackages.map((wp) => (
-                <option key={wp.workPackageId} value={wp.workPackageId}>
-                  {wp.name}
+          {!isEditing && (
+            <label>
+              Work package
+              <select required value={workPackageId} onChange={(e) => setWorkPackageId(e.target.value)}>
+                <option value="" disabled>
+                  Select a work package…
                 </option>
-              ))}
-            </select>
-          </label>
+                {workPackages.map((wp) => (
+                  <option key={wp.workPackageId} value={wp.workPackageId}>
+                    {wp.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
 
           <label>
             Title
@@ -159,7 +190,13 @@ export default function TaskFormModal({ sprintId, projectId, onClose, onCreated 
               Cancel
             </button>
             <button type="submit" className="primary-button" disabled={submitting}>
-              {submitting ? 'Creating…' : 'Create task'}
+              {submitting
+                ? isEditing
+                  ? 'Saving…'
+                  : 'Creating…'
+                : isEditing
+                  ? 'Save changes'
+                  : 'Create task'}
             </button>
           </div>
         </form>

@@ -1,18 +1,23 @@
 import { apiRequest } from './httpClient';
 
-// POST /api/auth/login (via gateway) -> AuthService
 export function login(username, password) {
-  return apiRequest('/api/auth/login', {
+  return apiRequest('/api/auth/login', { method: 'POST', body: { username, password } });
+}
+
+export function refreshToken(refreshTokenValue) {
+  return apiRequest('/api/auth/refresh', {
     method: 'POST',
-    body: { username, password },
+    body: { refreshToken: refreshTokenValue },
   });
 }
 
-// POST /api/user (via gateway) -> UserService self-registration.
-// Handy for spinning up a fresh account against a clean docker-compose DB.
-export function register({ name, username, email, contactInfo, password }) {
-  return apiRequest('/api/user', {
+export function logout(refreshTokenValue) {
+  return apiRequest('/api/auth/logout', {
     method: 'POST',
-    body: { name, username, email, contactInfo, password },
+    body: { refreshToken: refreshTokenValue },
   });
+}
+
+export function getSessions(userId, token) {
+  return apiRequest(`/api/auth/sessions/${userId}`, { token }).then((r) => r || []);
 }

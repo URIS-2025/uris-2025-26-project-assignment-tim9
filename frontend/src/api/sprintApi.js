@@ -1,10 +1,13 @@
 import { apiRequest } from './httpClient';
 
 // GET /sprints (via gateway) -> SprintService
-// All sprints. For non-Client callers the backend returns every sprint
-// system-wide (Clients are restricted server-side to their own projects).
-export function getAllSprints(token) {
-  return apiRequest('/sprints', { token }).then((r) => r || []);
+// All sprints, or just one project's when projectId is passed (the same
+// filter SprintController's GET /projects/{projectId}/sprints applies, just
+// via the query-string convenience it also accepts). For non-Client callers
+// with no projectId, the backend returns every sprint system-wide (Clients
+// are restricted server-side to their own projects either way).
+export function getAllSprints(token, { projectId } = {}) {
+  return apiRequest('/sprints', { token, query: { projectId } }).then((r) => r || []);
 }
 
 // POST /projects/{projectId}/sprints (via gateway) -> SprintService

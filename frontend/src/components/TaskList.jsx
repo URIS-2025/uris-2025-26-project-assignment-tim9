@@ -19,10 +19,12 @@ const STATUS_CLASS = {
 /**
  * @param {object} props
  * @param {Array} props.tasks
+ * @param {(task: object) => void} [props.onEdit] - omit to hide the Edit button (e.g. for
+ *   TeamMember/Client, who aren't allowed to edit tasks)
  * @param {(task: object) => void} [props.onDelete]
  * @param {string|null} [props.deletingId]
  */
-export default function TaskList({ tasks, onDelete, deletingId }) {
+export default function TaskList({ tasks, onEdit, onDelete, deletingId }) {
   if (tasks.length === 0) {
     return <div className="task-list-empty">No tasks in this sprint yet.</div>;
   }
@@ -40,15 +42,24 @@ export default function TaskList({ tasks, onDelete, deletingId }) {
             <span className={`badge ${STATUS_CLASS[statusLabel] || 'neutral'}`}>{statusLabel}</span>
             <span className="badge outline">{labelFor(TASK_PRIORITIES, task.priority)}</span>
             <span className="task-due">{formatDate(task.dueDate)}</span>
-            {onDelete && (
-              <button
-                type="button"
-                className="icon-button danger"
-                disabled={deletingId === task.taskId}
-                onClick={() => onDelete(task)}
-              >
-                {deletingId === task.taskId ? 'Deleting…' : 'Delete'}
-              </button>
+            {(onEdit || onDelete) && (
+              <span className="task-actions">
+                {onEdit && (
+                  <button type="button" className="icon-button" onClick={() => onEdit(task)}>
+                    Edit
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    type="button"
+                    className="icon-button danger"
+                    disabled={deletingId === task.taskId}
+                    onClick={() => onDelete(task)}
+                  >
+                    {deletingId === task.taskId ? 'Deleting…' : 'Delete'}
+                  </button>
+                )}
+              </span>
             )}
           </div>
         );

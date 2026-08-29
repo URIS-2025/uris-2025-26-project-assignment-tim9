@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { ApiError } from '../api/httpClient';
 import { getAllProjects } from '../api/projectApi';
@@ -25,6 +26,12 @@ export default function SprintsPage() {
   const { token, username, role, logout } = useAuth();
   const canManage = CAN_MANAGE_ROLES.includes(role);
 
+  // Present when mounted at /projects/:projectId/sprints (a project-scoped
+  // view) - absent at the flat /sprints route (every sprint the caller can
+  // see, across every project). Same page either way, just scoped to fewer
+  // sprints and a fixed project when opening the create form.
+  const { projectId: routeProjectId } = useParams();
+
   const [projects, setProjects] = useState([]);
   const [sprints, setSprints] = useState([]);
   const [selectedSprintId, setSelectedSprintId] = useState(null);
@@ -46,6 +53,7 @@ export default function SprintsPage() {
   const [showSprintForm, setShowSprintForm] = useState(false);
   const [editingSprint, setEditingSprint] = useState(null);
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   // Sprints are paged 3-at-a-time, stepping one sprint per arrow click
   // rather than jumping a full page at a time.
@@ -72,7 +80,7 @@ export default function SprintsPage() {
       try {
         const [allProjects, allSprints] = await Promise.all([
           getAllProjects(token),
-          getAllSprints(token),
+          getAllSprints(token, { projectId: routeProjectId }),
         ]);
         if (cancelled) return;
         setProjects(allProjects);
@@ -95,11 +103,16 @@ export default function SprintsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, sprintsVersion, handleAuthError]);
+  }, [token, sprintsVersion, routeProjectId, handleAuthError]);
 
   const projectNames = useMemo(
     () => Object.fromEntries(projects.map((p) => [p.projectId, p.name])),
     [projects]
+  );
+
+  const scopedProject = useMemo(
+    () => (routeProjectId ? projects.find((p) => p.projectId === routeProjectId) : null),
+    [routeProjectId, projects]
   );
 
   const selectedSprint = sprints.find((s) => s.id === selectedSprintId) ?? null;
@@ -182,8 +195,9 @@ export default function SprintsPage() {
     }
   }
 
-  function handleTaskCreated() {
+  function handleTaskSaved() {
     setShowTaskForm(false);
+    setEditingTask(null);
     setTasksVersion((v) => v + 1);
   }
 
@@ -208,7 +222,11 @@ export default function SprintsPage() {
       <header className="page-header">
         <div>
           <h1>Sprints</h1>
-          <p className="page-subtitle">Plan sprints per project and track their tasks.</p>
+          <p className="page-subtitle">
+            {routeProjectId
+              ? `Sprints on ${scopedProject?.name || 'this project'}.`
+              : 'Plan sprints per project and track their tasks.'}
+          </p>
         </div>
         <div className="user-badge">
           <div>
@@ -285,6 +303,7 @@ export default function SprintsPage() {
           ) : (
             <TaskList
               tasks={tasks}
+              onEdit={canManage ? setEditingTask : undefined}
               onDelete={canManage ? handleDeleteTask : undefined}
               deletingId={deletingTaskId}
             />
@@ -395,6 +414,7 @@ export default function SprintsPage() {
         <SprintFormModal
           projects={projects}
           sprint={editingSprint}
+          initialProjectId={routeProjectId}
           onClose={() => {
             setShowSprintForm(false);
             setEditingSprint(null);
@@ -403,12 +423,16 @@ export default function SprintsPage() {
         />
       )}
 
-      {showTaskForm && selectedSprint && (
+      {(showTaskForm || editingTask) && selectedSprint && (
         <TaskFormModal
           sprintId={selectedSprint.id}
           projectId={selectedSprint.projectId}
-          onClose={() => setShowTaskForm(false)}
-          onCreated={handleTaskCreated}
+          task={editingTask}
+          onClose={() => {
+            setShowTaskForm(false);
+            setEditingTask(null);
+          }}
+          onSaved={handleTaskSaved}
         />
       )}
     </div>

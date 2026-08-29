@@ -21,14 +21,16 @@ function toDateInputValue(iso) {
  * @param {object} props
  * @param {Array<{projectId: string, name: string}>} props.projects
  * @param {object} [props.sprint] - the sprint being edited; omit to create instead
+ * @param {string} [props.initialProjectId] - preselect this project (e.g. when opened from a
+ *   project-scoped sprints page); ignored while editing, and still changeable by the user
  * @param {() => void} props.onClose
  * @param {(sprint: object) => void} props.onSaved - receives the created/updated sprint (with .projectId)
  */
-export default function SprintFormModal({ projects, sprint, onClose, onSaved }) {
+export default function SprintFormModal({ projects, sprint, initialProjectId, onClose, onSaved }) {
   const { token } = useAuth();
   const isEditing = Boolean(sprint);
 
-  const [projectId, setProjectId] = useState(sprint?.projectId ?? '');
+  const [projectId, setProjectId] = useState(sprint?.projectId ?? initialProjectId ?? '');
   const [name, setName] = useState(sprint?.name ?? '');
   const [status, setStatus] = useState(String(sprint?.status ?? 0));
   const [startDate, setStartDate] = useState(toDateInputValue(sprint?.startDate));
