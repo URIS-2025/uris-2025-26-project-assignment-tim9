@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
 import '../../shared/styles/forms.css';
 import './LoginPage.css';
@@ -82,6 +82,10 @@ export default function LoginPage() {
             {submitting ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
+
+        <p className="login-switch">
+          Don't have an account? <Link to="/signup">Create one</Link>
+        </p>
       </div>
     </section>
   );
