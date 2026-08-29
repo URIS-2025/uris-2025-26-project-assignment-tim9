@@ -303,6 +303,7 @@ export default function SprintsPage() {
           ) : (
             <TaskList
               tasks={tasks}
+              projectId={selectedSprint.projectId}
               onEdit={canManage ? setEditingTask : undefined}
               onDelete={canManage ? handleDeleteTask : undefined}
               deletingId={deletingTaskId}
