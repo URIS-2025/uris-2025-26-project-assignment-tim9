@@ -53,6 +53,63 @@ function DetailRow({ label, children, muted = false }) {
   );
 }
 
+function LineIcon({ children }) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+function WorkPackagesIcon() {
+  return (
+    <LineIcon>
+      <rect x="3.5" y="3.5" width="13" height="13" rx="2" />
+      <path d="M6.8 8l1.7 1.7 3.2-3.4" />
+      <path d="M6.8 12.8h6.4" />
+    </LineIcon>
+  );
+}
+
+function SprintsIcon() {
+  return (
+    <LineIcon>
+      <rect x="3" y="4.4" width="14" height="12.2" rx="1.8" />
+      <path d="M3 8h14" />
+      <path d="M7 2.8v3.2" />
+      <path d="M13 2.8v3.2" />
+    </LineIcon>
+  );
+}
+
+function TimelogsIcon() {
+  return (
+    <LineIcon>
+      <circle cx="10" cy="10" r="7" />
+      <path d="M10 6v4.2l2.6 1.6" />
+    </LineIcon>
+  );
+}
+
+function RelatedCard({ to, label, icon }) {
+  return (
+    <Link to={to} className="pd-related__card">
+      <span className="pd-related__card-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="pd-related__card-label">{label}</span>
+    </Link>
+  );
+}
+
 function ProjectDetailsSkeleton() {
   return (
     <article className="pd-card pd-card--skeleton" aria-hidden="true">
@@ -232,26 +289,27 @@ export default function ProjectDetailsPage() {
 
           <section className="pd-related">
             <h2 className="pd-related__title">Related</h2>
-            <div className="pd-related__links">
-              <AttachmentsButton projectId={project.projectId} />
-              <Link
+
+            <div className="pd-related__attachments">
+              <AttachmentsButton projectId={project.projectId} label="Attachments" />
+            </div>
+
+            <div className="pd-related__grid">
+              <RelatedCard
                 to={`/projects/${project.projectId}/work-packages`}
-                className="secondary-button"
-              >
-                View Work Packages
-              </Link>
-              <Link
+                label="Work Packages"
+                icon={<WorkPackagesIcon />}
+              />
+              <RelatedCard
                 to={`/projects/${project.projectId}/sprints`}
-                className="secondary-button"
-              >
-                View Sprints
-              </Link>
-              <Link
+                label="Sprints"
+                icon={<SprintsIcon />}
+              />
+              <RelatedCard
                 to={`/projects/${project.projectId}/timelogs`}
-                className="secondary-button"
-              >
-                View Timelogs
-              </Link>
+                label="Timelogs"
+                icon={<TimelogsIcon />}
+              />
             </div>
           </section>
 
