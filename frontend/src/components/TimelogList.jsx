@@ -1,3 +1,4 @@
+import AttachmentsButton from './AttachmentsButton';
 import './TimelogList.css';
 
 function formatDate(iso) {
@@ -42,6 +43,9 @@ export default function TimelogList({ timelogs, onEdit, onDelete, deletingId }) 
           <span className="timelog-date">{formatDate(log.date)}</span>
           <span className="timelog-hours align-right">{log.hoursSpent}h</span>
           <span className="timelog-actions align-right">
+            {/* Attachments belong to the task, not the timelog entry itself -
+                every timelog on the same task shares the same file list. */}
+            <AttachmentsButton projectId={log.projectId} taskId={log.taskId} label="Files" />
             <button type="button" className="icon-button" onClick={() => onEdit(log)}>
               Update
             </button>
