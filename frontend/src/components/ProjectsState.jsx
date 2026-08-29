@@ -1,4 +1,3 @@
-// Empty / error panel for the projects page
 export default function ProjectsState({ variant = 'empty', title, children, onRetry }) {
   return (
     <div

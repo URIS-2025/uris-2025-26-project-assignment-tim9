@@ -1,4 +1,3 @@
-// Loading placeholder for one card
 export default function ProjectCardSkeleton() {
   return (
     <article className="project-card project-card--skeleton">

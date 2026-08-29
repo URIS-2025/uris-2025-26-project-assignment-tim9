@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
-import { getProjectById } from '../../api/projectApi';
+import { getProjectById, deleteProject } from '../../api/projectApi';
+import { resolveStatus } from '../../utils/projectStatus';
 import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ProjectsState from '../../components/ProjectsState';
 import MilestoneList from '../../components/MilestoneList';
 import RequirementList from '../../components/RequirementList';
-// ProjectsState styles live in ProjectListPage.css
+import ProjectMemberList from '../../components/ProjectMemberList';
+import Modal from '../../components/Modal';
+import CollapsibleSection from '../../components/CollapsibleSection';
+import ProjectForm from '../../components/ProjectForm';
+import MilestoneForm from '../../components/MilestoneForm';
+import RequirementForm from '../../components/RequirementForm';
+import ProjectMemberForm from '../../components/ProjectMemberForm';
 import './ProjectListPage.css';
 import './ProjectDetailsPage.css';
 
@@ -28,6 +35,12 @@ function formatDate(value, formatter) {
   if (!value) return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : formatter.format(parsed);
+}
+
+function isDeadlineOverdue(deadline, statusKey) {
+  if (!deadline || statusKey === 'Completed' || statusKey === 'Cancelled') return false;
+  const time = new Date(deadline).getTime();
+  return !Number.isNaN(time) && time < Date.now();
 }
 
 function DetailRow({ label, children, muted = false }) {
@@ -56,12 +69,24 @@ function ProjectDetailsSkeleton() {
 
 export default function ProjectDetailsPage() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const navigate = useNavigate();
+  const { token, role } = useAuth();
+  const canManage = role === 'Admin' || role === 'ProjectManager';
+  const isAdmin = role === 'Admin';
   const [project, setProject] = useState(null);
-  // phase: 'loading' | 'ready' | 'notfound' | 'error'
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [milestoneReload, setMilestoneReload] = useState(0);
+  const [showRequirementForm, setShowRequirementForm] = useState(false);
+  const [requirementReload, setRequirementReload] = useState(0);
+  const [showMemberForm, setShowMemberForm] = useState(false);
+  const [memberReload, setMemberReload] = useState(0);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     let ignore = false;
@@ -102,8 +127,28 @@ export default function ProjectDetailsPage() {
     setReloadKey((key) => key + 1);
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteProject(project.projectId, token);
+      navigate('/projects');
+    } catch (error) {
+      const status = error && error.status;
+      setDeleteError(
+        status === 403
+          ? "You don't have permission to delete this project."
+          : (error && error.message) ||
+              'Something went wrong while deleting the project. Please try again.'
+      );
+      setDeleting(false);
+    }
+  };
+
   const deadline = project && formatDate(project.deadline, dateFormat);
   const createdAt = project && formatDate(project.createdAt, dateTimeFormat);
+  const deadlineOverdue =
+    project && isDeadlineOverdue(project.deadline, resolveStatus(project.status).key);
 
   return (
     <section className="project-details-page">
@@ -111,7 +156,34 @@ export default function ProjectDetailsPage() {
         <Link to="/projects" className="pd-back">
           <span aria-hidden="true">&larr;</span> Projects
         </Link>
-        <h1 className="pd-title">{phase === 'ready' ? project.name : 'Project details'}</h1>
+        <div className="pd-title-row">
+          <h1 className="pd-title">{phase === 'ready' ? project.name : 'Project details'}</h1>
+          {phase === 'ready' && (canManage || isAdmin) && (
+            <div className="pd-title-actions">
+              {canManage && (
+                <button
+                  type="button"
+                  className="pd-edit-button"
+                  onClick={() => setShowEditForm(true)}
+                >
+                  Edit Project
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  type="button"
+                  className="pd-delete-button"
+                  onClick={() => {
+                    setDeleteError('');
+                    setShowDeleteConfirm(true);
+                  }}
+                >
+                  Delete Project
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       {phase === 'loading' && (
@@ -146,7 +218,10 @@ export default function ProjectDetailsPage() {
                 <span className="pd-budget">{numberFormat.format(project.budget ?? 0)}</span>
               </DetailRow>
               <DetailRow label="Deadline" muted={!deadline}>
-                {deadline ?? 'Not set'}
+                <span className="pd-deadline-value">
+                  <span>{deadline ?? 'Not set'}</span>
+                  {deadlineOverdue && <span className="pd-overdue">Overdue</span>}
+                </span>
               </DetailRow>
               <DetailRow label="Created" muted={!createdAt}>
                 {createdAt ?? 'Unknown'}
@@ -154,9 +229,168 @@ export default function ProjectDetailsPage() {
             </dl>
           </article>
 
-          <MilestoneList projectId={project.projectId} token={token} />
-          <RequirementList projectId={project.projectId} token={token} />
+          <CollapsibleSection
+            title="Milestones"
+            action={
+              canManage ? (
+                <button
+                  type="button"
+                  className="section-add-button"
+                  onClick={() => setShowMilestoneForm(true)}
+                >
+                  Add Milestone
+                </button>
+              ) : null
+            }
+          >
+            <MilestoneList
+              projectId={project.projectId}
+              token={token}
+              reloadSignal={milestoneReload}
+              canManage={canManage}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Requirements"
+            action={
+              canManage ? (
+                <button
+                  type="button"
+                  className="section-add-button"
+                  onClick={() => setShowRequirementForm(true)}
+                >
+                  Add Requirement
+                </button>
+              ) : null
+            }
+          >
+            <RequirementList
+              projectId={project.projectId}
+              token={token}
+              reloadSignal={requirementReload}
+              canManage={canManage}
+            />
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Members"
+            action={
+              canManage ? (
+                <button
+                  type="button"
+                  className="section-add-button"
+                  onClick={() => setShowMemberForm(true)}
+                >
+                  Add Member
+                </button>
+              ) : null
+            }
+          >
+            <ProjectMemberList
+              projectId={project.projectId}
+              token={token}
+              reloadSignal={memberReload}
+              canManage={canManage}
+            />
+          </CollapsibleSection>
         </>
+      )}
+
+      {showEditForm && project && (
+        <Modal title="Edit Project" onClose={() => setShowEditForm(false)}>
+          <ProjectForm
+            mode="edit"
+            project={project}
+            token={token}
+            onCancel={() => setShowEditForm(false)}
+            onSaved={() => {
+              setShowEditForm(false);
+              reload();
+            }}
+          />
+        </Modal>
+      )}
+
+      {showMilestoneForm && project && (
+        <Modal title="Add Milestone" onClose={() => setShowMilestoneForm(false)}>
+          <MilestoneForm
+            projectId={project.projectId}
+            token={token}
+            onCancel={() => setShowMilestoneForm(false)}
+            onCreated={() => {
+              setShowMilestoneForm(false);
+              setMilestoneReload((key) => key + 1);
+            }}
+          />
+        </Modal>
+      )}
+
+      {showRequirementForm && project && (
+        <Modal title="Add Requirement" onClose={() => setShowRequirementForm(false)}>
+          <RequirementForm
+            projectId={project.projectId}
+            token={token}
+            onCancel={() => setShowRequirementForm(false)}
+            onCreated={() => {
+              setShowRequirementForm(false);
+              setRequirementReload((key) => key + 1);
+            }}
+          />
+        </Modal>
+      )}
+
+      {showMemberForm && project && (
+        <Modal title="Add Member" onClose={() => setShowMemberForm(false)}>
+          <ProjectMemberForm
+            projectId={project.projectId}
+            token={token}
+            onCancel={() => setShowMemberForm(false)}
+            onCreated={() => {
+              setShowMemberForm(false);
+              setMemberReload((key) => key + 1);
+            }}
+          />
+        </Modal>
+      )}
+
+      {showDeleteConfirm && project && (
+        <Modal
+          title="Delete Project"
+          onClose={() => {
+            if (!deleting) setShowDeleteConfirm(false);
+          }}
+        >
+          <p className="pd-confirm__text">
+            Are you sure you want to delete this project? This will also delete all its
+            milestones, requirements, and members.
+          </p>
+
+          {deleteError && (
+            <p className="pd-delete-error" role="alert">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={deleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="pd-delete-button"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete Project'}
+            </button>
+          </div>
+        </Modal>
       )}
     </section>
   );

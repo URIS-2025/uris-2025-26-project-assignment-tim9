@@ -1,4 +1,3 @@
-// ProjectStatus (numeric index or string) -> label + colour tone
 export const STATUS_ORDER = ['Planned', 'Active', 'OnHold', 'Completed', 'Cancelled'];
 
 export const STATUS_META = {

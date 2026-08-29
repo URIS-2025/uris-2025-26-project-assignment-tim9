@@ -20,6 +20,21 @@ export class ApiError extends Error {
   }
 }
 
+function messagesFromErrors(errors) {
+  if (!errors || typeof errors !== 'object') return [];
+  return Object.entries(errors).flatMap(([field, value]) => {
+    const list = Array.isArray(value) ? value : [value];
+    return list
+      .map((entry) => String(entry).trim())
+      .filter(Boolean)
+      .map((msg) => {
+        const named = Boolean(field) && field !== '$';
+        const alreadyMentions = named && msg.toLowerCase().includes(field.toLowerCase());
+        return named && !alreadyMentions ? `${field}: ${msg}` : msg;
+      });
+  });
+}
+
 async function parseErrorMessage(response) {
   const text = await response.text().catch(() => '');
   if (!text) {
@@ -28,12 +43,13 @@ async function parseErrorMessage(response) {
   try {
     const data = JSON.parse(text);
     if (typeof data === 'string') return data;
-    if (data?.title) return data.title;
+
+    const fieldMessages = messagesFromErrors(data?.errors);
+    if (fieldMessages.length) return fieldMessages.join(' ');
+
+    if (data?.detail) return data.detail;
     if (data?.message) return data.message;
-    if (data?.errors) {
-      const first = Object.values(data.errors).flat()[0];
-      if (first) return first;
-    }
+    if (data?.title) return data.title;
     return text;
   } catch {
     return text;
