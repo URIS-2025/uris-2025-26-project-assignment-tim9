@@ -13,6 +13,14 @@ const icons = {
       <path d="M10 6v4.2l2.6 1.6" />
     </>
   ),
+  sprints: (
+    <>
+      <rect x="3" y="4.4" width="14" height="12.2" rx="1.8" />
+      <path d="M3 8h14" />
+      <path d="M7 2.8v3.2" />
+      <path d="M13 2.8v3.2" />
+    </>
+  ),
   payments: (
     <>
       <rect x="2.8" y="5" width="14.4" height="10" rx="1.6" />
@@ -53,6 +61,7 @@ export default function Sidebar() {
   const links = [
     { to: '/projects', label: 'Projects', icon: 'projects' },
     { to: '/timelogs', label: 'My timelogs', icon: 'timelogs' },
+    { to: '/sprints', label: 'Sprints', icon: 'sprints' },
     { to: '/payments', label: 'Billing', icon: 'payments' },
     ...(role === 'Admin' ? [{ to: '/users', label: 'Users', icon: 'users' }] : []),
   ];

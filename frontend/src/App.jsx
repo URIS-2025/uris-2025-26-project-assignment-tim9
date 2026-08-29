@@ -11,6 +11,7 @@ import WorkPackagesPage from './pages/WorkPackages/WorkPackagesPage'
 import WorkPackageDetailPage from './pages/WorkPackages/WorkPackageDetailPage'
 import BacklogPage from './pages/WorkPackages/BacklogPage'
 import TimelogsPage from './pages/Timelogs/TimelogsPage'
+import SprintsPage from './pages/SprintsPage'
 import PaymentsPage from './pages/Payments/PaymentsPage'
 import InvoiceDetailsPage from './pages/Payments/InvoiceDetailsPage'
 
@@ -43,6 +44,9 @@ function App() {
             <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
             <Route path="/projects/:projectId/timelogs" element={<TimelogsPage />} />
             <Route path="/timelogs" element={<TimelogsPage />} />
+
+            <Route path="/projects/:projectId/sprints" element={<SprintsPage />} />
+            <Route path="/sprints" element={<SprintsPage />} />
 
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/payments/:invoiceId" element={<InvoiceDetailsPage />} />
