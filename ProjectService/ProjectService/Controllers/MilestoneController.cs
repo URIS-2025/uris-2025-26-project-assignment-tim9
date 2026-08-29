@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectService.Data;
@@ -12,11 +12,16 @@ namespace ProjectService.Controllers
     public class MilestoneController : ControllerBase
     {
         private readonly IMilestoneRepository _milestoneRepository;
+        private readonly IProjectRepository _projectRepository;
         private readonly IMapper _mapper;
 
-        public MilestoneController(IMilestoneRepository milestoneRepository, IMapper mapper)
+        public MilestoneController(
+            IMilestoneRepository milestoneRepository,
+            IProjectRepository projectRepository,
+            IMapper mapper)
         {
             _milestoneRepository = milestoneRepository;
+            _projectRepository = projectRepository;
             _mapper = mapper;
         }
 
@@ -56,6 +61,9 @@ namespace ProjectService.Controllers
         [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<MilestoneConfirmationDto> CreateMilestone([FromBody] MilestoneCreationDto milestoneDto)
         {
+            if (ExpectedDateAfterProjectDeadline(milestoneDto.ProjectId, milestoneDto.ExpectedDate))
+                return BadRequest("Milestone expected date cannot be after the project deadline.");
+
             try
             {
                 var milestone = _milestoneRepository.CreateMilestone(milestoneDto);
@@ -72,6 +80,9 @@ namespace ProjectService.Controllers
         [Authorize(Roles = "Admin,ProjectManager")]
         public ActionResult<MilestoneConfirmationDto> UpdateMilestone([FromBody] MilestoneUpdateDto milestoneDto)
         {
+            if (ExpectedDateAfterProjectDeadline(milestoneDto.ProjectId, milestoneDto.ExpectedDate))
+                return BadRequest("Milestone expected date cannot be after the project deadline.");
+
             try
             {
                 var updated = _milestoneRepository.UpdateMilestone(milestoneDto);
@@ -110,6 +121,12 @@ namespace ProjectService.Controllers
         {
             Response.Headers.Add("Allow", "GET, POST, PUT, DELETE");
             return Ok();
+        }
+
+        private bool ExpectedDateAfterProjectDeadline(Guid projectId, DateTime expectedDate)
+        {
+            var project = _projectRepository.GetProjectById(projectId);
+            return project?.Deadline is DateTime deadline && expectedDate > deadline;
         }
     }
 }
