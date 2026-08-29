@@ -25,9 +25,13 @@ namespace PaymentService.Context
             if (!optionsBuilder.IsConfigured)
             {
                 var connectionString = _configuration.GetConnectionString("PaymentDB");
+
+                //verzija je zakucana namerno. ServerVersion.AutoDetect otvara novu
+                //konekciju ka bazi pri svakom zahtevu, jer se OnConfiguring poziva
+                //za svaku instancu konteksta - to trosi konekcije i usporava servis.
                 optionsBuilder.UseMySql(
                     connectionString,
-                    ServerVersion.AutoDetect(connectionString)
+                    new MySqlServerVersion(new Version(8, 0, 0))
                 );
             }
         }
