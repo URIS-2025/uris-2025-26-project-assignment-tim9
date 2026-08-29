@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Security.Claims;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectService.Data;
@@ -23,13 +24,32 @@ namespace ProjectService.Controllers
         }
 
         // GET sve projekte
+        // Admin/ProjectManager vide sve; TeamMember/Client vide samo projekte
+        // na kojima su clanovi (postoji ProjectMember zapis sa njihovim UserId).
         [HttpGet]
         [HttpHead]
         public ActionResult<IEnumerable<ProjectDto>> GetProjects()
         {
-            var projects = _projectRepository.GetProjects();
+            IEnumerable<ProjectDto> projects;
+
+            if (User.IsInRole("Admin") || User.IsInRole("ProjectManager"))
+            {
+                projects = _projectRepository.GetProjects();
+            }
+            else
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                                  ?? User.FindFirst("sub")?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Forbid();
+
+                projects = _projectRepository.GetProjectsByUserId(userId);
+            }
+
             if (projects == null || !projects.Any())
                 return NoContent();
+
             return Ok(projects);
         }
 

@@ -54,7 +54,7 @@ export default function ProjectCard({ project }) {
           <dt>Budget</dt>
           <dd>
             <span className="project-meta__budget">
-              {numberFormat.format(project.budget ?? 0)}
+              {numberFormat.format(project.budget ?? 0)} &euro;
             </span>
           </dd>
         </div>

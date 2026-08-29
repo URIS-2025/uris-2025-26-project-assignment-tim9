@@ -53,6 +53,9 @@ function applySort(list, sort) {
 export default function ProjectListPage() {
   const { token, role, userId } = useAuth();
   const canCreate = role === 'Admin' || role === 'ProjectManager';
+  // Admin/PM see every project by default, so a "mine only" filter is useful.
+  // TeamMember/Client are already scoped to their projects server-side.
+  const canFilterMine = role === 'Admin' || role === 'ProjectManager';
   const [projects, setProjects] = useState([]);
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -133,7 +136,7 @@ export default function ProjectListPage() {
 
       {phase === 'ready' && (
         <div className="projects-toolbar">
-          {userId && (
+          {userId && canFilterMine && (
             <label className="pl-toggle">
               <input
                 type="checkbox"
