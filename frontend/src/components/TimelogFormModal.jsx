@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Modal from './Modal';
 import { useAuth } from '../auth/useAuth';
-import { getWorkPackagesByProject } from '../api/workPackageApi';
-import { getTasksByWorkPackage } from '../api/taskApi';
+import { getWorkPackages, getTasksByWorkPackage } from '../api/workPackageApi';
 import { createTimelog, updateTimelog } from '../api/timelogApi';
 
 function today() {
@@ -13,14 +12,16 @@ function today() {
  * @param {object} props
  * @param {Array<{projectId: string, name: string}>} props.projects - projects the user belongs to
  * @param {object|null} props.editingTimelog - pass an existing timelog to edit it, null to create
+ * @param {string} [props.initialProjectId] - preselect this project (e.g. when opened from a
+ *   project-scoped timelogs page); ignored while editing, and still changeable by the user
  * @param {() => void} props.onClose
  * @param {() => void} props.onSaved - called after a successful create/update
  */
-export default function TimelogFormModal({ projects, editingTimelog, onClose, onSaved }) {
+export default function TimelogFormModal({ projects, editingTimelog, initialProjectId, onClose, onSaved }) {
   const { token, userId } = useAuth();
   const isEditing = !!editingTimelog;
 
-  const [projectId, setProjectId] = useState(editingTimelog?.projectId ?? '');
+  const [projectId, setProjectId] = useState(editingTimelog?.projectId ?? initialProjectId ?? '');
   const [taskId, setTaskId] = useState(editingTimelog?.taskId ?? '');
   const [hoursSpent, setHoursSpent] = useState(editingTimelog?.hoursSpent ?? '');
   const [date, setDate] = useState(
@@ -43,7 +44,7 @@ export default function TimelogFormModal({ projects, editingTimelog, onClose, on
       setTasksLoading(true);
       setTasksError(null);
       try {
-        const workPackages = await getWorkPackagesByProject(projectId, token);
+        const workPackages = await getWorkPackages(projectId, token);
         const taskLists = await Promise.all(
           workPackages.map((wp) => getTasksByWorkPackage(wp.workPackageId, token))
         );
