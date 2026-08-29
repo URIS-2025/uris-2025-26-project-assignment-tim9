@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AuthProvider from './auth/AuthProvider'
 import RequireAuth from './auth/RequireAuth'
 import LoginPage from './pages/Auth/LoginPage'
+import SignUpPage from './pages/Auth/SignUpPage'
+import UsersListPage from './pages/Users/UsersListPage'
 import ProjectListPage from './pages/Projects/ProjectListPage'
 import ProjectDetailsPage from './pages/Projects/ProjectDetailsPage'
 import WorkPackagesPage from './pages/WorkPackages/WorkPackagesPage'
@@ -16,6 +18,15 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/projects" replace />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route
+            path="/users"
+            element={
+              <RequireAuth roles={['Admin']}>
+                <UsersListPage />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/projects"
             element={
