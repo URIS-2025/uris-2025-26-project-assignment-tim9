@@ -241,6 +241,10 @@
   border: 0;
 }
 
+.pd-attachments {
+  margin-top: 16px;
+}
+
 /* ---- Header actions (Edit / Delete) --------------------- */
 
 .pd-edit-button {

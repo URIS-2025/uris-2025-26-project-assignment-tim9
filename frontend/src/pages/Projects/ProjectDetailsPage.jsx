@@ -14,6 +14,7 @@ import ProjectForm from '../../components/ProjectForm';
 import MilestoneForm from '../../components/MilestoneForm';
 import RequirementForm from '../../components/RequirementForm';
 import ProjectMemberForm from '../../components/ProjectMemberForm';
+import AttachmentsButton from '../../components/AttachmentsButton';
 import './ProjectListPage.css';
 import './ProjectDetailsPage.css';
 
@@ -228,6 +229,10 @@ export default function ProjectDetailsPage() {
               </DetailRow>
             </dl>
           </article>
+
+          <div className="pd-attachments">
+            <AttachmentsButton projectId={project.projectId} />
+          </div>
 
           <CollapsibleSection
             title="Milestones"

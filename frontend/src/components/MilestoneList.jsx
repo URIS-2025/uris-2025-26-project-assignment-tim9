@@ -34,8 +34,10 @@ function MilestoneListSkeleton() {
     <ul className="milestone-list__items" aria-hidden="true">
       {Array.from({ length: 3 }).map((_, index) => (
         <li className="milestone-row milestone-row--skeleton" key={index}>
-          <span className="ml-skeleton ml-skeleton--date" />
-          <span className="ml-skeleton ml-skeleton--pill" />
+          <div className="milestone-row__main">
+            <span className="ml-skeleton ml-skeleton--name" />
+            <span className="ml-skeleton ml-skeleton--date" />
+          </div>
         </li>
       ))}
     </ul>
@@ -159,12 +161,20 @@ export default function MilestoneList({ projectId, token, reloadSignal = 0, canM
             const date = formatDate(milestone.expectedDate);
             return (
               <li className="milestone-row" key={milestone.milestoneId ?? index}>
-                <span className="milestone-row__main">
-                  <span className="milestone-row__date">{date ?? 'Unknown date'}</span>
-                  <span className={`milestone-pill milestone-pill--${state.tone}`}>
-                    {state.label}
+                <div className="milestone-row__main">
+                  <span className="milestone-row__name">
+                    {milestone.name || 'Untitled milestone'}
                   </span>
-                </span>
+                  {milestone.description && (
+                    <span className="milestone-row__description">{milestone.description}</span>
+                  )}
+                  <span className="milestone-row__meta">
+                    <span className="milestone-row__date">{date ?? 'Unknown date'}</span>
+                    <span className={`milestone-pill milestone-pill--${state.tone}`}>
+                      {state.label}
+                    </span>
+                  </span>
+                </div>
                 {canManage && (
                   <span className="row-actions">
                     <button
