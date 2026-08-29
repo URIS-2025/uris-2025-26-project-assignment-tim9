@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { createMilestone, updateMilestone } from '../api/projectApi';
 import '../shared/styles/forms.css';
 
+const NAME_MAX = 200;
+const DESCRIPTION_MAX = 1000;
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -26,10 +29,18 @@ export default function MilestoneForm({
   onCancel,
 }) {
   const isEdit = mode === 'edit';
+  const [name, setName] = useState(milestone?.name ?? '');
+  const [description, setDescription] = useState(milestone?.description ?? '');
   const [expectedDate, setExpectedDate] = useState(toDateInput(milestone?.expectedDate));
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const trimmedName = name.trim();
+  const nameError = !trimmedName
+    ? 'Name is required.'
+    : name.length > NAME_MAX
+      ? `Name must be ${NAME_MAX} characters or fewer.`
+      : '';
   const dateError = !expectedDate
     ? 'Expected date is required.'
     : expectedDate <= today()
@@ -38,21 +49,24 @@ export default function MilestoneForm({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (dateError) {
-      setErrorMessage('Please fix the highlighted field.');
+    if (nameError || dateError) {
+      setErrorMessage('Please fix the highlighted fields.');
       return;
     }
 
     setSubmitting(true);
     setErrorMessage('');
     try {
+      const payload = {
+        projectId,
+        name: trimmedName,
+        description: description.trim() || null,
+        expectedDate,
+      };
       if (isEdit) {
-        await updateMilestone(
-          { milestoneId: milestone.milestoneId, projectId, expectedDate },
-          token
-        );
+        await updateMilestone({ ...payload, milestoneId: milestone.milestoneId }, token);
       } else {
-        await createMilestone({ projectId, expectedDate }, token);
+        await createMilestone(payload, token);
       }
       (onSaved || onCreated)();
     } catch (error) {
@@ -61,7 +75,7 @@ export default function MilestoneForm({
         httpStatus === 403
           ? `You don't have permission to ${isEdit ? 'edit' : 'add'} milestones.`
           : httpStatus === 400
-            ? error.message || 'The milestone is invalid. Please pick a future date.'
+            ? error.message || 'The milestone data is invalid. Please check the fields.'
             : `Something went wrong while ${isEdit ? 'saving' : 'adding'} the milestone. Please try again.`
       );
       setSubmitting(false);
@@ -75,6 +89,30 @@ export default function MilestoneForm({
           {errorMessage}
         </p>
       )}
+
+      <label>
+        Name
+        <input
+          type="text"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="e.g. Beta release"
+          maxLength={NAME_MAX}
+          required
+        />
+        {nameError && <span className="field-hint error">{nameError}</span>}
+      </label>
+
+      <label>
+        Description (optional)
+        <textarea
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="What this milestone covers"
+          rows={3}
+          maxLength={DESCRIPTION_MAX}
+        />
+      </label>
 
       <label>
         Expected Date
@@ -100,7 +138,7 @@ export default function MilestoneForm({
         <button
           type="submit"
           className="primary-button"
-          disabled={submitting || Boolean(dateError)}
+          disabled={submitting || Boolean(nameError) || Boolean(dateError)}
         >
           {submitting
             ? isEdit
