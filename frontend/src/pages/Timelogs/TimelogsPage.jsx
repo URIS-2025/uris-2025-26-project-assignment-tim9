@@ -11,7 +11,7 @@ import TimelogFormModal from '../../components/TimelogFormModal';
 import './TimelogsPage.css';
 
 export default function TimelogsPage() {
-  const { token, userId, username, role, logout } = useAuth();
+  const { token, userId, logout } = useAuth();
 
   // Present when this page is mounted at /projects/:projectId/timelogs
   // (a project-scoped view) - absent at the flat /timelogs route (the
@@ -234,15 +234,6 @@ export default function TimelogsPage() {
               ? `Your time logged on ${scopedProject?.name || 'this project'}.`
               : "Track hours across every project you're on."}
           </p>
-        </div>
-        <div className="user-badge">
-          <div>
-            <span className="user-name">{username}</span>
-            <span className="user-role">{role}</span>
-          </div>
-          <button type="button" className="secondary-button" onClick={logout}>
-            Log out
-          </button>
         </div>
       </header>
 

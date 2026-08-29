@@ -20,6 +20,9 @@ namespace PaymentService.Tests.Integration
         public const string KnownUsername = "integracioni.korisnik";
 
         public Guid KnownProjectId { get; } = Guid.NewGuid();
+
+        //projekat iz seed podataka PaymentContext-a
+        public static readonly Guid SeededProjectId = Guid.Parse("044f3de0-a9dd-4c2e-b745-89976a1b2a36");
         public const string KnownProjectName = "Integracioni projekat";
 
         private FakeJsonServer _userServer = null!;
@@ -52,6 +55,14 @@ namespace PaymentService.Tests.Integration
                 if (p.Equals($"api/projectmember/project/{KnownProjectId}", StringComparison.OrdinalIgnoreCase))
                 {
                     return (200, $"[{{\"userId\":\"{KnownUserId}\",\"status\":true}}]");
+                }
+
+                //projekti na kojima je KnownUserId clan: test projekat i onaj iz seed podataka
+                if (p.Equals($"api/project/user/{KnownUserId}", StringComparison.OrdinalIgnoreCase))
+                {
+                    return (200,
+                        $"[{{\"projectId\":\"{KnownProjectId}\",\"name\":\"{KnownProjectName}\",\"budget\":50000}},"
+                        + $"{{\"projectId\":\"{SeededProjectId}\",\"name\":\"Seeded\",\"budget\":10000}}]");
                 }
 
                 return (404, null);

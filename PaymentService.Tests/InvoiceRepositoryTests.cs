@@ -125,14 +125,14 @@ namespace PaymentService.Tests
         }
 
         [Fact]
-        public void GetInvoices_FiltersByProjectAndStatus()
+        public async Task GetInvoices_FiltersByProjectAndStatus()
         {
             var fx = new TestFixture();
             var paid = fx.SeedInvoice(InvoiceStatus.Paid);
             fx.SeedInvoice();
 
-            var byProject = fx.Invoices.GetInvoices(projectId: paid.ProjectId).ToList();
-            var byStatus = fx.Invoices.GetInvoices(status: InvoiceStatus.Unpaid).ToList();
+            var byProject = (await fx.Invoices.GetInvoicesAsync(Guid.NewGuid(), isAdmin: true, projectId: paid.ProjectId)).ToList();
+            var byStatus = (await fx.Invoices.GetInvoicesAsync(Guid.NewGuid(), isAdmin: true, status: InvoiceStatus.Unpaid)).ToList();
 
             Assert.Single(byProject);
             Assert.Single(byStatus);
@@ -178,6 +178,58 @@ namespace PaymentService.Tests
             Assert.True(result.IsSuccess);
             fx.ProjectService.Verify(
                 s => s.CheckMembershipAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task GetInvoices_HidesInvoicesFromProjectsTheCallerIsNotOn()
+        {
+            var fx = new TestFixture();
+            var mine = fx.SeedInvoice();
+            fx.SeedInvoice();
+
+            fx.ProjectService
+                .Setup(s => s.GetProjectIdsForUserAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(new[] { mine.ProjectId });
+
+            var visible = (await fx.Invoices.GetInvoicesAsync(Guid.NewGuid(), isAdmin: false)).ToList();
+
+            Assert.Single(visible);
+            Assert.Equal(mine.InvoiceId, visible[0].InvoiceId);
+        }
+
+        [Fact]
+        public async Task GetInvoices_AlwaysShowsInvoicesTheCallerIssued()
+        {
+            var fx = new TestFixture();
+            var issuer = Guid.NewGuid();
+            var mine = fx.SeedInvoice();
+            mine.IssuedByUserId = issuer;
+            fx.Context.SaveChanges();
+
+            fx.SeedInvoice();
+
+            //Project servis ne odgovara, ali svoje fakture korisnik i dalje vidi
+            fx.ProjectService
+                .Setup(s => s.GetProjectIdsForUserAsync(It.IsAny<Guid>()))
+                .ReturnsAsync((IReadOnlyCollection<Guid>?)null);
+
+            var visible = (await fx.Invoices.GetInvoicesAsync(issuer, isAdmin: false)).ToList();
+
+            Assert.Single(visible);
+            Assert.Equal(mine.InvoiceId, visible[0].InvoiceId);
+        }
+
+        [Fact]
+        public async Task GetInvoices_AsAdmin_ShowsEverything()
+        {
+            var fx = new TestFixture();
+            fx.SeedInvoice();
+            fx.SeedInvoice();
+
+            var visible = (await fx.Invoices.GetInvoicesAsync(Guid.NewGuid(), isAdmin: true)).ToList();
+
+            Assert.Equal(2, visible.Count);
+            fx.ProjectService.Verify(s => s.GetProjectIdsForUserAsync(It.IsAny<Guid>()), Times.Never);
         }
 
     }

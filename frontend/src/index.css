@@ -34,6 +34,9 @@ body {
   margin: 0;
 }
 
+/* Puna sirina, jer okvir aplikacije ima sidebar sa strane.
+   Centriranje sadrzaja na 1126px preuzeo je .app-content u layout.css,
+   pa stranice izgledaju isto kao pre uvodjenja okvira. */
 #root {
   width: 100%;
   min-height: 100svh;
