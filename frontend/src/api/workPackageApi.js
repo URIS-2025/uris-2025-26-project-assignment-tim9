@@ -1,9 +1,5 @@
-export async function getWorkPackages(projectId) {
-  const response = await fetch(`http://localhost:5037/api/projects/${projectId}/work-packages`);
+import { apiRequest } from './httpClient';
 
-  if (!response.ok) {
-    throw new Error(`Greška pri učitavanju work package-a: ${response.status}`);
-  }
-
-  return response.json();
+export function getWorkPackages(projectId, token) {
+  return apiRequest(`/projects/${projectId}/work-packages`, { token });
 }
