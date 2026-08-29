@@ -16,8 +16,26 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': { target: GATEWAY_URL, changeOrigin: true },
-      '/sprints': { target: GATEWAY_URL, changeOrigin: true },
-      '/projects': { target: GATEWAY_URL, changeOrigin: true },
+      // Both of these collide character-for-character with a page route of
+      // the same name (/sprints, /projects/:id/sprints), so the proxy has
+      // to tell an XHR/fetch call apart from a full-page navigation (e.g. a
+      // hard refresh or a pasted URL landing here) - otherwise it swallows
+      // the page request too and React Router never gets a chance to
+      // render it. Bypass lets Vite fall through to its SPA index.html for
+      // anything asking for text/html. (WorkPackage has no such collision:
+      // its real endpoint is /api/workpackage/project/{id}, already
+      // covered by the plain /api rule above - /projects/:id/work-packages
+      // is only ever a page route, so it needs no proxy entry at all.)
+      '/sprints': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
+      '^/projects/[^/]+/sprints': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
       '/attachments': { target: GATEWAY_URL, changeOrigin: true },
     },
   },

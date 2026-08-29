@@ -10,5 +10,6 @@ obj/
 .env
 keys/
 PORTS.md
+.claude/
 
 .claude/

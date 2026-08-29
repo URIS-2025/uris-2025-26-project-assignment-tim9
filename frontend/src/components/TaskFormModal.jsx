@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal';
 import { useAuth } from '../auth/useAuth';
-import { getWorkPackagesByProject } from '../api/workPackageApi';
+import { getWorkPackages } from '../api/workPackageApi';
 import { createTask } from '../api/taskApi';
 import { TASK_STATUSES, TASK_PRIORITIES } from '../shared/enums';
 
@@ -39,7 +39,7 @@ export default function TaskFormModal({ sprintId, projectId, onClose, onCreated 
       setWpLoading(true);
       setWpError(null);
       try {
-        const list = await getWorkPackagesByProject(projectId, token);
+        const list = await getWorkPackages(projectId, token);
         if (!cancelled) setWorkPackages(list);
       } catch (err) {
         if (!cancelled) setWpError(err.message || 'Could not load work packages for this project.');

@@ -5,6 +5,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using ProjectService.Models.DTO.MilestoneDtos;
+using ProjectService.Models.DTO.ProjectDtos;
+using ProjectService.Models.Enums;
 using Xunit;
 
 namespace ProjectService.Tests.Integration
@@ -31,6 +33,8 @@ namespace ProjectService.Tests.Integration
         private static MilestoneCreationDto ValidCreationDto(Guid? projectId = null) => new MilestoneCreationDto
         {
             ProjectId = projectId ?? Guid.NewGuid(),
+            Name = "Beta release",
+            Description = "Feature-complete build ready for QA",
             ExpectedDate = DateTime.Now.AddMonths(1)
         };
 
@@ -123,6 +127,25 @@ namespace ProjectService.Tests.Integration
             Assert.NotNull(created);
             Assert.NotEqual(Guid.Empty, created!.MilestoneId);
             Assert.Equal(dto.ProjectId, created.ProjectId);
+
+            var fetched = await _client.GetFromJsonAsync<MilestoneDto>($"/api/milestone/{created.MilestoneId}");
+            Assert.NotNull(fetched);
+            Assert.Equal(dto.Name, fetched!.Name);
+            Assert.Equal(dto.Description, fetched.Description);
+        }
+
+        [Fact]
+        public async Task CreateMilestone_WithMissingName_ReturnsBadRequest()
+        {
+            // Arrange
+            var dto = ValidCreationDto();
+            dto.Name = "";
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/milestone", dto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
@@ -166,6 +189,8 @@ namespace ProjectService.Tests.Integration
             {
                 MilestoneId = created!.MilestoneId,
                 ProjectId = newProjectId,
+                Name = "Beta release (revised)",
+                Description = "Scope trimmed for the beta",
                 ExpectedDate = newDate
             };
 
@@ -187,6 +212,7 @@ namespace ProjectService.Tests.Integration
             {
                 MilestoneId = Guid.NewGuid(), // ne postoji
                 ProjectId = Guid.NewGuid(),
+                Name = "Ghost milestone",
                 ExpectedDate = DateTime.Now.AddMonths(1)
             };
 
@@ -205,6 +231,7 @@ namespace ProjectService.Tests.Integration
             {
                 MilestoneId = Guid.Empty, // [NotEmptyGuid]
                 ProjectId = Guid.NewGuid(),
+                Name = "Milestone with empty id",
                 ExpectedDate = DateTime.Now.AddMonths(1)
             };
 
@@ -240,6 +267,118 @@ namespace ProjectService.Tests.Integration
 
             // Assert
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        private async Task<Guid> CreateProjectAsync(DateTime? deadline)
+        {
+            var projectDto = new ProjectCreationDto
+            {
+                Name = "Deadline test project",
+                Budget = 1000,
+                Status = ProjectStatus.Planned,
+                Deadline = deadline
+            };
+
+            var response = await _client.PostAsJsonAsync("/api/project", projectDto);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            var created = await response.Content.ReadFromJsonAsync<ProjectConfirmationDto>();
+            return created!.ProjectId;
+        }
+
+        [Fact]
+        public async Task CreateMilestone_WithExpectedDateBeforeProjectDeadline_ReturnsCreated()
+        {
+            // Arrange
+            var projectId = await CreateProjectAsync(DateTime.Now.AddMonths(6));
+            var dto = ValidCreationDto(projectId);
+            dto.ExpectedDate = DateTime.Now.AddMonths(1);
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/milestone", dto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task CreateMilestone_WithExpectedDateAfterProjectDeadline_ReturnsBadRequestWithMessage()
+        {
+            // Arrange
+            var projectId = await CreateProjectAsync(DateTime.Now.AddMonths(1));
+            var dto = ValidCreationDto(projectId);
+            dto.ExpectedDate = DateTime.Now.AddMonths(3);
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/milestone", dto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.Contains("Milestone expected date cannot be after the project deadline.", body);
+        }
+
+        [Fact]
+        public async Task CreateMilestone_WhenProjectDeadlineIsNull_ReturnsCreatedRegardlessOfDate()
+        {
+            // Arrange
+            var projectId = await CreateProjectAsync(null);
+            var dto = ValidCreationDto(projectId);
+            dto.ExpectedDate = DateTime.Now.AddYears(5);
+
+            // Act
+            var response = await _client.PostAsJsonAsync("/api/milestone", dto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateMilestone_WithExpectedDateAfterProjectDeadline_ReturnsBadRequestWithMessage()
+        {
+            // Arrange
+            var projectId = await CreateProjectAsync(DateTime.Now.AddMonths(2));
+            var createResponse = await _client.PostAsJsonAsync("/api/milestone", ValidCreationDto(projectId));
+            var created = await createResponse.Content.ReadFromJsonAsync<MilestoneConfirmationDto>();
+
+            var updateDto = new MilestoneUpdateDto
+            {
+                MilestoneId = created!.MilestoneId,
+                ProjectId = projectId,
+                Name = "Beta release (revised)",
+                ExpectedDate = DateTime.Now.AddMonths(5)
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync("/api/milestone", updateDto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.Contains("Milestone expected date cannot be after the project deadline.", body);
+        }
+
+        [Fact]
+        public async Task UpdateMilestone_WithExpectedDateBeforeProjectDeadline_ReturnsOk()
+        {
+            // Arrange
+            var projectId = await CreateProjectAsync(DateTime.Now.AddMonths(6));
+            var createResponse = await _client.PostAsJsonAsync("/api/milestone", ValidCreationDto(projectId));
+            var created = await createResponse.Content.ReadFromJsonAsync<MilestoneConfirmationDto>();
+
+            var updateDto = new MilestoneUpdateDto
+            {
+                MilestoneId = created!.MilestoneId,
+                ProjectId = projectId,
+                Name = "Beta release (revised)",
+                ExpectedDate = DateTime.Now.AddMonths(2)
+            };
+
+            // Act
+            var response = await _client.PutAsJsonAsync("/api/milestone", updateDto);
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
     }
 }
