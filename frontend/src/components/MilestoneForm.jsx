@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createMilestone } from '../api/projectApi';
+import { createMilestone, updateMilestone } from '../api/projectApi';
 import '../shared/styles/forms.css';
 
 function today() {
@@ -12,8 +12,21 @@ function tomorrow() {
   return date.toISOString().slice(0, 10);
 }
 
-export default function MilestoneForm({ projectId, token, onCreated, onCancel }) {
-  const [expectedDate, setExpectedDate] = useState('');
+function toDateInput(value) {
+  return value ? String(value).slice(0, 10) : '';
+}
+
+export default function MilestoneForm({
+  mode = 'create',
+  milestone = null,
+  projectId,
+  token,
+  onCreated,
+  onSaved,
+  onCancel,
+}) {
+  const isEdit = mode === 'edit';
+  const [expectedDate, setExpectedDate] = useState(toDateInput(milestone?.expectedDate));
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -33,13 +46,23 @@ export default function MilestoneForm({ projectId, token, onCreated, onCancel })
     setSubmitting(true);
     setErrorMessage('');
     try {
-      await createMilestone({ projectId, expectedDate }, token);
-      onCreated();
+      if (isEdit) {
+        await updateMilestone(
+          { milestoneId: milestone.milestoneId, projectId, expectedDate },
+          token
+        );
+      } else {
+        await createMilestone({ projectId, expectedDate }, token);
+      }
+      (onSaved || onCreated)();
     } catch (error) {
+      const httpStatus = error && error.status;
       setErrorMessage(
-        error && error.status === 400
-          ? error.message || 'The milestone is invalid. Please pick a future date.'
-          : 'Something went wrong while adding the milestone. Please try again.'
+        httpStatus === 403
+          ? `You don't have permission to ${isEdit ? 'edit' : 'add'} milestones.`
+          : httpStatus === 400
+            ? error.message || 'The milestone is invalid. Please pick a future date.'
+            : `Something went wrong while ${isEdit ? 'saving' : 'adding'} the milestone. Please try again.`
       );
       setSubmitting(false);
     }
@@ -58,7 +81,7 @@ export default function MilestoneForm({ projectId, token, onCreated, onCancel })
         <input
           type="date"
           value={expectedDate}
-          min={tomorrow()}
+          min={isEdit ? undefined : tomorrow()}
           onChange={(event) => setExpectedDate(event.target.value)}
           required
         />
@@ -79,7 +102,13 @@ export default function MilestoneForm({ projectId, token, onCreated, onCancel })
           className="primary-button"
           disabled={submitting || Boolean(dateError)}
         >
-          {submitting ? 'Adding…' : 'Add Milestone'}
+          {submitting
+            ? isEdit
+              ? 'Saving…'
+              : 'Adding…'
+            : isEdit
+              ? 'Save Milestone'
+              : 'Add Milestone'}
         </button>
       </div>
     </form>

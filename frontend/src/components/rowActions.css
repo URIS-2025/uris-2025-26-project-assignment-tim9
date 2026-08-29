@@ -1,0 +1,81 @@
+.row-actions {
+  display: inline-flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.row-action {
+  padding: 5px 12px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.row-action:hover {
+  color: var(--text-h);
+  border-color: var(--accent-border);
+}
+
+.row-action--danger:hover {
+  color: var(--color-status-critical);
+  border-color: rgba(214, 69, 69, 0.4);
+}
+
+.row-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.row-confirm-text {
+  margin: 0 0 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.row-delete-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--color-status-critical);
+  background: rgba(214, 69, 69, 0.1);
+  border: 1px solid rgba(214, 69, 69, 0.3);
+}
+
+.row-delete-confirm {
+  padding: 9px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-status-critical);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.row-delete-confirm:hover {
+  opacity: 0.9;
+}
+
+.row-delete-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.row-delete-confirm:focus-visible {
+  outline: 2px solid var(--color-status-critical);
+  outline-offset: 2px;
+}

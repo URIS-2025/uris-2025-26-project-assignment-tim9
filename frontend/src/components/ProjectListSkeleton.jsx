@@ -1,6 +1,5 @@
 import ProjectCardSkeleton from './ProjectCardSkeleton';
 
-// Loading grid of placeholder cards
 export default function ProjectListSkeleton({ count = 6 }) {
   return (
     <div className="projects-grid" aria-hidden="true">

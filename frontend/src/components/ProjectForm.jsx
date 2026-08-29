@@ -1,18 +1,31 @@
 import { useState } from 'react';
-import { createProject } from '../api/projectApi';
+import { createProject, updateProject } from '../api/projectApi';
+import { STATUS_ORDER, STATUS_META } from '../utils/projectStatus';
 import '../shared/styles/forms.css';
 
-// ProjectStatus.Planned (ProjectStatus.cs: Planned, Active, OnHold, Completed, Cancelled)
 const DEFAULT_STATUS = 0;
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function ProjectForm({ token, onCreated, onCancel }) {
-  const [name, setName] = useState('');
-  const [budget, setBudget] = useState('');
-  const [deadline, setDeadline] = useState('');
+function toDateInput(value) {
+  return value ? String(value).slice(0, 10) : '';
+}
+
+export default function ProjectForm({
+  mode = 'create',
+  project = null,
+  token,
+  onCreated,
+  onSaved,
+  onCancel,
+}) {
+  const isEdit = mode === 'edit';
+  const [name, setName] = useState(project?.name ?? '');
+  const [budget, setBudget] = useState(project ? String(project.budget ?? '') : '');
+  const [status, setStatus] = useState(String(project?.status ?? DEFAULT_STATUS));
+  const [deadline, setDeadline] = useState(toDateInput(project?.deadline));
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -38,21 +51,37 @@ export default function ProjectForm({ token, onCreated, onCancel }) {
     setSubmitting(true);
     setErrorMessage('');
     try {
-      await createProject(
-        {
-          name: trimmedName,
-          budget: budgetNumber,
-          status: DEFAULT_STATUS,
-          deadline: deadline || null,
-        },
-        token
-      );
-      onCreated();
+      if (isEdit) {
+        await updateProject(
+          {
+            projectId: project.projectId,
+            name: trimmedName,
+            budget: budgetNumber,
+            status: Number(status),
+            deadline: deadline || null,
+          },
+          token
+        );
+      } else {
+        await createProject(
+          {
+            name: trimmedName,
+            budget: budgetNumber,
+            status: DEFAULT_STATUS,
+            deadline: deadline || null,
+          },
+          token
+        );
+      }
+      (onSaved || onCreated)();
     } catch (error) {
+      const httpStatus = error && error.status;
       setErrorMessage(
-        error && error.status === 400
-          ? error.message || 'Some fields are invalid. Please check your input.'
-          : 'Something went wrong while creating the project. Please try again.'
+        httpStatus === 403
+          ? `You don't have permission to ${isEdit ? 'edit' : 'create'} this project.`
+          : httpStatus === 400
+            ? error.message || 'Some fields are invalid. Please check your input.'
+            : `Something went wrong while ${isEdit ? 'saving' : 'creating'} the project. Please try again.`
       );
       setSubmitting(false);
     }
@@ -93,12 +122,25 @@ export default function ProjectForm({ token, onCreated, onCancel }) {
         {budgetError && <span className="field-hint error">{budgetError}</span>}
       </label>
 
+      {isEdit && (
+        <label>
+          Status
+          <select value={status} onChange={(event) => setStatus(event.target.value)}>
+            {STATUS_ORDER.map((key, index) => (
+              <option key={key} value={index}>
+                {STATUS_META[key].label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <label>
         Deadline (optional)
         <input
           type="date"
           value={deadline}
-          min={today()}
+          min={isEdit ? undefined : today()}
           onChange={(event) => setDeadline(event.target.value)}
         />
       </label>
@@ -117,7 +159,13 @@ export default function ProjectForm({ token, onCreated, onCancel }) {
           className="primary-button"
           disabled={submitting || Boolean(nameError) || Boolean(budgetError)}
         >
-          {submitting ? 'Creating…' : 'Create Project'}
+          {submitting
+            ? isEdit
+              ? 'Saving…'
+              : 'Creating…'
+            : isEdit
+              ? 'Edit Project'
+              : 'Create Project'}
         </button>
       </div>
     </form>

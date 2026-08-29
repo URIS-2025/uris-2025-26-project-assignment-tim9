@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { createProjectMember } from '../api/projectApi';
+import { createProjectMember, updateProjectMember } from '../api/projectApi';
 import { searchUsers } from '../api/userApi';
 import '../shared/styles/forms.css';
 import './ProjectMemberForm.css';
@@ -10,12 +10,31 @@ function displayName(user) {
   return user.name || user.username || user.userId;
 }
 
-export default function ProjectMemberForm({ projectId, token, onCreated, onCancel }) {
+function memberErrorMessage(error, verb) {
+  const httpStatus = error && error.status;
+  if (httpStatus === 403) return `You don't have permission to ${verb} members.`;
+  if (httpStatus === 401) return 'Your session has expired. Please sign in again.';
+  if (httpStatus === 400) return error.message || 'The request is invalid. Please try again.';
+  return `Something went wrong while ${verb === 'edit' ? 'saving' : 'adding'} the member. Please try again.`;
+}
+
+export default function ProjectMemberForm({
+  mode = 'create',
+  member = null,
+  projectId,
+  token,
+  onCreated,
+  onSaved,
+  onCancel,
+}) {
+  const isEdit = mode === 'edit';
+
   const [term, setTerm] = useState('');
   const [selected, setSelected] = useState(null);
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [status, setStatus] = useState(member ? member.status !== false : true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -23,6 +42,7 @@ export default function ProjectMemberForm({ projectId, token, onCreated, onCance
   const showResults = !selected && query.length >= MIN_QUERY;
 
   useEffect(() => {
+    if (isEdit) return undefined;
     if (selected) return undefined;
     if (query.length < MIN_QUERY) return undefined;
 
@@ -47,7 +67,89 @@ export default function ProjectMemberForm({ projectId, token, onCreated, onCance
       ignore = true;
       clearTimeout(timer);
     };
-  }, [query, token, selected]);
+  }, [isEdit, query, token, selected]);
+
+  const handleEditSubmit = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      await updateProjectMember(
+        {
+          projectMemberId: member.projectMemberId,
+          projectId: member.projectId ?? projectId,
+          userId: member.userId,
+          joinedAt: member.joinedAt,
+          status,
+        },
+        token
+      );
+      (onSaved || onCreated)();
+    } catch (error) {
+      setErrorMessage(memberErrorMessage(error, 'edit'));
+      setSubmitting(false);
+    }
+  };
+
+  const handleCreateSubmit = async (event) => {
+    event.preventDefault();
+    if (!selected) {
+      setErrorMessage('Please pick a user from the search results.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      await createProjectMember({ projectId, userId: selected.userId }, token);
+      (onSaved || onCreated)();
+    } catch (error) {
+      setErrorMessage(memberErrorMessage(error, 'add'));
+      setSubmitting(false);
+    }
+  };
+
+  if (isEdit) {
+    return (
+      <form className="stacked-form" onSubmit={handleEditSubmit} noValidate>
+        {errorMessage && (
+          <p className="form-message error" role="alert">
+            {errorMessage}
+          </p>
+        )}
+
+        <p className="user-search-selected">
+          <strong>{member.username || member.userId}</strong>
+          {member.role ? ` — ${member.role}` : ''}
+        </p>
+
+        <label>
+          Status
+          <select
+            value={status ? 'active' : 'inactive'}
+            onChange={(event) => setStatus(event.target.value === 'active')}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </label>
+
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={onCancel}
+            disabled={submitting}
+          >
+            Cancel
+          </button>
+          <button type="submit" className="primary-button" disabled={submitting}>
+            {submitting ? 'Saving…' : 'Save Member'}
+          </button>
+        </div>
+      </form>
+    );
+  }
 
   const handleTermChange = (event) => {
     const value = event.target.value;
@@ -66,37 +168,8 @@ export default function ProjectMemberForm({ projectId, token, onCreated, onCance
     setSearchError('');
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!selected) {
-      setErrorMessage('Please pick a user from the search results.');
-      return;
-    }
-
-    setSubmitting(true);
-    setErrorMessage('');
-    try {
-      await createProjectMember({ projectId, userId: selected.userId }, token);
-      onCreated();
-    } catch (error) {
-      const status = error && error.status;
-      let message;
-      if (status === 403) {
-        message = "You don't have permission to add members.";
-      } else if (status === 401) {
-        message = 'Your session has expired. Please sign in again.';
-      } else if (status === 400) {
-        message = error.message || 'The user could not be added. Please try another user.';
-      } else {
-        message = 'Something went wrong while adding the member. Please try again.';
-      }
-      setErrorMessage(message);
-      setSubmitting(false);
-    }
-  };
-
   return (
-    <form className="stacked-form" onSubmit={handleSubmit} noValidate>
+    <form className="stacked-form" onSubmit={handleCreateSubmit} noValidate>
       {errorMessage && (
         <p className="form-message error" role="alert">
           {errorMessage}
@@ -163,11 +236,7 @@ export default function ProjectMemberForm({ projectId, token, onCreated, onCance
         >
           Cancel
         </button>
-        <button
-          type="submit"
-          className="primary-button"
-          disabled={submitting || !selected}
-        >
+        <button type="submit" className="primary-button" disabled={submitting || !selected}>
           {submitting ? 'Adding…' : 'Add Member'}
         </button>
       </div>

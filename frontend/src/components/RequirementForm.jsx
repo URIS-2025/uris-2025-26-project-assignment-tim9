@@ -1,11 +1,20 @@
 import { useState } from 'react';
-import { createRequirement } from '../api/projectApi';
+import { createRequirement, updateRequirement } from '../api/projectApi';
 import '../shared/styles/forms.css';
 
 const MAX_LENGTH = 2000;
 
-export default function RequirementForm({ projectId, token, onCreated, onCancel }) {
-  const [description, setDescription] = useState('');
+export default function RequirementForm({
+  mode = 'create',
+  requirement = null,
+  projectId,
+  token,
+  onCreated,
+  onSaved,
+  onCancel,
+}) {
+  const isEdit = mode === 'edit';
+  const [description, setDescription] = useState(requirement?.description ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -26,13 +35,23 @@ export default function RequirementForm({ projectId, token, onCreated, onCancel 
     setSubmitting(true);
     setErrorMessage('');
     try {
-      await createRequirement({ projectId, description: trimmed }, token);
-      onCreated();
+      if (isEdit) {
+        await updateRequirement(
+          { requirementId: requirement.requirementId, projectId, description: trimmed },
+          token
+        );
+      } else {
+        await createRequirement({ projectId, description: trimmed }, token);
+      }
+      (onSaved || onCreated)();
     } catch (error) {
+      const httpStatus = error && error.status;
       setErrorMessage(
-        error && error.status === 400
-          ? error.message || 'The requirement is invalid. Please check the description.'
-          : 'Something went wrong while adding the requirement. Please try again.'
+        httpStatus === 403
+          ? `You don't have permission to ${isEdit ? 'edit' : 'add'} requirements.`
+          : httpStatus === 400
+            ? error.message || 'The requirement is invalid. Please check the description.'
+            : `Something went wrong while ${isEdit ? 'saving' : 'adding'} the requirement. Please try again.`
       );
       setSubmitting(false);
     }
@@ -75,7 +94,13 @@ export default function RequirementForm({ projectId, token, onCreated, onCancel 
           className="primary-button"
           disabled={submitting || Boolean(descriptionError)}
         >
-          {submitting ? 'Adding…' : 'Add Requirement'}
+          {submitting
+            ? isEdit
+              ? 'Saving…'
+              : 'Adding…'
+            : isEdit
+              ? 'Save Requirement'
+              : 'Add Requirement'}
         </button>
       </div>
     </form>

@@ -26,26 +26,50 @@
 
 .pd-back {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   color: var(--accent);
   text-decoration: none;
 }
 
-.pd-back:hover {
-  text-decoration: underline;
+.pd-back span {
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 0.18s ease;
+}
+
+.pd-back:hover span {
+  transform: translateX(-4px);
 }
 
 .pd-back:focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
   border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-back span {
+    transition: none;
+  }
+}
+
+.pd-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .pd-title {
   margin: 0;
+  min-width: 0;
   font-family: var(--heading);
   font-weight: 500;
   font-size: 36px;
@@ -59,6 +83,13 @@
   .pd-title {
     font-size: 28px;
   }
+}
+
+.pd-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 /* ---- Card ------------------------------------------------------- */
@@ -116,9 +147,44 @@
 }
 
 .pd-budget {
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: normal;
+  font-family: var(--heading);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: -0.3px;
+  color: var(--text-h);
+}
+
+.pd-deadline-value {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.pd-overdue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 69, 69, 0.32);
+  background: rgba(214, 69, 69, 0.12);
+  color: var(--color-status-critical);
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.pd-overdue::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 /* ---- Loading skeleton ---------------------------------------- */
@@ -173,4 +239,74 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---- Header actions (Edit / Delete) --------------------- */
+
+.pd-edit-button {
+  padding: 9px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.pd-edit-button:hover {
+  opacity: 0.9;
+}
+
+.pd-edit-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.pd-delete-button {
+  padding: 9px 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--color-status-critical);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.pd-delete-button:hover {
+  opacity: 0.9;
+}
+
+.pd-delete-button:focus-visible {
+  outline: 2px solid var(--color-status-critical);
+  outline-offset: 2px;
+}
+
+.pd-delete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pd-confirm__text {
+  margin: 0 0 16px;
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.pd-delete-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--color-status-critical);
+  background: rgba(214, 69, 69, 0.1);
+  border: 1px solid rgba(214, 69, 69, 0.3);
 }

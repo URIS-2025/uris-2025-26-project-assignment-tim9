@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react';
-import { getMilestonesByProjectId } from '../api/projectApi';
+import { useEffect, useMemo, useState } from 'react';
+import { getMilestonesByProjectId, deleteMilestone } from '../api/projectApi';
+import { sortBy } from '../utils/sortList';
+import Modal from './Modal';
+import MilestoneForm from './MilestoneForm';
 import './MilestoneList.css';
+import './rowActions.css';
+import './listControls.css';
+
+const STATE_FILTERS = ['', 'Upcoming', 'Overdue'];
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
   day: 'numeric',
@@ -14,7 +21,6 @@ function formatDate(value) {
   return Number.isNaN(parsed.getTime()) ? null : dateFormat.format(parsed);
 }
 
-// past date -> Overdue, otherwise Upcoming
 function resolveMilestoneState(expectedDate) {
   const parsed = new Date(expectedDate);
   if (Number.isNaN(parsed.getTime())) return { label: 'Unknown', tone: 'neutral' };
@@ -36,11 +42,16 @@ function MilestoneListSkeleton() {
   );
 }
 
-export default function MilestoneList({ projectId, token, reloadSignal = 0, onAdd }) {
+export default function MilestoneList({ projectId, token, reloadSignal = 0, canManage = false }) {
   const [milestones, setMilestones] = useState([]);
-  // phase: 'loading' | 'ready' | 'error'
   const [phase, setPhase] = useState('loading');
   const [reloadKey, setReloadKey] = useState(0);
+  const [editing, setEditing] = useState(null);
+  const [deletingItem, setDeletingItem] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [stateFilter, setStateFilter] = useState('');
+  const [sortDir, setSortDir] = useState('asc');
 
   useEffect(() => {
     if (!projectId) return undefined;
@@ -49,9 +60,7 @@ export default function MilestoneList({ projectId, token, reloadSignal = 0, onAd
     getMilestonesByProjectId(projectId, token)
       .then((data) => {
         if (ignore) return;
-        const list = Array.isArray(data) ? data : [];
-        list.sort((a, b) => new Date(a.expectedDate) - new Date(b.expectedDate));
-        setMilestones(list);
+        setMilestones(Array.isArray(data) ? data : []);
         setPhase('ready');
       })
       .catch(() => {
@@ -69,17 +78,35 @@ export default function MilestoneList({ projectId, token, reloadSignal = 0, onAd
     setReloadKey((key) => key + 1);
   };
 
-  return (
-    <section className="milestone-list">
-      <div className="milestone-list__header">
-        <h2 className="milestone-list__title">Milestones</h2>
-        {onAdd && (
-          <button type="button" className="milestone-list__add" onClick={onAdd}>
-            Add Milestone
-          </button>
-        )}
-      </div>
+  const visible = useMemo(() => {
+    const filtered = stateFilter
+      ? milestones.filter((m) => resolveMilestoneState(m.expectedDate).label === stateFilter)
+      : milestones;
+    return sortBy(filtered, (m) => new Date(m.expectedDate), sortDir);
+  }, [milestones, stateFilter, sortDir]);
 
+  const confirmDelete = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteMilestone(deletingItem.milestoneId, token);
+      setDeletingItem(null);
+      setDeleting(false);
+      reload();
+    } catch (error) {
+      const httpStatus = error && error.status;
+      setDeleteError(
+        httpStatus === 403
+          ? "You don't have permission to delete milestones."
+          : (error && error.message) ||
+              'Something went wrong while deleting the milestone. Please try again.'
+      );
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <>
       {phase === 'loading' && <MilestoneListSkeleton />}
 
       {phase === 'error' && (
@@ -96,21 +123,126 @@ export default function MilestoneList({ projectId, token, reloadSignal = 0, onAd
       )}
 
       {phase === 'ready' && milestones.length > 0 && (
+        <div className="list-toolbar">
+          <span className="list-chips">
+            {STATE_FILTERS.map((filter) => (
+              <button
+                key={filter || 'all'}
+                type="button"
+                className={stateFilter === filter ? 'list-chip is-active' : 'list-chip'}
+                onClick={() => setStateFilter(filter)}
+              >
+                {filter || 'All'}
+              </button>
+            ))}
+          </span>
+          <label className="list-control">
+            Sort
+            <select value={sortDir} onChange={(event) => setSortDir(event.target.value)}>
+              <option value="asc">Date (soonest)</option>
+              <option value="desc">Date (latest)</option>
+            </select>
+          </label>
+        </div>
+      )}
+
+      {phase === 'ready' && milestones.length > 0 && visible.length === 0 && (
+        <p className="milestone-list__state milestone-list__state--empty">
+          No milestones match the filter.
+        </p>
+      )}
+
+      {phase === 'ready' && visible.length > 0 && (
         <ol className="milestone-list__items">
-          {milestones.map((milestone, index) => {
+          {visible.map((milestone, index) => {
             const state = resolveMilestoneState(milestone.expectedDate);
             const date = formatDate(milestone.expectedDate);
             return (
               <li className="milestone-row" key={milestone.milestoneId ?? index}>
-                <span className="milestone-row__date">{date ?? 'Unknown date'}</span>
-                <span className={`milestone-pill milestone-pill--${state.tone}`}>
-                  {state.label}
+                <span className="milestone-row__main">
+                  <span className="milestone-row__date">{date ?? 'Unknown date'}</span>
+                  <span className={`milestone-pill milestone-pill--${state.tone}`}>
+                    {state.label}
+                  </span>
                 </span>
+                {canManage && (
+                  <span className="row-actions">
+                    <button
+                      type="button"
+                      className="row-action"
+                      onClick={() => setEditing(milestone)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="row-action row-action--danger"
+                      onClick={() => {
+                        setDeleteError('');
+                        setDeletingItem(milestone);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </span>
+                )}
               </li>
             );
           })}
         </ol>
       )}
-    </section>
+
+      {editing && (
+        <Modal title="Edit Milestone" onClose={() => setEditing(null)}>
+          <MilestoneForm
+            mode="edit"
+            milestone={editing}
+            projectId={projectId}
+            token={token}
+            onCancel={() => setEditing(null)}
+            onSaved={() => {
+              setEditing(null);
+              reload();
+            }}
+          />
+        </Modal>
+      )}
+
+      {deletingItem && (
+        <Modal
+          title="Delete Milestone"
+          onClose={() => {
+            if (!deleting) setDeletingItem(null);
+          }}
+        >
+          <p className="row-confirm-text">Are you sure you want to delete this milestone?</p>
+
+          {deleteError && (
+            <p className="row-delete-error" role="alert">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="modal-actions">
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => setDeletingItem(null)}
+              disabled={deleting}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="row-delete-confirm"
+              onClick={confirmDelete}
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting…' : 'Delete Milestone'}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }
