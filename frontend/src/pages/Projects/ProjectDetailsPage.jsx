@@ -230,15 +230,30 @@ export default function ProjectDetailsPage() {
             </dl>
           </article>
 
-          <div className="pd-attachments">
-            <AttachmentsButton projectId={project.projectId} />
-            <Link
-              to={`/projects/${project.projectId}/work-packages`}
-              className="secondary-button"
-            >
-              View Work Packages
-            </Link>
-          </div>
+          <section className="pd-related">
+            <h2 className="pd-related__title">Related</h2>
+            <div className="pd-related__links">
+              <AttachmentsButton projectId={project.projectId} />
+              <Link
+                to={`/projects/${project.projectId}/work-packages`}
+                className="secondary-button"
+              >
+                View Work Packages
+              </Link>
+              <Link
+                to={`/projects/${project.projectId}/sprints`}
+                className="secondary-button"
+              >
+                View Sprints
+              </Link>
+              <Link
+                to={`/projects/${project.projectId}/timelogs`}
+                className="secondary-button"
+              >
+                View Timelogs
+              </Link>
+            </div>
+          </section>
 
           <CollapsibleSection
             title="Milestones"
