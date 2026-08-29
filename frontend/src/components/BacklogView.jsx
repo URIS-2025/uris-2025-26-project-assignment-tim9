@@ -1,10 +1,11 @@
-import { useState } from 'react';
-
-const MOCK_BACKLOG_ITEMS = [
-  { id: 'b1', name: 'Bulk task import support', description: 'Import from a CSV file', createdAt: '2026-08-10T09:00:00' },
-  { id: 'b2', name: 'Dark mode', description: 'Postponed until after the deadline', createdAt: '2026-08-15T14:30:00' },
-  { id: 'b3', name: 'Export project to PDF', description: 'For the client report', createdAt: '2026-08-18T16:45:00' },
-];
+import { useEffect, useState } from 'react';
+import { useAuth } from '../auth/useAuth';
+import {
+  getBacklog,
+  addBacklogItem,
+  deleteBacklogItem,
+  updateBacklogItem,
+} from '../api/workPackageApi';
 
 const inputStyle = {
   width: '100%',
@@ -35,7 +36,12 @@ const primaryButtonStyle = {
 };
 
 export default function BacklogView({ projectId }) {
-  const [items, setItems] = useState(MOCK_BACKLOG_ITEMS);
+  const { token, userId } = useAuth();
+  const [items, setItems] = useState([]);
+  const [phase, setPhase] = useState('loading');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 
@@ -43,31 +49,63 @@ export default function BacklogView({ projectId }) {
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
-  function handleAdd(e) {
+  useEffect(() => {
+    let ignore = false;
+
+    getBacklog(projectId, token)
+      .then((data) => {
+        if (ignore) return;
+        setItems(Array.isArray(data) ? data : []);
+        setErrorMessage('');
+        setPhase('ready');
+      })
+      .catch((error) => {
+        if (ignore) return;
+        setErrorMessage(
+          error && error.status === 401
+            ? 'Your session has expired. Please sign in again.'
+            : 'Something went wrong while loading the backlog.',
+        );
+        setPhase('error');
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [projectId, token, reloadKey]);
+
+  const reload = () => {
+    setPhase('loading');
+    setReloadKey((key) => key + 1);
+  };
+
+  async function handleAdd(e) {
     e.preventDefault();
     if (!name.trim()) return;
-
-    const newItem = {
-      id: crypto.randomUUID(),
-      name,
-      description,
-      createdAt: new Date().toISOString(),
-    };
-
-    setItems([newItem, ...items]);
-    setName('');
-    setDescription('');
+    try {
+      await addBacklogItem(projectId, { name: name.trim(), description }, token, userId);
+      setName('');
+      setDescription('');
+      reload();
+    } catch (error) {
+      window.alert(error?.message || 'Could not add the backlog item.');
+    }
   }
 
-  function handleDelete(id) {
+  async function handleDelete(id) {
     if (!window.confirm('Delete this backlog item?')) return;
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    try {
+      await deleteBacklogItem(id, token);
+      setItems((prev) => prev.filter((item) => item.backlogId !== id));
+    } catch (error) {
+      window.alert(error?.message || 'Could not delete the backlog item.');
+    }
   }
 
   function handleEditStart(item) {
-    setEditingId(item.id);
+    setEditingId(item.backlogId);
     setEditName(item.name);
-    setEditDescription(item.description);
+    setEditDescription(item.description ?? '');
   }
 
   function handleEditCancel() {
@@ -76,22 +114,41 @@ export default function BacklogView({ projectId }) {
     setEditDescription('');
   }
 
-  function handleEditSave() {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === editingId ? { ...item, name: editName, description: editDescription } : item,
-      ),
-    );
-    handleEditCancel();
+  async function handleEditSave() {
+    try {
+      await updateBacklogItem(editingId, { name: editName, description: editDescription }, token);
+      setItems((prev) =>
+        prev.map((item) =>
+          item.backlogId === editingId ? { ...item, name: editName, description: editDescription } : item,
+        ),
+      );
+      handleEditCancel();
+    } catch (error) {
+      window.alert(error?.message || 'Could not save the backlog item.');
+    }
   }
 
   function handleMoveToSprint(item) {
     const sprintName = window.prompt('Enter Sprint name (mock - real integration coming later):');
     if (!sprintName || !sprintName.trim()) return;
 
-    setItems((prev) => prev.filter((current) => current.id !== item.id));
+    setItems((prev) => prev.filter((current) => current.backlogId !== item.backlogId));
     window.alert(
       `Item moved to sprint: ${sprintName.trim()}. (Mock action - not yet connected to SprintService.)`,
+    );
+  }
+
+  if (phase === 'loading') {
+    return <p style={{ maxWidth: '600px', margin: '0 auto' }}>Loading...</p>;
+  }
+  if (phase === 'error') {
+    return (
+      <p style={{ maxWidth: '600px', margin: '0 auto' }}>
+        {errorMessage}{' '}
+        <button type="button" onClick={reload}>
+          Retry
+        </button>
+      </p>
     );
   }
 
@@ -128,11 +185,11 @@ export default function BacklogView({ projectId }) {
       </form>
 
       {items.map((item) => {
-        const isEditing = editingId === item.id;
+        const isEditing = editingId === item.backlogId;
 
         return (
           <div
-            key={item.id}
+            key={item.backlogId}
             style={{
               position: 'relative',
               border: '1px solid var(--border)',
@@ -145,7 +202,7 @@ export default function BacklogView({ projectId }) {
               <button
                 type="button"
                 aria-label="Delete backlog item"
-                onClick={() => handleDelete(item.id)}
+                onClick={() => handleDelete(item.backlogId)}
                 style={{
                   position: 'absolute',
                   top: '8px',
