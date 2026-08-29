@@ -1,0 +1,177 @@
+.app-shell {
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  min-height: 100svh;
+  text-align: left;
+  width: 100%;
+}
+
+/* ---- sidebar --------------------------------------------------------- */
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+  padding: 24px 16px;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sidebar-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+}
+
+.sidebar-brand-mark {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 2.5px;
+  color: var(--accent);
+}
+
+.sidebar-brand-name {
+  font-family: var(--heading);
+  font-size: 19px;
+  line-height: 1.15;
+  color: var(--text-h);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar-link:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
+}
+
+.sidebar-link-active,
+.sidebar-link-active:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.sidebar-icon {
+  width: 19px;
+  height: 19px;
+  flex: none;
+}
+
+/* ---- navbar ---------------------------------------------------------- */
+
+.app-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  height: 64px;
+  padding: 0 24px;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  flex: none;
+}
+
+.navbar-identity {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.navbar-username {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.navbar-role {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.navbar-logout {
+  padding: 7px 14px;
+  font-size: 14px;
+}
+
+/* ---- sadrzaj --------------------------------------------------------- */
+
+/* Preuzima centriranje koje je ranije radio #root, pa tudje stranice
+   izgledaju isto kao pre uvodjenja okvira. */
+.app-content {
+  flex: 1;
+  width: 100%;
+  max-width: var(--layout-content-max, 1126px);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ---- uzi ekrani ------------------------------------------------------ */
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    gap: 16px;
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

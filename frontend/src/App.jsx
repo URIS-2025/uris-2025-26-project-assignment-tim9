@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AuthProvider from './auth/AuthProvider'
 import RequireAuth from './auth/RequireAuth'
+import AppLayout from './components/layout/AppLayout'
 import LoginPage from './pages/Auth/LoginPage'
 import SignUpPage from './pages/Auth/SignUpPage'
 import UsersListPage from './pages/Users/UsersListPage'
@@ -10,80 +11,54 @@ import WorkPackagesPage from './pages/WorkPackages/WorkPackagesPage'
 import WorkPackageDetailPage from './pages/WorkPackages/WorkPackageDetailPage'
 import BacklogPage from './pages/WorkPackages/BacklogPage'
 import TimelogsPage from './pages/Timelogs/TimelogsPage'
+import PaymentsPage from './pages/Payments/PaymentsPage'
+import InvoiceDetailsPage from './pages/Payments/InvoiceDetailsPage'
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={<Navigate to="/projects" replace />} />
+          {/* stranice bez okvira - korisnik jos nije prijavljen */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+
+          {/* sve ostalo trazi prijavu i zivi unutar sidebar/navbar okvira */}
           <Route
-            path="/users"
-            element={
-              <RequireAuth roles={['Admin']}>
-                <UsersListPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/projects"
             element={
               <RequireAuth>
-                <ProjectListPage />
+                <AppLayout />
               </RequireAuth>
             }
-          />
-          <Route
-            path="/projects/:id"
-            element={
-              <RequireAuth>
-                <ProjectDetailsPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/projects/:projectId/work-packages"
-            element={
-              <RequireAuth>
-                <WorkPackagesPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/projects/:projectId/work-packages/:workPackageId"
-            element={
-              <RequireAuth>
-                <WorkPackageDetailPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/projects/:projectId/backlog"
-            element={
-              <RequireAuth>
-                <BacklogPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/projects/:projectId/timelogs"
-            element={
-              <RequireAuth>
-                <TimelogsPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/timelogs"
-            element={
-              <RequireAuth>
-                <TimelogsPage />
-              </RequireAuth>
-            }
-          />
-          <Route path="*" element={<Navigate to="/projects" replace />} />
+          >
+            <Route path="/" element={<Navigate to="/projects" replace />} />
+
+            <Route path="/projects" element={<ProjectListPage />} />
+            <Route path="/projects/:id" element={<ProjectDetailsPage />} />
+            <Route path="/projects/:projectId/work-packages" element={<WorkPackagesPage />} />
+            <Route
+              path="/projects/:projectId/work-packages/:workPackageId"
+              element={<WorkPackageDetailPage />}
+            />
+            <Route path="/projects/:projectId/backlog" element={<BacklogPage />} />
+            <Route path="/projects/:projectId/timelogs" element={<TimelogsPage />} />
+            <Route path="/timelogs" element={<TimelogsPage />} />
+
+            <Route path="/payments" element={<PaymentsPage />} />
+            <Route path="/payments/:invoiceId" element={<InvoiceDetailsPage />} />
+
+            {/* rola se proverava dodatno, samo za ovu rutu */}
+            <Route
+              path="/users"
+              element={
+                <RequireAuth roles={['Admin']}>
+                  <UsersListPage />
+                </RequireAuth>
+              }
+            />
+
+            <Route path="*" element={<Navigate to="/projects" replace />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </BrowserRouter>
