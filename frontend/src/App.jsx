@@ -4,7 +4,9 @@ import RequireAuth from './auth/RequireAuth'
 import LoginPage from './pages/Auth/LoginPage'
 import ProjectListPage from './pages/Projects/ProjectListPage'
 import ProjectDetailsPage from './pages/Projects/ProjectDetailsPage'
-import WorkPackagesPage from './pages/WorkPackages/WorkPackagePage'
+import WorkPackagesPage from './pages/WorkPackages/WorkPackagesPage'
+import WorkPackageDetailPage from './pages/WorkPackages/WorkPackageDetailPage'
+import BacklogPage from './pages/WorkPackages/BacklogPage'
 import TimelogsPage from './pages/Timelogs/TimelogsPage'
 
 function App() {
@@ -35,6 +37,22 @@ function App() {
             element={
               <RequireAuth>
                 <WorkPackagesPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/projects/:projectId/work-packages/:workPackageId"
+            element={
+              <RequireAuth>
+                <WorkPackageDetailPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/projects/:projectId/backlog"
+            element={
+              <RequireAuth>
+                <BacklogPage />
               </RequireAuth>
             }
           />
