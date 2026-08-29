@@ -10,6 +10,7 @@ import WorkPackagesPage from './pages/WorkPackages/WorkPackagesPage'
 import WorkPackageDetailPage from './pages/WorkPackages/WorkPackageDetailPage'
 import BacklogPage from './pages/WorkPackages/BacklogPage'
 import TimelogsPage from './pages/Timelogs/TimelogsPage'
+import SprintsPage from './pages/SprintsPage'
 
 function App() {
   return (
@@ -80,6 +81,22 @@ function App() {
             element={
               <RequireAuth>
                 <TimelogsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/projects/:projectId/sprints"
+            element={
+              <RequireAuth>
+                <SprintsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/sprints"
+            element={
+              <RequireAuth>
+                <SprintsPage />
               </RequireAuth>
             }
           />
