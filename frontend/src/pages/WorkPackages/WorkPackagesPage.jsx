@@ -16,6 +16,10 @@ export default function WorkPackagesPage() {
 
   return (
     <section className="work-packages-page">
+      <Link to="/projects" className="work-packages-page__back">
+        ← Back to Projects
+      </Link>
+
       <header className="work-packages-page__header">
         <h1>Work Packages</h1>
         <Link to={`/projects/${projectId}/backlog`} className="work-packages-page__backlog-link">
