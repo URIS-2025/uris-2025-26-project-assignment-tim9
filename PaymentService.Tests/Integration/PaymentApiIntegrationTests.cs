@@ -308,6 +308,36 @@ namespace PaymentService.Tests.Integration
             Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         }
 
+        [Fact]
+        public async Task UserFromAnotherProject_DoesNotSeeTheseInvoices()
+        {
+            await CreateInvoiceAsync();
+
+            //ovaj korisnik nije ni na jednom projektu - lazni Project servis
+            //za njega vraca 404, pa nema sta da vidi
+            using var stranac = _fixture.CreateClientFor("TeamMember", Guid.NewGuid());
+
+            var response = await stranac.GetAsync("/api/invoice");
+            response.EnsureSuccessStatusCode();
+
+            var invoices = await ReadAsync<List<InvoiceDTO>>(response);
+            Assert.Empty(invoices!);
+        }
+
+        [Fact]
+        public async Task AdminSeesInvoicesFromEveryProject()
+        {
+            await CreateInvoiceAsync();
+
+            using var admin = _fixture.CreateClientFor("Admin", Guid.NewGuid());
+
+            var response = await admin.GetAsync("/api/invoice");
+            response.EnsureSuccessStatusCode();
+
+            var invoices = await ReadAsync<List<InvoiceDTO>>(response);
+            Assert.NotEmpty(invoices!);
+        }
+
         // ---------- pomocne metode ----------
 
         private object NewInvoicePayload() => new

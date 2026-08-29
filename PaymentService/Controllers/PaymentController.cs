@@ -25,9 +25,20 @@ namespace PaymentService.Controllers
         [HttpGet]
         [HttpHead]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<PaymentDTO>> GetPayments([FromQuery] Guid? invoiceId, [FromQuery] Guid? paidByUserId)
+        public async Task<ActionResult<IEnumerable<PaymentDTO>>> GetPayments(
+            [FromQuery] Guid? invoiceId,
+            [FromQuery] Guid? paidByUserId)
         {
-            return Ok(_paymentRepository.GetPayments(invoiceId, paidByUserId));
+            if (!Request.TryGetUserId(out var callerId))
+            {
+                return BadRequest($"Nedostaje ili je neispravan {UserHeader.Name} header.");
+            }
+
+            //isto pravilo kao kod faktura
+            var payments = await _paymentRepository.GetPaymentsAsync(
+                callerId, User.IsInRole("Admin"), invoiceId, paidByUserId);
+
+            return Ok(payments);
         }
 
         // GET: api/payment/{paymentId}

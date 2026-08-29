@@ -1,0 +1,333 @@
+.payments-page {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 24px 72px;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+@media (max-width: 1024px) {
+  .payments-page {
+    padding: 32px 20px 56px;
+  }
+}
+
+/* ---- zaglavlje ------------------------------------------------------- */
+
+.payments-header {
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.payments-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payments-title {
+  margin: 0;
+  font-family: var(--heading);
+  font-weight: 500;
+  font-size: 36px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  color: var(--text-h);
+}
+
+.payments-count {
+  padding: 2px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--accent-bg);
+  border-radius: 999px;
+}
+
+.payments-subtitle {
+  margin: 8px 0 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* ---- kartice ---------------------------------------------------------- */
+
+.payments-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.payments-tab {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.payments-tab:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
+}
+
+.payments-tab-active,
+.payments-tab-active:hover {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+/* ---- filteri ---------------------------------------------------------- */
+
+.payments-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.payments-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.payments-filter select {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  letter-spacing: normal;
+  min-width: 190px;
+}
+
+.payments-filter select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+/* ---- tabela ----------------------------------------------------------- */
+
+.payments-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.payments-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.payments-table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-h);
+  vertical-align: middle;
+}
+
+.payments-table tbody tr:hover {
+  background: var(--social-bg);
+}
+
+.col-num {
+  text-align: right;
+}
+
+/* iznosi u monospace fontu da se cifre poravnaju po kolonama */
+.col-money {
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.payments-link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.payments-link:hover {
+  text-decoration: underline;
+}
+
+/* ---- prazno stanje ---------------------------------------------------- */
+
+.payments-empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--text);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+.payments-note {
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+/* ---- detalji fakture -------------------------------------------------- */
+
+.payments-back {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.invoice-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.invoice-stat {
+  flex: 1 1 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.invoice-stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.invoice-stat-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  color: var(--text-h);
+}
+
+.invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.invoice-section-title {
+  margin: 32px 0 12px;
+  font-family: var(--heading);
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--text-h);
+}
+
+.item-preview {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.item-preview strong {
+  font-family: var(--mono);
+  color: var(--text-h);
+}
+
+.pay-remaining {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.pay-remaining strong {
+  font-family: var(--mono);
+  font-size: 16px;
+  color: var(--text-h);
+}
+
+/* ---- forma za novu fakturu -------------------------------------------- */
+
+.invoice-modal {
+  max-width: 620px;
+}
+
+.invoice-items-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.invoice-items-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.invoice-item-row {
+  display: grid;
+  grid-template-columns: 1fr 110px 80px 32px;
+  gap: 8px;
+  align-items: center;
+}
+
+.invoice-item-row input {
+  font: inherit;
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  letter-spacing: normal;
+  min-width: 0;
+}
+
+.invoice-item-row input[type='number'] {
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.invoice-item-row input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+@media (max-width: 620px) {
+  .invoice-item-row {
+    grid-template-columns: 1fr 1fr 70px 32px;
+  }
+}
+
+.payments-new {
+  margin-left: auto;
+  padding: 9px 16px;
+  font-size: 14px;
+}

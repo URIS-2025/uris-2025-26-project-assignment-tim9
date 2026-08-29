@@ -65,6 +65,13 @@ namespace PaymentService.Tests
                 .Setup(s => s.CheckMembershipAsync(It.IsAny<Guid>(), It.IsAny<Guid>()))
                 .ReturnsAsync(new ProjectMembershipResult(ProjectMembershipStatus.Member));
 
+            //podrazumevano korisnik nije ni na jednom projektu; testovi filtriranja
+            //ovo pregaze svojim Setup-om, a testovi koji ne testiraju vidljivost
+            //citaju kao admin
+            ProjectService
+                .Setup(s => s.GetProjectIdsForUserAsync(It.IsAny<Guid>()))
+                .ReturnsAsync(Array.Empty<Guid>());
+
             Invoices = new InvoiceRepository(Context, Mapper, UserService.Object, ProjectService.Object);
             Items = new InvoiceItemRepository(Context, Mapper);
             Payments = new PaymentRepository(Context, Mapper, UserService.Object, ProjectService.Object);
