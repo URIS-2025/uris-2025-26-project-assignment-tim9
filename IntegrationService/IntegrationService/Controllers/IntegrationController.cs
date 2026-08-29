@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using IntegrationService.Data;
@@ -44,7 +45,7 @@ namespace IntegrationService.Controllers
         public async Task<ActionResult<IEnumerable<IntegrationDisplayDTO>>> GetAll()
         {
             var integrations = await _repository.GetAllAsync();
-            var result = integrations.Select(i => ToDisplayDTO(i, _apiKeyProtector.Unprotect(i.ApiKeyEncrypted)));
+            var result = integrations.Select(ToDisplayDTOFromStorage);
             return Ok(result);
         }
 
@@ -58,8 +59,7 @@ namespace IntegrationService.Controllers
                 return NotFound();
             }
 
-            var plainKey = _apiKeyProtector.Unprotect(integration.ApiKeyEncrypted);
-            return Ok(ToDisplayDTO(integration, plainKey));
+            return Ok(ToDisplayDTOFromStorage(integration));
         }
 
         // PUT /integrations/{integrationId}
@@ -77,8 +77,12 @@ namespace IntegrationService.Controllers
             try
             {
                 var updated = await _repository.UpdateAsync(integrationId, updatedEntity, rotateApiKey);
-                var plainKey = _apiKeyProtector.Unprotect(updated.ApiKeyEncrypted);
-                return Ok(ToDisplayDTO(updated, plainKey));
+                // A rotated key is already known in plaintext here (dto.ApiKey) - no need to
+                // decrypt what was just encrypted. Otherwise fall back to the same
+                // decrypt-from-storage path GetAll/GetById use, so a row whose key can't be
+                // recovered doesn't turn a routine rename/status toggle into a 500.
+                var result = rotateApiKey ? ToDisplayDTO(updated, dto.ApiKey!) : ToDisplayDTOFromStorage(updated);
+                return Ok(result);
             }
             catch (EntityNotFoundException)
             {
@@ -106,6 +110,24 @@ namespace IntegrationService.Controllers
             var dto = _mapper.Map<IntegrationDisplayDTO>(integration);
             dto.ApiKeyMasked = _apiKeyProtector.Mask(plainApiKey);
             return dto;
+        }
+
+        // Decrypts straight from the stored ciphertext. If the key ring that encrypted this
+        // particular row is gone (rotated away, or the row came from a different environment's
+        // key store), the key itself is unrecoverable - but that shouldn't take down every other
+        // integration in the same GetAll response.
+        private IntegrationDisplayDTO ToDisplayDTOFromStorage(Integration integration)
+        {
+            try
+            {
+                return ToDisplayDTO(integration, _apiKeyProtector.Unprotect(integration.ApiKeyEncrypted));
+            }
+            catch (CryptographicException)
+            {
+                var dto = _mapper.Map<IntegrationDisplayDTO>(integration);
+                dto.ApiKeyMasked = "unavailable";
+                return dto;
+            }
         }
     }
 }
