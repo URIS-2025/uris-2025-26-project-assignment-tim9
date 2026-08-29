@@ -1,15 +1,20 @@
 using System.Net;
 using System.Net.Http.Json;
+using IntegrationService.Context;
+using IntegrationService.Models;
 using IntegrationService.Models.DTO.IntegrationDTOs;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IntegrationService.Tests.IntegrationTests
 {
     public class IntegrationControllerTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly HttpClient _client;
+        private readonly CustomWebApplicationFactory _factory;
 
         public IntegrationControllerTests(CustomWebApplicationFactory factory)
         {
+            _factory = factory;
             _client = factory.CreateClient();
         }
 
@@ -94,6 +99,37 @@ namespace IntegrationService.Tests.IntegrationTests
             var updated = await response.Content.ReadFromJsonAsync<IntegrationDisplayDTO>();
             Assert.NotEqual(created.ApiKeyMasked, updated!.ApiKeyMasked);
             Assert.EndsWith("999", updated.ApiKeyMasked);
+        }
+
+        [Fact]
+        public async Task GetAll_WhenOneRowHasUndecryptableKey_StillReturnsTheOthers()
+        {
+            // Simulates a row whose ApiKeyEncrypted was produced by a key ring that's since
+            // been rotated away or lost (e.g. a different environment's key store) - the
+            // ciphertext is on-disk garbage as far as the current Data Protection key ring
+            // is concerned, so Unprotect throws for this row specifically.
+            await CreateIntegrationAsync(type: "Healthy", apiKey: "healthy-plaintext-key-1");
+
+            using (var scope = _factory.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<IntegrationServiceContext>();
+                context.Integrations.Add(new Integration
+                {
+                    Id = Guid.NewGuid(),
+                    Type = "Corrupted",
+                    ApiKeyEncrypted = "not-a-real-protected-payload",
+                    Status = true,
+                    CreatedAt = DateTime.UtcNow,
+                });
+                await context.SaveChangesAsync();
+            }
+
+            var response = await _client.GetAsync("integrations");
+
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<List<IntegrationDisplayDTO>>();
+            Assert.Contains(result!, i => i.Type == "Healthy" && i.ApiKeyMasked.EndsWith("ey-1"));
+            Assert.Contains(result!, i => i.Type == "Corrupted" && i.ApiKeyMasked == "unavailable");
         }
 
         [Fact]
