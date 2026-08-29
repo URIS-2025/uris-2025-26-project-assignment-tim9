@@ -7,6 +7,19 @@
   gap: 32px;
 }
 
+.work-packages-page__back {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.work-packages-page__back:hover {
+  text-decoration: underline;
+}
+
 .work-packages-page__header {
   display: flex;
   align-items: baseline;

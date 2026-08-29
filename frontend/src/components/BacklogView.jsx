@@ -128,16 +128,6 @@ export default function BacklogView({ projectId }) {
     }
   }
 
-  function handleMoveToSprint(item) {
-    const sprintName = window.prompt('Enter Sprint name (mock - real integration coming later):');
-    if (!sprintName || !sprintName.trim()) return;
-
-    setItems((prev) => prev.filter((current) => current.backlogId !== item.backlogId));
-    window.alert(
-      `Item moved to sprint: ${sprintName.trim()}. (Mock action - not yet connected to SprintService.)`,
-    );
-  }
-
   if (phase === 'loading') {
     return <p style={{ maxWidth: '600px', margin: '0 auto' }}>Loading...</p>;
   }
@@ -259,9 +249,6 @@ export default function BacklogView({ projectId }) {
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <button type="button" onClick={() => handleEditStart(item)} style={secondaryButtonStyle}>
                     ✎ Edit
-                  </button>
-                  <button type="button" onClick={() => handleMoveToSprint(item)} style={secondaryButtonStyle}>
-                    Move to Sprint
                   </button>
                 </div>
               </>
