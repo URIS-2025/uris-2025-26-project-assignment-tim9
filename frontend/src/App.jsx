@@ -1,18 +1,15 @@
-import WorkPackageList from './features/workpackage/components/WorkPackageList'
-import TaskBoard from './features/workpackage/components/TaskBoard'
-import SubTaskTree from './features/workpackage/components/SubTaskTree'
-import TaskDetails from './features/workpackage/components/TaskDetails'
-import BacklogView from './features/workpackage/components/BacklogView'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import ProjectListPage from './pages/Projects/ProjectListPage'
+import ProjectDetailsPage from './pages/Projects/ProjectDetailsPage'
 
 function App() {
   return (
-    <div>
-      <WorkPackageList projectId="00000000-0000-0000-0000-000000000000" />
-      <TaskBoard workPackageId="00000000-0000-0000-0000-000000000000" />
-      <SubTaskTree taskId="00000000-0000-0000-0000-000000000000" />
-      <TaskDetails taskId="00000000-0000-0000-0000-000000000000" />
-      <BacklogView projectId="00000000-0000-0000-0000-000000000000" />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/projects" element={<ProjectListPage />} />
+        <Route path="/projects/:id" element={<ProjectDetailsPage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

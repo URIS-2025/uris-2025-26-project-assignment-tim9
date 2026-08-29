@@ -1,7 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using WorkPackageService.Context;
 using WorkPackageService.ServiceCalls.Notification;
@@ -13,6 +17,10 @@ namespace WorkPackageService.Tests.IntegrationTests
     // da testovi iz razlicitih klasa ne dele stanje.
     public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
+        private const string JwtKey = "uris-2025-26-tim9-super-secret-key-min-32-chars";
+        private const string JwtIssuer = "AuthService";
+        private const string JwtAudience = "UrisApi";
+
         private readonly string _databaseName = Guid.NewGuid().ToString();
 
         public Mock<INotificationService> NotificationServiceMock { get; } = new();
@@ -49,6 +57,31 @@ namespace WorkPackageService.Tests.IntegrationTests
 
                 services.AddSingleton(NotificationServiceMock.Object);
             });
+        }
+
+        public string GenerateJwtToken(Guid? userId = null, string? role = null)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, (userId ?? Guid.NewGuid()).ToString()),
+                new Claim(ClaimTypes.NameIdentifier, (userId ?? Guid.NewGuid()).ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            if (!string.IsNullOrWhiteSpace(role))
+                claims.Add(new Claim(ClaimTypes.Role, role));
+
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtKey));
+            var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: JwtIssuer,
+                audience: JwtAudience,
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(1),
+                signingCredentials: credentials);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

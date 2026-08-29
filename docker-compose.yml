@@ -262,6 +262,13 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__AttachmentDB: "Server=mysql;Port=3306;Database=attachment_db;User=root;Password=root;"
       ObjectStorage__ServiceUrl: "http://minio:9000"
+      # Presigned upload/download URLs are handed to the browser, which runs
+      # on the host and can't resolve the "minio" container hostname baked
+      # into ServiceUrl above - sign them against localhost instead. If you
+      # access the frontend from somewhere other than the host machine
+      # (e.g. another device on your LAN), point this at an address that
+      # machine can reach, such as your host's LAN IP.
+      ObjectStorage__PublicServiceUrl: "http://localhost:9000"
       ObjectStorage__BucketName: "attachments"
       ObjectStorage__AccessKey: "minioadmin"
       ObjectStorage__SecretKey: "minioadmin"

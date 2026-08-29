@@ -132,6 +132,9 @@ namespace WorkPackageService.Migrations
                     b.Property<int>("Priority")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("SprintId")
+                        .HasColumnType("char(36)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -163,7 +166,7 @@ namespace WorkPackageService.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<DateTime>("Deadline")
+                    b.Property<DateTime?>("Deadline")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")

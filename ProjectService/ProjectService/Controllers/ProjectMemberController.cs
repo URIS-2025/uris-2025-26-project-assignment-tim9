@@ -80,7 +80,7 @@ namespace ProjectService.Controllers
 
         // POST kreiraj clana
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public async Task<ActionResult<ProjectMemberConfirmationDto>> CreateProjectMember([FromBody] ProjectMemberCreationDto projectMemberDto)
         {
             var user = await _userService.GetUserByIdAsync(projectMemberDto.UserId);
@@ -100,7 +100,7 @@ namespace ProjectService.Controllers
 
         // PUT azuriraj clana
         [HttpPut]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public async Task<ActionResult<ProjectMemberConfirmationDto>> UpdateProjectMember([FromBody] ProjectMemberUpdateDto projectMemberDto)
         {
             var user = await _userService.GetUserByIdAsync(projectMemberDto.UserId);
@@ -122,7 +122,7 @@ namespace ProjectService.Controllers
 
         // DELETE obrisi clana
         [HttpDelete("{projectMemberId}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,ProjectManager")]
         public IActionResult DeleteProjectMember(Guid projectMemberId)
         {
             try

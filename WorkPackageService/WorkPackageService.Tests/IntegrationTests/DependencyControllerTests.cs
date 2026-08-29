@@ -16,6 +16,9 @@ namespace WorkPackageService.Tests.IntegrationTests
         public DependencyControllerTests(CustomWebApplicationFactory factory)
         {
             _client = factory.CreateClient();
+            _client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer", factory.GenerateJwtToken(role: "ProjectManager"));
         }
 
         private async Task<Guid> CreateTaskAsync()

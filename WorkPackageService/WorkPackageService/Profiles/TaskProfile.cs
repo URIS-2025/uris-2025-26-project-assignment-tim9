@@ -19,7 +19,8 @@ namespace WorkPackageService.Profiles
                 .ForMember(dest => dest.Priority, opt => opt.Condition(src => src.Priority != null))
                 .ForMember(dest => dest.AssigneeId, opt => opt.Condition(src => src.AssigneeId != null))
                 .ForMember(dest => dest.ApproverId, opt => opt.Condition(src => src.ApproverId != null))
-                .ForMember(dest => dest.DueDate, opt => opt.Condition(src => src.DueDate != null));
+                .ForMember(dest => dest.DueDate, opt => opt.Condition(src => src.DueDate != null))
+                .ForMember(dest => dest.SprintId, opt => opt.Condition(src => src.SprintId != null));
         }
     }
 }

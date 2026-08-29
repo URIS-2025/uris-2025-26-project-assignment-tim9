@@ -9,6 +9,7 @@ namespace WorkPackageService.Models.DTO.TaskDTOs
         public Guid TaskId { get; set; }
         public Guid WorkPackageId { get; set; }
         public Guid? ParentTaskId { get; set; }
+        public Guid? SprintId { get; set; }
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public TaskStatus Status { get; set; }
