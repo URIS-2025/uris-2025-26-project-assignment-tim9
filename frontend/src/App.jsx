@@ -14,6 +14,8 @@ import TimelogsPage from './pages/Timelogs/TimelogsPage'
 import SprintsPage from './pages/SprintsPage'
 import PaymentsPage from './pages/Payments/PaymentsPage'
 import InvoiceDetailsPage from './pages/Payments/InvoiceDetailsPage'
+import NotificationsPage from './pages/Notifications/NotificationsPage'
+import IntegrationsPage from './pages/Integrations/IntegrationsPage'
 
 function App() {
   return (
@@ -51,12 +53,22 @@ function App() {
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/payments/:invoiceId" element={<InvoiceDetailsPage />} />
 
-            {/* rola se proverava dodatno, samo za ovu rutu */}
+            <Route path="/notifications" element={<NotificationsPage />} />
+
+            {/* rola se proverava dodatno, samo za ove rute */}
             <Route
               path="/users"
               element={
                 <RequireAuth roles={['Admin']}>
                   <UsersListPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/integrations"
+              element={
+                <RequireAuth roles={['Admin']}>
+                  <IntegrationsPage />
                 </RequireAuth>
               }
             />

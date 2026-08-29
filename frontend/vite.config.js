@@ -37,6 +37,20 @@ export default defineConfig({
         bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
       },
       '/attachments': { target: GATEWAY_URL, changeOrigin: true },
+      // Same page-route collision as /sprints above: NotificationService and
+      // IntegrationService both use flat routes without an /api prefix
+      // (/notifications, /integrations), which match this app's own
+      // /notifications and /integrations pages character-for-character.
+      '/notifications': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
+      '/integrations': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
     },
   },
 })
