@@ -1,0 +1,23 @@
+.wp-detail {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  text-align: left;
+}
+
+.wp-detail__back {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wp-detail__back:hover {
+  text-decoration: underline;
+}
+
+.wp-detail h1 {
+  margin-top: 0;
+}
