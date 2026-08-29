@@ -131,6 +131,7 @@ export default function ProjectDetailsPage() {
   const { token, role } = useAuth();
   const canManage = role === 'Admin' || role === 'ProjectManager';
   const isAdmin = role === 'Admin';
+  const isClient = role === 'Client';
   const [project, setProject] = useState(null);
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -272,9 +273,11 @@ export default function ProjectDetailsPage() {
               <DetailRow label="Status">
                 <ProjectStatusBadge status={project.status} />
               </DetailRow>
-              <DetailRow label="Budget">
-                <span className="pd-budget">{numberFormat.format(project.budget ?? 0)}</span>
-              </DetailRow>
+              {!isClient && (
+                <DetailRow label="Budget">
+                  <span className="pd-budget">{numberFormat.format(project.budget ?? 0)} €</span>
+                </DetailRow>
+              )}
               <DetailRow label="Deadline" muted={!deadline}>
                 <span className="pd-deadline-value">
                   <span>{deadline ?? 'Not set'}</span>
@@ -357,27 +360,29 @@ export default function ProjectDetailsPage() {
             />
           </CollapsibleSection>
 
-          <CollapsibleSection
-            title="Members"
-            action={
-              canManage ? (
-                <button
-                  type="button"
-                  className="section-add-button"
-                  onClick={() => setShowMemberForm(true)}
-                >
-                  Add Member
-                </button>
-              ) : null
-            }
-          >
-            <ProjectMemberList
-              projectId={project.projectId}
-              token={token}
-              reloadSignal={memberReload}
-              canManage={canManage}
-            />
-          </CollapsibleSection>
+          {!isClient && (
+            <CollapsibleSection
+              title="Members"
+              action={
+                canManage ? (
+                  <button
+                    type="button"
+                    className="section-add-button"
+                    onClick={() => setShowMemberForm(true)}
+                  >
+                    Add Member
+                  </button>
+                ) : null
+              }
+            >
+              <ProjectMemberList
+                projectId={project.projectId}
+                token={token}
+                reloadSignal={memberReload}
+                canManage={canManage}
+              />
+            </CollapsibleSection>
+          )}
         </>
       )}
 

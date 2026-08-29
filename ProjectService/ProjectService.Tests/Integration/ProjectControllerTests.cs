@@ -36,6 +36,12 @@ namespace ProjectService.Tests.Integration
                 new AuthenticationHeaderValue("Bearer", _factory.GenerateJwtToken(role: role));
         }
 
+        private void UseRoleAndUser(string role, Guid userId)
+        {
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _factory.GenerateJwtToken(userId, role));
+        }
+
         private static ProjectCreationDto ValidCreationDto() => new ProjectCreationDto
         {
             Name = "Integration Test Project",
@@ -68,6 +74,66 @@ namespace ProjectService.Tests.Integration
             var projects = await response.Content.ReadFromJsonAsync<ProjectDto[]>();
             Assert.NotNull(projects);
             Assert.Single(projects!);
+        }
+
+        [Fact]
+        public async Task GetProjects_AsAdmin_ReturnsAllProjects()
+        {
+            // Arrange
+            await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+            await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+
+            // Act
+            UseRole("Admin");
+            var response = await _client.GetAsync("/api/project");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var projects = await response.Content.ReadFromJsonAsync<ProjectDto[]>();
+            Assert.NotNull(projects);
+            Assert.Equal(2, projects!.Length);
+        }
+
+        [Fact]
+        public async Task GetProjects_AsTeamMember_ReturnsOnlyProjectsWhereUserIsMember()
+        {
+            // Arrange - PM creates two projects
+            var aResponse = await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+            var projectA = await aResponse.Content.ReadFromJsonAsync<ProjectConfirmationDto>();
+            await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+
+            var memberUserId = Guid.NewGuid();
+            UseRole("Admin"); // ProjectMember POST zahteva Admin
+            await _client.PostAsJsonAsync("/api/projectmember", new ProjectMemberCreationDto
+            {
+                ProjectId = projectA!.ProjectId,
+                UserId = memberUserId
+            });
+
+            // Act - clan gleda listu projekata
+            UseRoleAndUser("TeamMember", memberUserId);
+            var response = await _client.GetAsync("/api/project");
+
+            // Assert - samo projekat na kojem je clan
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var projects = await response.Content.ReadFromJsonAsync<ProjectDto[]>();
+            Assert.NotNull(projects);
+            Assert.Single(projects!);
+            Assert.Equal(projectA.ProjectId, projects![0].ProjectId);
+        }
+
+        [Fact]
+        public async Task GetProjects_AsClient_WhenNotMemberOfAnyProject_ReturnsNoContent()
+        {
+            // Arrange - postoji projekat kojem klijent ne pripada
+            await _client.PostAsJsonAsync("/api/project", ValidCreationDto());
+
+            // Act
+            UseRoleAndUser("Client", Guid.NewGuid());
+            var response = await _client.GetAsync("/api/project");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         [Fact]
