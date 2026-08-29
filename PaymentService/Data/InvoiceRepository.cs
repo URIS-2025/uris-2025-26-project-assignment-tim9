@@ -28,7 +28,11 @@ namespace PaymentService.Data
             _projectService = projectService;
         }
 
-        public IEnumerable<InvoiceDTO> GetInvoices(Guid? projectId = null, InvoiceStatus? status = null)
+        public async Task<IEnumerable<InvoiceDTO>> GetInvoicesAsync(
+            Guid callerId,
+            bool isAdmin,
+            Guid? projectId = null,
+            InvoiceStatus? status = null)
         {
             var query = _context.Invoices.Include(i => i.Items).AsQueryable();
 
@@ -43,6 +47,20 @@ namespace PaymentService.Data
             }
 
             var invoices = query.OrderByDescending(i => i.IssueDate).ToList();
+
+            //admin vidi sve; ostali samo fakture projekata kojih su clanovi,
+            //plus one koje su sami izdali. ako Project servis ne odgovori,
+            //ostaje im bar ono sto je njihovo, umesto prazne ili tudje liste.
+            if (!isAdmin)
+            {
+                var memberProjects = await _projectService.GetProjectIdsForUserAsync(callerId)
+                    ?? Array.Empty<Guid>();
+
+                invoices = invoices
+                    .Where(i => memberProjects.Contains(i.ProjectId) || i.IssuedByUserId == callerId)
+                    .ToList();
+            }
+
             return _mapper.Map<List<InvoiceDTO>>(invoices);
         }
 

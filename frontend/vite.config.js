@@ -16,23 +16,41 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': { target: GATEWAY_URL, changeOrigin: true },
-      '/sprints': { target: GATEWAY_URL, changeOrigin: true },
-      // This collides character-for-character with the page route of the
-      // same name (/projects/:id/sprints), so the proxy has to tell an
-      // XHR/fetch call apart from a full-page navigation (e.g. a hard
-      // refresh or a pasted URL landing here) - otherwise it swallows the
-      // page request too and React Router never gets a chance to render
-      // it. Bypass lets Vite fall through to its SPA index.html for
+      // Both of these collide character-for-character with a page route of
+      // the same name (/sprints, /projects/:id/sprints), so the proxy has
+      // to tell an XHR/fetch call apart from a full-page navigation (e.g. a
+      // hard refresh or a pasted URL landing here) - otherwise it swallows
+      // the page request too and React Router never gets a chance to
+      // render it. Bypass lets Vite fall through to its SPA index.html for
       // anything asking for text/html. (WorkPackage has no such collision:
       // its real endpoint is /api/workpackage/project/{id}, already
       // covered by the plain /api rule above - /projects/:id/work-packages
       // is only ever a page route, so it needs no proxy entry at all.)
+      '/sprints': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
       '^/projects/[^/]+/sprints': {
         target: GATEWAY_URL,
         changeOrigin: true,
         bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
       },
       '/attachments': { target: GATEWAY_URL, changeOrigin: true },
+      // Same page-route collision as /sprints above: NotificationService and
+      // IntegrationService both use flat routes without an /api prefix
+      // (/notifications, /integrations), which match this app's own
+      // /notifications and /integrations pages character-for-character.
+      '/notifications': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
+      '/integrations': {
+        target: GATEWAY_URL,
+        changeOrigin: true,
+        bypass: (req) => (req.headers.accept?.includes('text/html') ? req.url : undefined),
+      },
     },
   },
 })

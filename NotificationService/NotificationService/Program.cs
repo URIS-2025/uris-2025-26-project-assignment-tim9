@@ -12,8 +12,12 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var connectionString = builder.Configuration.GetConnectionString("NotificationServiceConnection");
+// ServerVersion.AutoDetect opens its own throwaway connection to probe the server on every
+// call - since this runs per-request (not once at startup), it was quietly leaking connections
+// outside the pool until the server ran out and started timing out/502-ing. A fixed version
+// (matching NotificationServiceContextFactory's design-time config) skips that probe entirely.
 builder.Services.AddDbContext<NotificationServiceContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 35))));
 
 builder.Services.AddAutoMapper(typeof(Program));
 

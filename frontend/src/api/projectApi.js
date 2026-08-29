@@ -1,5 +1,12 @@
 import { apiRequest } from './httpClient';
 
+// GET /api/project (via gateway) -> ProjectService
+// All projects - used to populate the "attach sprint to a project" selector,
+// since creating a sprint isn't limited to projects the caller is a member of.
+export function getAllProjects(token) {
+  return apiRequest('/api/project', { token }).then((r) => r || []);
+}
+
 export function getProjects(token) {
   return apiRequest('/api/project', { token }).then((r) => r || []);
 }

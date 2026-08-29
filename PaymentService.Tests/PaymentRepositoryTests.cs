@@ -192,7 +192,7 @@ namespace PaymentService.Tests
             await fx.Payments.CreatePaymentAsync(
                 new PaymentCreationDTO { InvoiceId = second.InvoiceId, Amount = 200m }, Guid.NewGuid(), false);
 
-            var payments = fx.Payments.GetPayments(invoiceId: first.InvoiceId).ToList();
+            var payments = (await fx.Payments.GetPaymentsAsync(Guid.NewGuid(), isAdmin: true, invoiceId: first.InvoiceId)).ToList();
 
             Assert.Single(payments);
             Assert.Equal(100m, payments[0].Amount);
