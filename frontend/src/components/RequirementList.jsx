@@ -15,7 +15,7 @@ function RequirementListSkeleton() {
   );
 }
 
-export default function RequirementList({ projectId, token }) {
+export default function RequirementList({ projectId, token, reloadSignal = 0, onAdd }) {
   const [requirements, setRequirements] = useState([]);
   // phase: 'loading' | 'ready' | 'error'
   const [phase, setPhase] = useState('loading');
@@ -39,7 +39,7 @@ export default function RequirementList({ projectId, token }) {
     return () => {
       ignore = true;
     };
-  }, [projectId, token, reloadKey]);
+  }, [projectId, token, reloadKey, reloadSignal]);
 
   const reload = () => {
     setPhase('loading');
@@ -48,7 +48,14 @@ export default function RequirementList({ projectId, token }) {
 
   return (
     <section className="requirement-list">
-      <h2 className="requirement-list__title">Requirements</h2>
+      <div className="requirement-list__header">
+        <h2 className="requirement-list__title">Requirements</h2>
+        {onAdd && (
+          <button type="button" className="requirement-list__add" onClick={onAdd}>
+            Add Requirement
+          </button>
+        )}
+      </div>
 
       {phase === 'loading' && <RequirementListSkeleton />}
 

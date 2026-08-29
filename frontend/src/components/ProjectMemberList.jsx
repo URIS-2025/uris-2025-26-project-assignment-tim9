@@ -27,7 +27,7 @@ function ProjectMemberListSkeleton() {
   );
 }
 
-export default function ProjectMemberList({ projectId, token }) {
+export default function ProjectMemberList({ projectId, token, reloadSignal = 0, onAdd }) {
   const [members, setMembers] = useState([]);
   // phase: 'loading' | 'ready' | 'error'
   const [phase, setPhase] = useState('loading');
@@ -51,7 +51,7 @@ export default function ProjectMemberList({ projectId, token }) {
     return () => {
       ignore = true;
     };
-  }, [projectId, token, reloadKey]);
+  }, [projectId, token, reloadKey, reloadSignal]);
 
   const reload = () => {
     setPhase('loading');
@@ -60,7 +60,14 @@ export default function ProjectMemberList({ projectId, token }) {
 
   return (
     <section className="member-list">
-      <h2 className="member-list__title">Members</h2>
+      <div className="member-list__header">
+        <h2 className="member-list__title">Members</h2>
+        {onAdd && (
+          <button type="button" className="member-list__add" onClick={onAdd}>
+            Add Member
+          </button>
+        )}
+      </div>
 
       {phase === 'loading' && <ProjectMemberListSkeleton />}
 

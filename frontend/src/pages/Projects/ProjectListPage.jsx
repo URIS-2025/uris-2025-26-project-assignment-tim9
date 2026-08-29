@@ -4,14 +4,18 @@ import { getProjects } from '../../api/projectApi';
 import ProjectCard from '../../components/ProjectCard';
 import ProjectListSkeleton from '../../components/ProjectListSkeleton';
 import ProjectsState from '../../components/ProjectsState';
+import Modal from '../../components/Modal';
+import ProjectForm from '../../components/ProjectForm';
 import './ProjectListPage.css';
 
 export default function ProjectListPage() {
-  const { token } = useAuth();
+  const { token, role } = useAuth();
+  const canCreate = role === 'Admin' || role === 'ProjectManager';
   const [projects, setProjects] = useState([]);
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [showCreate, setShowCreate] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -52,6 +56,15 @@ export default function ProjectListPage() {
           {phase === 'ready' && projects.length > 0 && (
             <span className="projects-count">{projects.length}</span>
           )}
+          {canCreate && (
+            <button
+              type="button"
+              className="projects-create-button"
+              onClick={() => setShowCreate(true)}
+            >
+              Create Project
+            </button>
+          )}
         </div>
         <p className="projects-subtitle">
           Every project at a glance &mdash; budget, current status and deadline.
@@ -85,6 +98,19 @@ export default function ProjectListPage() {
             <ProjectCard key={project.projectId ?? project.name} project={project} />
           ))}
         </div>
+      )}
+
+      {showCreate && (
+        <Modal title="Create Project" onClose={() => setShowCreate(false)}>
+          <ProjectForm
+            token={token}
+            onCancel={() => setShowCreate(false)}
+            onCreated={() => {
+              setShowCreate(false);
+              reload();
+            }}
+          />
+        </Modal>
       )}
     </section>
   );

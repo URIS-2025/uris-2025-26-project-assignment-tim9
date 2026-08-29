@@ -36,7 +36,7 @@ function MilestoneListSkeleton() {
   );
 }
 
-export default function MilestoneList({ projectId, token }) {
+export default function MilestoneList({ projectId, token, reloadSignal = 0, onAdd }) {
   const [milestones, setMilestones] = useState([]);
   // phase: 'loading' | 'ready' | 'error'
   const [phase, setPhase] = useState('loading');
@@ -62,7 +62,7 @@ export default function MilestoneList({ projectId, token }) {
     return () => {
       ignore = true;
     };
-  }, [projectId, token, reloadKey]);
+  }, [projectId, token, reloadKey, reloadSignal]);
 
   const reload = () => {
     setPhase('loading');
@@ -71,7 +71,14 @@ export default function MilestoneList({ projectId, token }) {
 
   return (
     <section className="milestone-list">
-      <h2 className="milestone-list__title">Milestones</h2>
+      <div className="milestone-list__header">
+        <h2 className="milestone-list__title">Milestones</h2>
+        {onAdd && (
+          <button type="button" className="milestone-list__add" onClick={onAdd}>
+            Add Milestone
+          </button>
+        )}
+      </div>
 
       {phase === 'loading' && <MilestoneListSkeleton />}
 

@@ -7,6 +7,10 @@ import ProjectsState from '../../components/ProjectsState';
 import MilestoneList from '../../components/MilestoneList';
 import RequirementList from '../../components/RequirementList';
 import ProjectMemberList from '../../components/ProjectMemberList';
+import Modal from '../../components/Modal';
+import MilestoneForm from '../../components/MilestoneForm';
+import RequirementForm from '../../components/RequirementForm';
+import ProjectMemberForm from '../../components/ProjectMemberForm';
 // ProjectsState styles live in ProjectListPage.css
 import './ProjectListPage.css';
 import './ProjectDetailsPage.css';
@@ -57,12 +61,19 @@ function ProjectDetailsSkeleton() {
 
 export default function ProjectDetailsPage() {
   const { id } = useParams();
-  const { token } = useAuth();
+  const { token, role } = useAuth();
+  const canManage = role === 'Admin' || role === 'ProjectManager';
   const [project, setProject] = useState(null);
   // phase: 'loading' | 'ready' | 'notfound' | 'error'
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
+  const [showMilestoneForm, setShowMilestoneForm] = useState(false);
+  const [milestoneReload, setMilestoneReload] = useState(0);
+  const [showRequirementForm, setShowRequirementForm] = useState(false);
+  const [requirementReload, setRequirementReload] = useState(0);
+  const [showMemberForm, setShowMemberForm] = useState(false);
+  const [memberReload, setMemberReload] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -155,10 +166,67 @@ export default function ProjectDetailsPage() {
             </dl>
           </article>
 
-          <MilestoneList projectId={project.projectId} token={token} />
-          <RequirementList projectId={project.projectId} token={token} />
-          <ProjectMemberList projectId={project.projectId} token={token} />
+          <MilestoneList
+            projectId={project.projectId}
+            token={token}
+            reloadSignal={milestoneReload}
+            onAdd={canManage ? () => setShowMilestoneForm(true) : undefined}
+          />
+          <RequirementList
+            projectId={project.projectId}
+            token={token}
+            reloadSignal={requirementReload}
+            onAdd={canManage ? () => setShowRequirementForm(true) : undefined}
+          />
+          <ProjectMemberList
+            projectId={project.projectId}
+            token={token}
+            reloadSignal={memberReload}
+            onAdd={canManage ? () => setShowMemberForm(true) : undefined}
+          />
         </>
+      )}
+
+      {showMilestoneForm && project && (
+        <Modal title="Add Milestone" onClose={() => setShowMilestoneForm(false)}>
+          <MilestoneForm
+            projectId={project.projectId}
+            token={token}
+            onCancel={() => setShowMilestoneForm(false)}
+            onCreated={() => {
+              setShowMilestoneForm(false);
+              setMilestoneReload((key) => key + 1);
+            }}
+          />
+        </Modal>
+      )}
+
+      {showRequirementForm && project && (
+        <Modal title="Add Requirement" onClose={() => setShowRequirementForm(false)}>
+          <RequirementForm
+            projectId={project.projectId}
+            token={token}
+            onCancel={() => setShowRequirementForm(false)}
+            onCreated={() => {
+              setShowRequirementForm(false);
+              setRequirementReload((key) => key + 1);
+            }}
+          />
+        </Modal>
+      )}
+
+      {showMemberForm && project && (
+        <Modal title="Add Member" onClose={() => setShowMemberForm(false)}>
+          <ProjectMemberForm
+            projectId={project.projectId}
+            token={token}
+            onCancel={() => setShowMemberForm(false)}
+            onCreated={() => {
+              setShowMemberForm(false);
+              setMemberReload((key) => key + 1);
+            }}
+          />
+        </Modal>
       )}
     </section>
   );
