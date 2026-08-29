@@ -6,6 +6,7 @@ import ProjectStatusBadge from '../../components/ProjectStatusBadge';
 import ProjectsState from '../../components/ProjectsState';
 import MilestoneList from '../../components/MilestoneList';
 import RequirementList from '../../components/RequirementList';
+import ProjectMemberList from '../../components/ProjectMemberList';
 // ProjectsState styles live in ProjectListPage.css
 import './ProjectListPage.css';
 import './ProjectDetailsPage.css';
@@ -156,6 +157,7 @@ export default function ProjectDetailsPage() {
 
           <MilestoneList projectId={project.projectId} token={token} />
           <RequirementList projectId={project.projectId} token={token} />
+          <ProjectMemberList projectId={project.projectId} token={token} />
         </>
       )}
     </section>
