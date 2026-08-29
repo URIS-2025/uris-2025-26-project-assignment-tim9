@@ -232,6 +232,12 @@ export default function ProjectDetailsPage() {
 
           <div className="pd-attachments">
             <AttachmentsButton projectId={project.projectId} />
+            <Link
+              to={`/projects/${project.projectId}/work-packages`}
+              className="secondary-button"
+            >
+              View Work Packages
+            </Link>
           </div>
 
           <CollapsibleSection
