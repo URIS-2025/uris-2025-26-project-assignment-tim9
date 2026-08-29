@@ -5,7 +5,7 @@ namespace PaymentService.Data
 {
     public interface IInvoiceRepository
     {
-        IEnumerable<InvoiceDTO> GetInvoices(Guid? projectId = null, InvoiceStatus? status = null);
+        Task<IEnumerable<InvoiceDTO>> GetInvoicesAsync(Guid callerId, bool isAdmin, Guid? projectId = null, InvoiceStatus? status = null);
         InvoiceDTO? GetInvoiceById(Guid invoiceId);
         Task<OperationResult<InvoiceConfirmationDTO>> CreateInvoiceAsync(InvoiceCreationDTO invoice, Guid issuedByUserId, bool isAdmin);
         Task<OperationResult<InvoiceConfirmationDTO>> UpdateInvoiceAsync(Guid invoiceId, InvoiceUpdateDTO invoice);

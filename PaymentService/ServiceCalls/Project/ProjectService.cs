@@ -83,5 +83,42 @@ namespace PaymentService.ServiceCalls.Project
                 return new ProjectMembershipResult(ProjectMembershipStatus.ServiceUnavailable);
             }
         }
+        public async Task<IReadOnlyCollection<Guid>?> GetProjectIdsForUserAsync(Guid userId)
+        {
+            try
+            {
+                //jedan poziv umesto provere clanstva za svaki projekat ponaosob
+                var response = await _httpClient.GetAsync($"api/project/user/{userId}");
+
+                if (response.StatusCode == HttpStatusCode.NoContent)
+                {
+                    return Array.Empty<Guid>();
+                }
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var projects = JsonSerializer.Deserialize<List<ProjectInfoDTO>>(content, JsonOptions)
+                    ?? new List<ProjectInfoDTO>();
+
+                return projects.Select(p => p.ProjectId).ToList();
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+            catch (TaskCanceledException)
+            {
+                return null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
     }
 }

@@ -28,7 +28,11 @@ namespace PaymentService.Data
             _projectService = projectService;
         }
 
-        public IEnumerable<PaymentDTO> GetPayments(Guid? invoiceId = null, Guid? paidByUserId = null)
+        public async Task<IEnumerable<PaymentDTO>> GetPaymentsAsync(
+            Guid callerId,
+            bool isAdmin,
+            Guid? invoiceId = null,
+            Guid? paidByUserId = null)
         {
             var query = _context.Payments.AsQueryable();
 
@@ -43,6 +47,26 @@ namespace PaymentService.Data
             }
 
             var payments = query.OrderByDescending(p => p.Date).ToList();
+
+            //isto pravilo kao kod faktura: admin vidi sve, ostali uplate sa
+            //projekata kojih su clanovi, plus svoje sopstvene uplate
+            if (!isAdmin)
+            {
+                var memberProjects = await _projectService.GetProjectIdsForUserAsync(callerId)
+                    ?? Array.Empty<Guid>();
+
+                //uplata ne nosi projekat, pa se projekat cita sa njene fakture
+                var projectByInvoice = _context.Invoices
+                    .ToDictionary(i => i.InvoiceId, i => i.ProjectId);
+
+                payments = payments
+                    .Where(p =>
+                        p.PaidByUserId == callerId
+                        || (projectByInvoice.TryGetValue(p.InvoiceId, out var pid)
+                            && memberProjects.Contains(pid)))
+                    .ToList();
+            }
+
             return _mapper.Map<List<PaymentDTO>>(payments);
         }
 

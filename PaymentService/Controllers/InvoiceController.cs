@@ -26,9 +26,20 @@ namespace PaymentService.Controllers
         [HttpGet]
         [HttpHead]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<InvoiceDTO>> GetInvoices([FromQuery] Guid? projectId, [FromQuery] InvoiceStatus? status)
+        public async Task<ActionResult<IEnumerable<InvoiceDTO>>> GetInvoices(
+            [FromQuery] Guid? projectId,
+            [FromQuery] InvoiceStatus? status)
         {
-            return Ok(_invoiceRepository.GetInvoices(projectId, status));
+            if (!Request.TryGetUserId(out var callerId))
+            {
+                return BadRequest($"Nedostaje ili je neispravan {UserHeader.Name} header.");
+            }
+
+            //lista se filtrira prema clanstvu pozivaoca, admin vidi sve
+            var invoices = await _invoiceRepository.GetInvoicesAsync(
+                callerId, User.IsInRole("Admin"), projectId, status);
+
+            return Ok(invoices);
         }
 
         // GET: api/invoice/{invoiceId}
