@@ -28,15 +28,3 @@
   font-size: 14px;
   color: var(--text);
 }
-
-.login-switch {
-  margin: 20px 0 0;
-  font-size: 14px;
-  color: var(--text);
-  text-align: center;
-}
-
-.login-switch a {
-  color: var(--accent);
-  font-weight: 600;
-}
