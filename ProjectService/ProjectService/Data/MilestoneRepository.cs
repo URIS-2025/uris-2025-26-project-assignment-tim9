@@ -63,6 +63,8 @@ namespace ProjectService.Data
             {
                 MilestoneId = Guid.NewGuid(),
                 ProjectId = milestoneDto.ProjectId,
+                Name = milestoneDto.Name,
+                Description = milestoneDto.Description,
                 ExpectedDate = milestoneDto.ExpectedDate
             };
 
@@ -86,6 +88,8 @@ namespace ProjectService.Data
                 return null;
 
             existing.ProjectId = milestoneDto.ProjectId;
+            existing.Name = milestoneDto.Name;
+            existing.Description = milestoneDto.Description;
             existing.ExpectedDate = milestoneDto.ExpectedDate;
             _context.SaveChanges();
 

@@ -45,6 +45,8 @@ namespace ProjectService.Tests.Repositories
             var dto = new MilestoneCreationDto
             {
                 ProjectId = projectId,
+                Name = "Design phase complete",
+                Description = "All design documents approved",
                 ExpectedDate = DateTime.Now.AddMonths(1)
             };
 
@@ -59,6 +61,8 @@ namespace ProjectService.Tests.Repositories
             var savedMilestone = context.Milestones.FirstOrDefault(m => m.MilestoneId == result.MilestoneId);
             Assert.NotNull(savedMilestone);
             Assert.Equal(projectId, savedMilestone.ProjectId);
+            Assert.Equal("Design phase complete", savedMilestone.Name);
+            Assert.Equal("All design documents approved", savedMilestone.Description);
         }
 
         [Fact]
@@ -70,6 +74,8 @@ namespace ProjectService.Tests.Repositories
             {
                 MilestoneId = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
+                Name = "Original milestone",
+                Description = "Original description",
                 ExpectedDate = DateTime.Now.AddDays(10)
             };
             context.Milestones.Add(existingMilestone);
@@ -83,6 +89,8 @@ namespace ProjectService.Tests.Repositories
             {
                 MilestoneId = existingMilestone.MilestoneId,
                 ProjectId = newProjectId,
+                Name = "Renamed milestone",
+                Description = "Updated description",
                 ExpectedDate = newDate
             };
 
@@ -96,6 +104,8 @@ namespace ProjectService.Tests.Repositories
 
             var updatedMilestone = context.Milestones.First(m => m.MilestoneId == existingMilestone.MilestoneId);
             Assert.Equal(newProjectId, updatedMilestone.ProjectId);
+            Assert.Equal("Renamed milestone", updatedMilestone.Name);
+            Assert.Equal("Updated description", updatedMilestone.Description);
         }
 
         [Fact]
@@ -109,6 +119,7 @@ namespace ProjectService.Tests.Repositories
             {
                 MilestoneId = Guid.NewGuid(), // ne postoji u bazi
                 ProjectId = Guid.NewGuid(),
+                Name = "Nonexistent milestone",
                 ExpectedDate = DateTime.Now.AddDays(5)
             };
 
@@ -128,6 +139,7 @@ namespace ProjectService.Tests.Repositories
             {
                 MilestoneId = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
+                Name = "Milestone to delete",
                 ExpectedDate = DateTime.Now.AddDays(20)
             };
             context.Milestones.Add(existingMilestone);
@@ -152,6 +164,7 @@ namespace ProjectService.Tests.Repositories
             {
                 MilestoneId = Guid.NewGuid(),
                 ProjectId = Guid.NewGuid(),
+                Name = "Milestone by id",
                 ExpectedDate = DateTime.Now.AddDays(15)
             };
             context.Milestones.Add(existingMilestone);
@@ -191,9 +204,9 @@ namespace ProjectService.Tests.Repositories
             var projectBId = Guid.NewGuid();
 
             context.Milestones.AddRange(
-                new Milestone { MilestoneId = Guid.NewGuid(), ProjectId = projectAId, ExpectedDate = DateTime.Now.AddDays(5) },
-                new Milestone { MilestoneId = Guid.NewGuid(), ProjectId = projectAId, ExpectedDate = DateTime.Now.AddDays(10) },
-                new Milestone { MilestoneId = Guid.NewGuid(), ProjectId = projectBId, ExpectedDate = DateTime.Now.AddDays(15) }
+                new Milestone { MilestoneId = Guid.NewGuid(), ProjectId = projectAId, Name = "A-1", ExpectedDate = DateTime.Now.AddDays(5) },
+                new Milestone { MilestoneId = Guid.NewGuid(), ProjectId = projectAId, Name = "A-2", ExpectedDate = DateTime.Now.AddDays(10) },
+                new Milestone { MilestoneId = Guid.NewGuid(), ProjectId = projectBId, Name = "B-1", ExpectedDate = DateTime.Now.AddDays(15) }
             );
             context.SaveChanges();
 

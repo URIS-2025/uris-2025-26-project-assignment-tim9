@@ -1,17 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../auth/useAuth';
-import { ApiError } from '../api/httpClient';
-import { getProjectsByUser, getProjectById } from '../api/projectApi';
-import { getWorkPackagesByProject } from '../api/workPackageApi';
-import { getTaskById, getTasksByWorkPackage } from '../api/taskApi';
-import { getAllTimelogs, deleteTimelog } from '../api/timelogApi';
-import TotalHoursPanel from '../components/TotalHoursPanel';
-import TimelogList from '../components/TimelogList';
-import TimelogFormModal from '../components/TimelogFormModal';
+import { useParams } from 'react-router-dom';
+import { useAuth } from '../../auth/useAuth';
+import { ApiError } from '../../api/httpClient';
+import { getProjectsByUserId, getProjectById } from '../../api/projectApi';
+import { getWorkPackages, getTaskById, getTasksByWorkPackage } from '../../api/workPackageApi';
+import { getAllTimelogs, deleteTimelog } from '../../api/timelogApi';
+import TotalHoursPanel from '../../components/TotalHoursPanel';
+import TimelogList from '../../components/TimelogList';
+import TimelogFormModal from '../../components/TimelogFormModal';
 import './TimelogsPage.css';
 
 export default function TimelogsPage() {
   const { token, userId, username, role, logout } = useAuth();
+
+  // Present when this page is mounted at /projects/:projectId/timelogs
+  // (a project-scoped view) - absent at the flat /timelogs route (the
+  // user's personal "my timelogs across every project" dashboard). Same
+  // component, same "my timelogs" filtering either way; this only changes
+  // which project(s) it's scoped to.
+  const { projectId: routeProjectId } = useParams();
 
   const [projects, setProjects] = useState([]);
   const [rawTimelogs, setRawTimelogs] = useState([]);
@@ -35,6 +42,12 @@ export default function TimelogsPage() {
   const [filterTasks, setFilterTasks] = useState([]);
   const [filterTasksLoading, setFilterTasksLoading] = useState(false);
 
+  // The route param always wins - when this page is project-scoped there's
+  // no "All projects" choice to begin with, so the dropdown-driven
+  // filterProjectId (which isn't even rendered in that case) never comes
+  // into play.
+  const effectiveProjectId = routeProjectId || filterProjectId;
+
   const handleAuthError = useCallback(
     (err) => {
       if (err instanceof ApiError && err.status === 401) {
@@ -54,8 +67,8 @@ export default function TimelogsPage() {
       setError(null);
       try {
         const [myProjects, allTimelogs] = await Promise.all([
-          getProjectsByUser(userId, token),
-          getAllTimelogs(token, { projectId: filterProjectId, taskId: filterTaskId }),
+          getProjectsByUserId(userId, token),
+          getAllTimelogs(token, { projectId: effectiveProjectId, taskId: filterTaskId }),
         ]);
         if (cancelled) return;
 
@@ -84,7 +97,7 @@ export default function TimelogsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, token, refreshToken, filterProjectId, filterTaskId, handleAuthError]);
+  }, [userId, token, refreshToken, effectiveProjectId, filterTaskId, handleAuthError]);
 
   function handleFilterProjectChange(projectId) {
     setFilterProjectId(projectId);
@@ -97,12 +110,12 @@ export default function TimelogsPage() {
   // project -> work packages -> tasks lookup, scoped to whichever project
   // is currently filtered.
   useEffect(() => {
-    if (!filterProjectId) return undefined;
+    if (!effectiveProjectId) return undefined;
     let cancelled = false;
     (async () => {
       setFilterTasksLoading(true);
       try {
-        const workPackages = await getWorkPackagesByProject(filterProjectId, token);
+        const workPackages = await getWorkPackages(effectiveProjectId, token);
         const taskLists = await Promise.all(
           workPackages.map((wp) => getTasksByWorkPackage(wp.workPackageId, token))
         );
@@ -116,7 +129,7 @@ export default function TimelogsPage() {
     return () => {
       cancelled = true;
     };
-  }, [filterProjectId, token]);
+  }, [effectiveProjectId, token]);
 
   // Resolve display names for any project/task not already cached
   // (e.g. a project the user has since left, or a task from a work
@@ -176,10 +189,15 @@ export default function TimelogsPage() {
     [projects]
   );
 
-  // Tasks belong to whichever project is currently filtered - once the
-  // filter changes, stale tasks from the previous project shouldn't flash
-  // before the new fetch resolves.
-  const visibleFilterTasks = filterProjectId ? filterTasks : [];
+  const scopedProject = useMemo(
+    () => (routeProjectId ? projects.find((p) => p.projectId === routeProjectId) : null),
+    [routeProjectId, projects]
+  );
+
+  // Tasks belong to whichever project is currently in scope - once that
+  // changes, stale tasks from the previous project shouldn't flash before
+  // the new fetch resolves.
+  const visibleFilterTasks = effectiveProjectId ? filterTasks : [];
 
   function refresh() {
     setRefreshToken((n) => n + 1);
@@ -211,7 +229,11 @@ export default function TimelogsPage() {
       <header className="page-header">
         <div>
           <h1>Timelogs</h1>
-          <p className="page-subtitle">Track hours across every project you're on.</p>
+          <p className="page-subtitle">
+            {routeProjectId
+              ? `Your time logged on ${scopedProject?.name || 'this project'}.`
+              : "Track hours across every project you're on."}
+          </p>
         </div>
         <div className="user-badge">
           <div>
@@ -230,7 +252,10 @@ export default function TimelogsPage() {
         <div className="form-message error">{error}</div>
       ) : (
         <>
-          <TotalHoursPanel projects={projects} timelogs={rawTimelogs} />
+          <TotalHoursPanel
+            projects={routeProjectId ? projects.filter((p) => p.projectId === routeProjectId) : projects}
+            timelogs={rawTimelogs}
+          />
 
           <section className="timelog-section">
             <div className="timelog-section-header">
@@ -247,32 +272,34 @@ export default function TimelogsPage() {
             </div>
 
             <div className="timelog-filters">
-              <label>
-                Project
-                <select
-                  value={filterProjectId}
-                  onChange={(e) => handleFilterProjectChange(e.target.value)}
-                >
-                  <option value="">All projects</option>
-                  {filterProjectOptions.map((p) => (
-                    <option key={p.projectId} value={p.projectId}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              {!routeProjectId && (
+                <label>
+                  Project
+                  <select
+                    value={filterProjectId}
+                    onChange={(e) => handleFilterProjectChange(e.target.value)}
+                  >
+                    <option value="">All projects</option>
+                    {filterProjectOptions.map((p) => (
+                      <option key={p.projectId} value={p.projectId}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
 
               <label>
                 Task
                 <select
                   value={filterTaskId}
-                  disabled={!filterProjectId || filterTasksLoading}
+                  disabled={!effectiveProjectId || filterTasksLoading}
                   onChange={(e) => setFilterTaskId(e.target.value)}
                 >
                   <option value="">
                     {filterTasksLoading
                       ? 'Loading tasks…'
-                      : !filterProjectId
+                      : !effectiveProjectId
                         ? 'Pick a project first'
                         : 'All tasks'}
                   </option>
@@ -301,6 +328,7 @@ export default function TimelogsPage() {
         <TimelogFormModal
           projects={projects}
           editingTimelog={modalState.editing}
+          initialProjectId={routeProjectId}
           onClose={() => setModalState(null)}
           onSaved={handleSaved}
         />
