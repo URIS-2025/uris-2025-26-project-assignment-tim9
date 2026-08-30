@@ -30,12 +30,44 @@ export function getWorkPackage(workPackageId, token) {
   return apiRequest(`/api/workpackage/${workPackageId}`, { token });
 }
 
+export function createWorkPackage(projectId, data, token) {
+  // POST /api/workpackage  body: WorkPackageCreateDTO { ProjectId, Name, Description?, Status, Deadline }
+  // (Roles = ProjectManager, Admin). Backend rejects a Deadline past the project deadline.
+  return apiRequest('/api/workpackage', {
+    method: 'POST',
+    token,
+    body: {
+      projectId,
+      name: data.name,
+      description: data.description ?? null,
+      status: toInt(data.status ?? 0),
+      deadline: data.deadline,
+    },
+  });
+}
+
 export function updateWorkPackageStatus(workPackageId, status, token) {
   // PUT /api/workpackage  body: WorkPackageUpdateDTO { Id, Status? } (no PATCH endpoint exists)
   return apiRequest('/api/workpackage', {
     method: 'PUT',
     token,
     body: { id: workPackageId, status: toInt(status) },
+  });
+}
+
+export function updateWorkPackage(workPackageId, data, token) {
+  // PUT /api/workpackage  body: WorkPackageUpdateDTO { Id, Name?, Description?, Status?, Deadline? }
+  // (Roles = ProjectManager, Admin). Only send the fields being changed.
+  return apiRequest('/api/workpackage', {
+    method: 'PUT',
+    token,
+    body: {
+      id: workPackageId,
+      name: data.name,
+      description: data.description,
+      status: data.status === undefined ? undefined : toInt(data.status),
+      deadline: data.deadline,
+    },
   });
 }
 
@@ -108,6 +140,26 @@ export function deleteTask(taskId, token) {
   return apiRequest(`/api/task/${taskId}`, { method: 'DELETE', token });
 }
 
+export function reassignTask(taskId, newAssigneeId, token) {
+  // PATCH /api/task/{id}/reassign  body: TaskReassignRequestDTO { NewAssigneeId }
+  // (Roles = ProjectManager, Admin)
+  return apiRequest(`/api/task/${taskId}/reassign`, {
+    method: 'PATCH',
+    token,
+    body: { newAssigneeId },
+  });
+}
+
+export function moveTask(taskId, newWorkPackageId, token) {
+  // PATCH /api/task/{id}/move  body: TaskMoveRequestDTO { NewWorkPackageId }
+  // (Roles = ProjectManager, Admin)
+  return apiRequest(`/api/task/${taskId}/move`, {
+    method: 'PATCH',
+    token,
+    body: { newWorkPackageId },
+  });
+}
+
 // --- Comments ---------------------------------------------------------
 // Backend: CommentController -> /api/comment
 
@@ -122,6 +174,27 @@ export function addComment(taskId, text, token, authorId) {
     method: 'POST',
     token,
     body: { taskId, authorId, text },
+  });
+}
+
+export function updateComment(commentId, text, token, callerId) {
+  // PUT /api/comment?callerId={guid}  body: CommentUpdateDTO { Id, Text }
+  // Backend: only the author (AuthorId === callerId) may edit -> 403 otherwise.
+  return apiRequest('/api/comment', {
+    method: 'PUT',
+    token,
+    query: { callerId },
+    body: { id: commentId, text },
+  });
+}
+
+export function deleteComment(commentId, token, callerId) {
+  // DELETE /api/comment/{id}?callerId={guid}
+  // Backend: only the author may delete -> 403 otherwise.
+  return apiRequest(`/api/comment/${commentId}`, {
+    method: 'DELETE',
+    token,
+    query: { callerId },
   });
 }
 
@@ -141,6 +214,11 @@ export function addDependency(taskId, blockerTaskId, token) {
     token,
     body: { taskId, blockerTaskId },
   });
+}
+
+export function deleteDependency(dependencyId, token) {
+  // DELETE /api/dependency/{id}  (Roles = ProjectManager, Admin)
+  return apiRequest(`/api/dependency/${dependencyId}`, { method: 'DELETE', token });
 }
 
 // --- Backlog --------------------------------------------------------

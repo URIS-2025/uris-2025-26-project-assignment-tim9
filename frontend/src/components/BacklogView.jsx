@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
+import { useToast } from '../shared/components/useToast';
 import {
   getBacklog,
   addBacklogItem,
@@ -37,6 +39,7 @@ const primaryButtonStyle = {
 
 export default function BacklogView({ projectId }) {
   const { token, userId } = useAuth();
+  const { showToast } = useToast();
   const [items, setItems] = useState([]);
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
@@ -88,7 +91,7 @@ export default function BacklogView({ projectId }) {
       setDescription('');
       reload();
     } catch (error) {
-      window.alert(error?.message || 'Could not add the backlog item.');
+      showToast(getFriendlyErrorMessage(error, 'backlog-write'), 'error');
     }
   }
 
@@ -97,8 +100,9 @@ export default function BacklogView({ projectId }) {
     try {
       await deleteBacklogItem(id, token);
       setItems((prev) => prev.filter((item) => item.backlogId !== id));
+      showToast('Backlog item deleted.', 'success');
     } catch (error) {
-      window.alert(error?.message || 'Could not delete the backlog item.');
+      showToast(getFriendlyErrorMessage(error, 'backlog-write'), 'error');
     }
   }
 
@@ -124,7 +128,7 @@ export default function BacklogView({ projectId }) {
       );
       handleEditCancel();
     } catch (error) {
-      window.alert(error?.message || 'Could not save the backlog item.');
+      showToast(getFriendlyErrorMessage(error, 'backlog-write'), 'error');
     }
   }
 

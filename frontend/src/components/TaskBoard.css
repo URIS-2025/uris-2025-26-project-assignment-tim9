@@ -4,12 +4,13 @@
 
 .task-board__columns {
   display: flex;
+  flex-wrap: wrap;
   gap: 16px;
   margin-top: 16px;
 }
 
 .task-column {
-  flex: 1;
+  flex: 1 1 150px;
   min-width: 0;
   background: var(--code-bg);
   border: 1px solid var(--border);
@@ -69,10 +70,16 @@
   box-shadow: var(--shadow);
 }
 
-.task-card__delete {
+.task-card__actions {
   position: absolute;
   top: 6px;
   right: 6px;
+  display: flex;
+  gap: 2px;
+}
+
+.task-card__edit,
+.task-card__delete {
   width: 22px;
   height: 22px;
   display: flex;
@@ -82,9 +89,14 @@
   border-radius: 6px;
   background: transparent;
   color: var(--text);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
   cursor: pointer;
+}
+
+.task-card__edit:hover {
+  background: var(--code-bg);
+  color: var(--accent);
 }
 
 .task-card__delete:hover {
@@ -94,9 +106,69 @@
 
 .task-card__title {
   margin: 0;
-  padding-right: 20px;
+  padding-right: 48px;
   font-weight: 600;
   color: var(--text-h);
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.task-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.task-form input,
+.task-form textarea,
+.task-form select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: var(--sans);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.task-form__error {
+  margin: 0;
+  color: var(--color-status-critical);
+  font-size: 13px;
+}
+
+.task-form__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.task-form button {
+  padding: 9px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--sans);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.task-form__cancel {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.task-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .task-card__meta {
