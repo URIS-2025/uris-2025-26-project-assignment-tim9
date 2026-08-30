@@ -94,7 +94,7 @@ function AddSubTaskRow({ parentTaskId, workPackageId, onCreated }) {
   );
 }
 
-function SubTaskItem({ task, workPackageId, token, depth = 0 }) {
+function SubTaskItem({ task, workPackageId, token, onTaskClick, depth = 0 }) {
   const [children, setChildren] = useState([]);
   const [version, setVersion] = useState(0);
 
@@ -117,6 +117,15 @@ function SubTaskItem({ task, workPackageId, token, depth = 0 }) {
   return (
     <div style={{ marginLeft: depth * 20, marginTop: '6px' }}>
       <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onTaskClick?.(task)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onTaskClick?.(task);
+          }
+        }}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -127,6 +136,7 @@ function SubTaskItem({ task, workPackageId, token, depth = 0 }) {
           padding: '8px 12px',
           background: 'var(--bg)',
           textAlign: 'left',
+          cursor: onTaskClick ? 'pointer' : 'default',
         }}
       >
         <span>{task.title}</span>
@@ -140,6 +150,7 @@ function SubTaskItem({ task, workPackageId, token, depth = 0 }) {
               task={child}
               workPackageId={workPackageId}
               token={token}
+              onTaskClick={onTaskClick}
               depth={depth + 1}
             />
           ))}
@@ -156,7 +167,7 @@ function SubTaskItem({ task, workPackageId, token, depth = 0 }) {
   );
 }
 
-export default function SubTaskTree({ taskId, workPackageId }) {
+export default function SubTaskTree({ taskId, workPackageId, onTaskClick }) {
   const { token } = useAuth();
   const [roots, setRoots] = useState([]);
   const [phase, setPhase] = useState('loading');
@@ -191,7 +202,14 @@ export default function SubTaskTree({ taskId, workPackageId }) {
         )}
         {phase === 'ready' &&
           roots.map((task) => (
-            <SubTaskItem key={task.taskId} task={task} workPackageId={workPackageId} token={token} depth={0} />
+            <SubTaskItem
+              key={task.taskId}
+              task={task}
+              workPackageId={workPackageId}
+              token={token}
+              onTaskClick={onTaskClick}
+              depth={0}
+            />
           ))}
         {workPackageId && (
           <div style={{ marginTop: '10px' }}>

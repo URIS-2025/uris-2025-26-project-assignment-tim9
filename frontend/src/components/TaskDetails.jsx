@@ -17,9 +17,11 @@ import {
   TASK_STATUS_LABELS,
   TASK_PRIORITY_LABELS,
 } from '../api/workPackageApi';
-import { useUserNames } from '../utils/userNames';
+import { getProjectMembersByProjectId } from '../api/projectApi';
+import { useUserNames, shortId } from '../utils/userNames';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
 import { useToast } from '../shared/components/useToast';
+import Modal from './Modal';
 import SubTaskTree from './SubTaskTree';
 
 const STATUS_COLORS = {
@@ -58,11 +60,13 @@ const smallPrimary = {
 };
 
 function DependencySection({ taskId, workPackageId, token, canManage }) {
+  const { showToast } = useToast();
   const [dependencies, setDependencies] = useState([]);
   const [candidates, setCandidates] = useState([]);
   const [selected, setSelected] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false); // a remove is in flight
+  const [adding, setAdding] = useState(false); // the add call is in flight
+  const [error, setError] = useState(''); // load-time error only
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -73,6 +77,7 @@ function DependencySection({ taskId, workPackageId, token, canManage }) {
           (deps || []).map((d) => getTask(d.blockerTaskId, token).catch(() => null)),
         );
         if (ignore) return;
+        setError('');
         setDependencies(
           (deps || []).map((dep, i) => ({
             id: dep.dependencyId,
@@ -92,28 +97,49 @@ function DependencySection({ taskId, workPackageId, token, canManage }) {
   }, [taskId, workPackageId, token, version]);
 
   async function handleAdd() {
-    if (!selected) return;
-    setBusy(true);
-    setError('');
+    if (!selected || adding) return;
+    setAdding(true);
     try {
-      await addDependency(taskId, selected, token);
+      const created = await addDependency(taskId, selected, token);
+      // Show it immediately from the create response - don't wait on the
+      // refetch below, which also runs a parallel getTasks() that could fail
+      // and (via the effect's catch) leave a successful add invisible.
+      const blocker = candidates.find((t) => t.taskId === selected);
+      const newId = created?.dependencyId ?? `pending-${selected}`;
+      setDependencies((prev) =>
+        prev.some((d) => d.blockerTaskId === selected)
+          ? prev
+          : [
+              ...prev,
+              {
+                id: newId,
+                blockerTaskId: selected,
+                title: blocker?.title ?? `Task ${String(selected).slice(0, 8)}…`,
+                status: blocker
+                  ? TASK_STATUS_LABELS[blocker.status] ?? String(blocker.status)
+                  : '—',
+              },
+            ],
+      );
       setSelected('');
-      setVersion((v) => v + 1);
+      setVersion((v) => v + 1); // reconcile with the server
+      showToast('Dependency added.', 'success');
     } catch (err) {
-      setError(getFriendlyErrorMessage(err, 'dependency-write'));
+      showToast(getFriendlyErrorMessage(err, 'dependency-write'), 'error');
     } finally {
-      setBusy(false);
+      setAdding(false);
     }
   }
 
   async function handleDelete(dependencyId) {
     setBusy(true);
-    setError('');
     try {
       await deleteDependency(dependencyId, token);
+      setDependencies((prev) => prev.filter((d) => d.id !== dependencyId));
       setVersion((v) => v + 1);
+      showToast('Dependency removed.', 'success');
     } catch (err) {
-      setError(getFriendlyErrorMessage(err, 'dependency-write'));
+      showToast(getFriendlyErrorMessage(err, 'dependency-write'), 'error');
     } finally {
       setBusy(false);
     }
@@ -152,7 +178,7 @@ function DependencySection({ taskId, workPackageId, token, canManage }) {
                 type="button"
                 aria-label="Remove dependency"
                 onClick={() => handleDelete(dep.id)}
-                disabled={busy}
+                disabled={busy || adding}
                 style={{ ...smallButton, marginLeft: 'auto', color: 'var(--color-status-critical)' }}
               >
                 ×
@@ -178,8 +204,13 @@ function DependencySection({ taskId, workPackageId, token, canManage }) {
                 </option>
               ))}
           </select>
-          <button type="button" onClick={handleAdd} disabled={busy || !selected} style={smallPrimary}>
-            Add dependency
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={adding || busy || !selected}
+            style={smallPrimary}
+          >
+            {adding ? 'Adding…' : 'Add dependency'}
           </button>
         </div>
       )}
@@ -376,18 +407,31 @@ function ReassignMoveSection({ task, token, onChanged }) {
   const { showToast } = useToast();
   const [assigneeId, setAssigneeId] = useState('');
   const [workPackages, setWorkPackages] = useState([]);
+  const [members, setMembers] = useState([]);
   const [moveTarget, setMoveTarget] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let ignore = false;
     getWorkPackage(task.workPackageId, token)
-      .then((wp) => (wp?.projectId ? getWorkPackages(wp.projectId, token) : []))
-      .then((list) => {
-        if (!ignore) setWorkPackages(Array.isArray(list) ? list : []);
+      .then((wp) => {
+        const projectId = wp?.projectId;
+        if (!projectId) return [[], []];
+        return Promise.all([
+          getWorkPackages(projectId, token).catch(() => []),
+          getProjectMembersByProjectId(projectId, token).catch(() => []),
+        ]);
+      })
+      .then(([wps, mems]) => {
+        if (ignore) return;
+        setWorkPackages(Array.isArray(wps) ? wps : []);
+        setMembers(Array.isArray(mems) ? mems : []);
       })
       .catch(() => {
-        if (!ignore) setWorkPackages([]);
+        if (!ignore) {
+          setWorkPackages([]);
+          setMembers([]);
+        }
       });
     return () => {
       ignore = true;
@@ -395,11 +439,10 @@ function ReassignMoveSection({ task, token, onChanged }) {
   }, [task.workPackageId, token]);
 
   async function handleReassign() {
-    const trimmed = assigneeId.trim();
-    if (!trimmed) return;
+    if (!assigneeId) return;
     setBusy(true);
     try {
-      await reassignTask(task.taskId, trimmed, token);
+      await reassignTask(task.taskId, assigneeId, token);
       setAssigneeId('');
       showToast('Task reassigned.', 'success');
       onChanged?.();
@@ -428,14 +471,23 @@ function ReassignMoveSection({ task, token, onChanged }) {
     <div style={{ marginTop: '16px' }}>
       <h3 style={{ fontSize: '16px' }}>Assignment</h3>
       <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '8px' }}>
-        <input
-          type="text"
+        <select
           value={assigneeId}
           onChange={(e) => setAssigneeId(e.target.value)}
-          placeholder="New assignee user id (GUID)"
           style={{ ...fieldStyle, flex: '1 1 240px' }}
-        />
-        <button type="button" onClick={handleReassign} disabled={busy || !assigneeId.trim()} style={smallPrimary}>
+        >
+          <option value="">
+            {members.length ? 'Reassign to…' : 'No project members found'}
+          </option>
+          {members
+            .filter((m) => m.userId !== task.assigneeId)
+            .map((m) => (
+              <option key={m.userId} value={m.userId}>
+                {m.username || shortId(m.userId)}
+              </option>
+            ))}
+        </select>
+        <button type="button" onClick={handleReassign} disabled={busy || !assigneeId} style={smallPrimary}>
           Reassign
         </button>
       </div>
@@ -470,6 +522,7 @@ export default function TaskDetails({ taskId, onChanged }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [reloadKey, setReloadKey] = useState(0);
   const [showSubTasks, setShowSubTasks] = useState(false);
+  const [subTask, setSubTask] = useState(null); // sub-task opened in a stacked modal
 
   useEffect(() => {
     let ignore = false;
@@ -513,6 +566,7 @@ export default function TaskDetails({ taskId, onChanged }) {
   const priorityLabel = TASK_PRIORITY_LABELS[task.priority] ?? String(task.priority);
 
   return (
+    <>
     <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'left' }}>
       <h2 style={{ textAlign: 'center' }}>Task Details</h2>
       <div
@@ -552,10 +606,21 @@ export default function TaskDetails({ taskId, onChanged }) {
         </button>
         {showSubTasks && (
           <div style={{ marginTop: '10px' }}>
-            <SubTaskTree taskId={taskId} workPackageId={task.workPackageId} />
+            <SubTaskTree
+              taskId={taskId}
+              workPackageId={task.workPackageId}
+              onTaskClick={setSubTask}
+            />
           </div>
         )}
       </div>
     </div>
+
+    {subTask && (
+      <Modal title={subTask.title} onClose={() => setSubTask(null)}>
+        <TaskDetails taskId={subTask.taskId} onChanged={handleChanged} />
+      </Modal>
+    )}
+    </>
   );
 }
