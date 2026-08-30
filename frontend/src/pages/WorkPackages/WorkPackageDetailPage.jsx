@@ -12,6 +12,7 @@ export default function WorkPackageDetailPage() {
   const { token } = useAuth();
   const [selectedTask, setSelectedTask] = useState(null);
   const [name, setName] = useState(`Work Package #${workPackageId}`);
+  const [boardKey, setBoardKey] = useState(0);
 
   useEffect(() => {
     let ignore = false;
@@ -33,11 +34,14 @@ export default function WorkPackageDetailPage() {
 
       <h1>{name}</h1>
 
-      <TaskBoard workPackageId={workPackageId} onTaskClick={setSelectedTask} />
+      <TaskBoard key={boardKey} workPackageId={workPackageId} onTaskClick={setSelectedTask} />
 
       {selectedTask && (
         <Modal title={selectedTask.title} onClose={() => setSelectedTask(null)}>
-          <TaskDetails taskId={selectedTask.id} />
+          <TaskDetails
+            taskId={selectedTask.id}
+            onChanged={() => setBoardKey((k) => k + 1)}
+          />
         </Modal>
       )}
     </section>

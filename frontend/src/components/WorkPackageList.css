@@ -30,10 +30,16 @@
   outline: none;
 }
 
-.wp-card__delete {
+.wp-card__actions {
   position: absolute;
   top: 8px;
   right: 8px;
+  display: flex;
+  gap: 2px;
+}
+
+.wp-card__edit,
+.wp-card__delete {
   width: 24px;
   height: 24px;
   display: flex;
@@ -43,14 +49,76 @@
   border-radius: 6px;
   background: transparent;
   color: var(--text);
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
+}
+
+.wp-card__edit:hover {
+  background: var(--code-bg);
+  color: var(--accent);
 }
 
 .wp-card__delete:hover {
   background: var(--code-bg);
   color: var(--color-status-critical);
+}
+
+.wp-card--editing {
+  cursor: default;
+}
+
+.wp-card--editing:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.wp-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.wp-card__field input,
+.wp-card__field textarea {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: var(--sans);
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.wp-card__edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wp-card__edit-actions button {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.wp-card__edit-actions button[type='submit'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.wp-card__edit-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .wp-card__badge {
@@ -81,7 +149,7 @@
 
 .wp-card__title {
   margin: 0;
-  padding-right: 20px;
+  padding-right: 56px;
   font-family: var(--heading);
   font-size: 16px;
   font-weight: 500;

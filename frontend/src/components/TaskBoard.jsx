@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../auth/useAuth';
 import {
   getTasks,
@@ -7,6 +7,11 @@ import {
   deleteTask,
   TASK_PRIORITY_LABELS,
 } from '../api/workPackageApi';
+import { updateTask } from '../api/taskApi';
+import { useUserNames } from '../utils/userNames';
+import { getFriendlyErrorMessage } from '../utils/errorMessages';
+import { useToast } from '../shared/components/useToast';
+import Modal from './Modal';
 import './TaskBoard.css';
 
 // TaskStatus enum (backend, integer on the wire):
@@ -14,18 +19,21 @@ import './TaskBoard.css';
 const COLUMNS = [
   { key: 0, label: 'To Do' },
   { key: 1, label: 'In Progress' },
+  { key: 2, label: 'In Review' },
   { key: 3, label: 'Done' },
+  { key: 4, label: 'Blocked' },
 ];
 
-const STATUS_OPTIONS = [
-  { value: 0, label: 'To Do' },
-  { value: 1, label: 'In Progress' },
-  { value: 2, label: 'In Review' },
-  { value: 3, label: 'Done' },
-  { value: 4, label: 'Blocked' },
-];
+const STATUS_OPTIONS = COLUMNS.map((c) => ({ value: c.key, label: c.label }));
 
 // TaskPriority enum: 0 Low, 1 Medium, 2 High, 3 Critical
+const PRIORITY_OPTIONS = [
+  { value: 0, label: 'Low' },
+  { value: 1, label: 'Medium' },
+  { value: 2, label: 'High' },
+  { value: 3, label: 'Critical' },
+];
+
 const PRIORITY_COLORS = {
   3: 'var(--color-status-critical)',
   2: 'var(--color-status-critical)',
@@ -33,15 +41,96 @@ const PRIORITY_COLORS = {
   0: 'var(--border)',
 };
 
+function TaskCardForm({ title, initial, onClose, onSubmit }) {
+  const [form, setForm] = useState({
+    title: initial?.title ?? '',
+    description: initial?.description ?? '',
+    priority: initial?.priority ?? 1,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(event) {
+    event.preventDefault();
+    if (!form.title.trim()) return;
+    setSaving(true);
+    setError('');
+    try {
+      await onSubmit({
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        priority: Number(form.priority),
+      });
+      onClose();
+    } catch (err) {
+      setError(getFriendlyErrorMessage(err, 'task-write'));
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal title={title} onClose={saving ? () => {} : onClose}>
+      <form className="task-form" onSubmit={submit}>
+        <label>
+          Title
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            required
+          />
+        </label>
+        <label>
+          Description
+          <textarea
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+          />
+        </label>
+        <label>
+          Priority
+          <select
+            value={form.priority}
+            onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value }))}
+          >
+            {PRIORITY_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {error && <p className="task-form__error">{error}</p>}
+        <div className="task-form__actions">
+          <button type="submit" className="task-form__save" disabled={saving}>
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            type="button"
+            className="task-form__cancel"
+            onClick={onClose}
+            disabled={saving}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 export default function TaskBoard({ workPackageId, onTaskClick }) {
   const { token, userId, role } = useAuth();
+  const { showToast } = useToast();
   const canManage = role === 'Admin' || role === 'ProjectManager';
   const [tasks, setTasks] = useState([]);
   const [phase, setPhase] = useState('loading');
   const [errorMessage, setErrorMessage] = useState('');
+  const [addColumn, setAddColumn] = useState(null); // status key for the create modal
+  const [editTask, setEditTask] = useState(null);
 
   const load = useCallback(() => {
-    setPhase('loading');
     return getTasks(workPackageId, token)
       .then((data) => {
         setTasks(Array.isArray(data) ? data : []);
@@ -81,16 +170,8 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
     };
   }, [workPackageId, token]);
 
-  async function handleAdd(columnKey) {
-    const title = window.prompt('New task name:');
-    if (!title || !title.trim()) return;
-    try {
-      await createTask(workPackageId, { title: title.trim(), status: columnKey, priority: 1 }, token);
-      await load();
-    } catch (error) {
-      window.alert(error?.message || 'Could not create the task.');
-    }
-  }
+  const assigneeIds = useMemo(() => tasks.map((t) => t.assigneeId), [tasks]);
+  const nameFor = useUserNames(assigneeIds, token);
 
   async function handleStatusChange(id, status) {
     const nextStatus = Number(status);
@@ -100,11 +181,7 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
       await updateTaskStatus(id, nextStatus, token, userId);
     } catch (error) {
       setTasks(previous);
-      window.alert(
-        error && error.status === 403
-          ? 'Only the person the task is assigned to can change its status.'
-          : error?.message || 'Could not update the task status.',
-      );
+      showToast(getFriendlyErrorMessage(error, 'task-status'), 'error');
     }
   }
 
@@ -113,12 +190,9 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
     try {
       await deleteTask(id, token);
       setTasks((prev) => prev.filter((task) => task.taskId !== id));
+      showToast('Task deleted.', 'success');
     } catch (error) {
-      window.alert(
-        error && error.status === 409
-          ? 'This task still has dependencies or subtasks. Remove them first.'
-          : error?.message || 'Could not delete the task.',
-      );
+      showToast(getFriendlyErrorMessage(error, 'task-write'), 'error');
     }
   }
 
@@ -154,7 +228,7 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
                   type="button"
                   className="task-column__add"
                   aria-label={`Add task to ${column.label} column`}
-                  onClick={() => handleAdd(column.key)}
+                  onClick={() => setAddColumn(column.key)}
                 >
                   +
                 </button>
@@ -171,22 +245,35 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
                   onClick={() => onTaskClick?.({ ...task, id: task.taskId })}
                 >
                   {canManage && (
-                    <button
-                      type="button"
-                      className="task-card__delete"
-                      aria-label="Delete task"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        handleDelete(task.taskId);
-                      }}
-                    >
-                      ×
-                    </button>
+                    <div className="task-card__actions">
+                      <button
+                        type="button"
+                        className="task-card__edit"
+                        aria-label="Edit task"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditTask(task);
+                        }}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        className="task-card__delete"
+                        aria-label="Delete task"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleDelete(task.taskId);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
                   )}
 
                   <p className="task-card__title">{task.title}</p>
                   <p className="task-card__meta">
-                    {task.assigneeId ? `${task.assigneeId.slice(0, 8)}…` : 'Unassigned'} •{' '}
+                    {task.assigneeId ? nameFor(task.assigneeId) : 'Unassigned'} •{' '}
                     {TASK_PRIORITY_LABELS[task.priority] ?? task.priority}
                   </p>
 
@@ -207,6 +294,30 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
           </div>
         ))}
       </div>
+
+      {addColumn !== null && (
+        <TaskCardForm
+          title="New Task"
+          initial={{ priority: 1 }}
+          onClose={() => setAddColumn(null)}
+          onSubmit={async (data) => {
+            await createTask(workPackageId, { ...data, status: addColumn }, token);
+            await load();
+          }}
+        />
+      )}
+
+      {editTask && (
+        <TaskCardForm
+          title="Edit Task"
+          initial={editTask}
+          onClose={() => setEditTask(null)}
+          onSubmit={async (data) => {
+            await updateTask({ id: editTask.taskId, ...data }, token);
+            await load();
+          }}
+        />
+      )}
     </div>
   );
 }
