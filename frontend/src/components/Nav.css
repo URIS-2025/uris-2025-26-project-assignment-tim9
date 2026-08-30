@@ -1,0 +1,73 @@
+.app-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.app-nav-link {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  padding: 6px 2px;
+  border-bottom: 2px solid transparent;
+}
+
+.app-nav-link:hover {
+  color: var(--text-h);
+}
+
+.app-nav-link.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.app-nav-account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-nav-username {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.app-nav-role {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-h);
+  background: var(--social-bg);
+  border-radius: 999px;
+}
+
+.app-nav-logout {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.app-nav-logout:hover {
+  color: var(--color-status-critical);
+  border-color: rgba(214, 69, 69, 0.4);
+}
