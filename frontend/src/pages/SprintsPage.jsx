@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { ApiError } from '../api/httpClient';
 import { getAllProjects } from '../api/projectApi';
@@ -219,6 +219,12 @@ export default function SprintsPage() {
 
   return (
     <div className="sprints-page">
+      {routeProjectId && (
+        <Link to={`/projects/${routeProjectId}`} className="back-button">
+          ← Back to project
+        </Link>
+      )}
+
       <header className="page-header">
         <div>
           <h1>Sprints</h1>
