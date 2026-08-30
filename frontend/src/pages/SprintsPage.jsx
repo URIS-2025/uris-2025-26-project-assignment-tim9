@@ -23,7 +23,7 @@ function formatDate(iso) {
 const CAN_MANAGE_ROLES = ['Admin', 'ProjectManager'];
 
 export default function SprintsPage() {
-  const { token, username, role, logout } = useAuth();
+  const { token, role, logout } = useAuth();
   const canManage = CAN_MANAGE_ROLES.includes(role);
 
   // Present when mounted at /projects/:projectId/sprints (a project-scoped
@@ -227,15 +227,6 @@ export default function SprintsPage() {
               ? `Sprints on ${scopedProject?.name || 'this project'}.`
               : 'Plan sprints per project and track their tasks.'}
           </p>
-        </div>
-        <div className="user-badge">
-          <div>
-            <span className="user-name">{username}</span>
-            <span className="user-role">{role}</span>
-          </div>
-          <button type="button" className="secondary-button" onClick={logout}>
-            Log out
-          </button>
         </div>
       </header>
 
