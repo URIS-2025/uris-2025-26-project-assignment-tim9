@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from '../auth/useAuth';
-import { ApiError } from '../api/httpClient';
-import { getAllProjects } from '../api/projectApi';
-import { getAllSprints, deleteSprint } from '../api/sprintApi';
-import { deleteTask, getTasksBySprint } from '../api/taskApi';
-import { SPRINT_STATUSES, labelFor } from '../shared/enums';
-import TaskList from '../components/TaskList';
-import SprintFormModal from '../components/SprintFormModal';
-import TaskFormModal from '../components/TaskFormModal';
+import { useAuth } from '../../auth/useAuth';
+import { ApiError } from '../../api/httpClient';
+import { getAllProjects } from '../../api/projectApi';
+import { getAllSprints, deleteSprint } from '../../api/sprintApi';
+import { deleteTask, getTasksBySprint } from '../../api/taskApi';
+import { SPRINT_STATUSES, labelFor } from '../../shared/enums';
+import TaskList from '../../components/TaskList';
+import SprintFormModal from '../../components/SprintFormModal';
+import TaskFormModal from '../../components/TaskFormModal';
 import './SprintsPage.css';
 
 function formatDate(iso) {
