@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NotificationService.Context;
 
@@ -11,9 +12,11 @@ using NotificationService.Context;
 namespace NotificationService.Migrations
 {
     [DbContext(typeof(NotificationServiceContext))]
-    partial class NotificationServiceContextModelSnapshot : ModelSnapshot
+    [Migration("20260830131218_SeedRealisticDemoData")]
+    partial class SeedRealisticDemoData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

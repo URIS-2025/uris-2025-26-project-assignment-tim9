@@ -21,8 +21,8 @@ namespace PaymentService.Tests.Integration
 
         public Guid KnownProjectId { get; } = Guid.NewGuid();
 
-        //projekat iz seed podataka PaymentContext-a
-        public static readonly Guid SeededProjectId = Guid.Parse("044f3de0-a9dd-4c2e-b745-89976a1b2a36");
+        //projekat iz seed podataka PaymentContext-a (project1 - "Project Management System")
+        public static readonly Guid SeededProjectId = Guid.Parse("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
         public const string KnownProjectName = "Integracioni projekat";
 
         private FakeJsonServer _userServer = null!;
