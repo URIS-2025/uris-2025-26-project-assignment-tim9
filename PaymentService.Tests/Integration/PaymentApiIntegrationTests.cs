@@ -12,7 +12,8 @@ namespace PaymentService.Tests.Integration
     //sa pravim kontrolerima, repozitorijumima i MySQL bazom, i salju se stvarni HTTP zahtevi
     public class PaymentApiIntegrationTests : IClassFixture<PaymentApiFixture>
     {
-        private static readonly Guid SeededInvoiceId = Guid.Parse("a1111111-1111-1111-1111-111111111111");
+        //faktura za project1 iz seed podataka PaymentContext-a (Unpaid, 1 stavka)
+        private static readonly Guid SeededInvoiceId = Guid.Parse("e1000001-0000-0000-0000-000000000001");
 
         private readonly PaymentApiFixture _fixture;
         private readonly HttpClient _client;
@@ -34,8 +35,8 @@ namespace PaymentService.Tests.Integration
             var invoices = await ReadAsync<List<InvoiceDTO>>(response);
 
             var seeded = Assert.Single(invoices!, i => i.InvoiceId == SeededInvoiceId);
-            Assert.Equal(1500.00m, seeded.TotalAmount);
-            Assert.Equal(2, seeded.Items.Count);
+            Assert.Equal(4200.00m, seeded.TotalAmount);
+            Assert.Equal(1, seeded.Items.Count);
         }
 
         [Fact]
