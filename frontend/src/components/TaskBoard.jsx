@@ -5,10 +5,12 @@ import {
   createTask,
   updateTaskStatus,
   deleteTask,
+  getWorkPackage,
   TASK_PRIORITY_LABELS,
 } from '../api/workPackageApi';
 import { updateTask } from '../api/taskApi';
-import { useUserNames } from '../utils/userNames';
+import { getProjectMembersByProjectId } from '../api/projectApi';
+import { useUserNames, shortId } from '../utils/userNames';
 import { getFriendlyErrorMessage } from '../utils/errorMessages';
 import { useToast } from '../shared/components/useToast';
 import Modal from './Modal';
@@ -41,11 +43,12 @@ const PRIORITY_COLORS = {
   0: 'var(--border)',
 };
 
-function TaskCardForm({ title, initial, onClose, onSubmit }) {
+function TaskCardForm({ title, initial, members = [], onClose, onSubmit }) {
   const [form, setForm] = useState({
     title: initial?.title ?? '',
     description: initial?.description ?? '',
     priority: initial?.priority ?? 1,
+    assigneeId: initial?.assigneeId ?? '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -60,6 +63,7 @@ function TaskCardForm({ title, initial, onClose, onSubmit }) {
         title: form.title.trim(),
         description: form.description.trim() || null,
         priority: Number(form.priority),
+        assigneeId: form.assigneeId || null,
       });
       onClose();
     } catch (err) {
@@ -101,6 +105,24 @@ function TaskCardForm({ title, initial, onClose, onSubmit }) {
             ))}
           </select>
         </label>
+        <label>
+          Assignee
+          <select
+            value={form.assigneeId}
+            onChange={(e) => setForm((f) => ({ ...f, assigneeId: e.target.value }))}
+          >
+            <option value="">Unassigned</option>
+            {initial?.assigneeId &&
+              !members.some((m) => m.userId === initial.assigneeId) && (
+                <option value={initial.assigneeId}>{shortId(initial.assigneeId)}</option>
+              )}
+            {members.map((m) => (
+              <option key={m.userId} value={m.userId}>
+                {m.username || shortId(m.userId)}
+              </option>
+            ))}
+          </select>
+        </label>
         {error && <p className="task-form__error">{error}</p>}
         <div className="task-form__actions">
           <button type="submit" className="task-form__save" disabled={saving}>
@@ -129,6 +151,7 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [addColumn, setAddColumn] = useState(null); // status key for the create modal
   const [editTask, setEditTask] = useState(null);
+  const [members, setMembers] = useState([]);
 
   const load = useCallback(() => {
     return getTasks(workPackageId, token)
@@ -164,6 +187,21 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
             : 'Something went wrong while loading the tasks.',
         );
         setPhase('error');
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [workPackageId, token]);
+
+  useEffect(() => {
+    let ignore = false;
+    getWorkPackage(workPackageId, token)
+      .then((wp) => (wp?.projectId ? getProjectMembersByProjectId(wp.projectId, token) : []))
+      .then((list) => {
+        if (!ignore) setMembers(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (!ignore) setMembers([]);
       });
     return () => {
       ignore = true;
@@ -236,7 +274,9 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
             </div>
 
             {tasks
-              .filter((task) => task.status === column.key)
+              // Only top-level tasks belong on the board; sub-tasks (parentTaskId
+              // set) are reachable through their parent's Sub-tasks section.
+              .filter((task) => task.status === column.key && !task.parentTaskId)
               .map((task) => (
                 <div
                   key={task.taskId}
@@ -299,6 +339,7 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
         <TaskCardForm
           title="New Task"
           initial={{ priority: 1 }}
+          members={members}
           onClose={() => setAddColumn(null)}
           onSubmit={async (data) => {
             await createTask(workPackageId, { ...data, status: addColumn }, token);
@@ -311,6 +352,7 @@ export default function TaskBoard({ workPackageId, onTaskClick }) {
         <TaskCardForm
           title="Edit Task"
           initial={editTask}
+          members={members}
           onClose={() => setEditTask(null)}
           onSubmit={async (data) => {
             await updateTask({ id: editTask.taskId, ...data }, token);
