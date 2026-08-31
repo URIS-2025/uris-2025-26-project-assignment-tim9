@@ -1,10 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './useAuth';
-import Nav from '../components/Nav';
 
 // Wrap a route element to require a logged-in user, and optionally one of a
 // set of roles. Redirects to /login (preserving where the user was headed).
-// Also renders the shared Nav bar, since every authenticated page needs it.
+// Chrome (sidebar/navbar) is owned by AppLayout, not by this guard.
 export default function RequireAuth({ children, roles }) {
   const { isAuthenticated, role } = useAuth();
   const location = useLocation();
@@ -17,10 +16,5 @@ export default function RequireAuth({ children, roles }) {
     return <Navigate to="/projects" replace />;
   }
 
-  return (
-    <>
-      <Nav />
-      {children}
-    </>
-  );
+  return children;
 }
